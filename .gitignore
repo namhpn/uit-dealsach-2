@@ -65,6 +65,8 @@ Vagrantfile
 
 php_errors.log
 
+/frontend/node_modules
+
 #-------------------------
 # User Guide Temp Files
 #-------------------------

@@ -112,7 +112,7 @@ At the end of every implementation run, Codex must provide:
 * Follow-up tickets
 * Docs updated
 
-Use `docs/Completion_Report_Template.md` as the report structure.
+Use `docs/templates/Completion_Report_Template.md` as the report structure.
 
 ### Repo State Updates
 
@@ -219,69 +219,66 @@ Run backend commands from `backend/`. Run frontend commands from `frontend/`. Th
 Install backend dependencies in Docker:
 
 ```bash
-docker compose --env-file backend/.env run --rm app sh -lc 'cd backend && php ../composer.phar install'
+docker compose run --rm app sh -lc 'cd backend && php ../composer.phar install'
 ```
 
-Install frontend dependencies on the host:
+Install frontend dependencies in Docker:
 
 ```bash
-cd frontend
-npm install
+docker compose run --rm frontend npm install
 ```
 
 Start the full Docker stack:
 
 ```bash
-docker compose --env-file backend/.env up -d --build
+docker compose up -d --build
 ```
 
 Stop the stack:
 
 ```bash
-docker compose --env-file backend/.env down
+docker compose down
 ```
 
 Run CI4 Spark commands in Docker:
 
 ```bash
-docker compose --env-file backend/.env run --rm app sh -lc 'cd backend && php spark list'
-docker compose --env-file backend/.env run --rm app sh -lc 'cd backend && php spark migrate'
+docker compose run --rm app sh -lc 'cd backend && php spark list'
+docker compose run --rm app sh -lc 'cd backend && php spark migrate'
 ```
 
 Run backend tests in Docker:
 
 ```bash
-docker compose --env-file backend/.env run --rm app sh -lc 'cd backend && php vendor/bin/phpunit'
+docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit'
 ```
 
 Run a temporary Dockerized test environment and remove its volumes afterward:
 
 ```bash
-docker compose --env-file backend/.env -p dealsach_test up -d --build db
-docker compose --env-file backend/.env -p dealsach_test run --rm app sh -lc 'cd backend && php ../composer.phar install && php vendor/bin/phpunit'
-docker compose --env-file backend/.env -p dealsach_test down -v
+docker compose -p dealsach_test up -d --build db
+docker compose -p dealsach_test run --rm app sh -lc 'cd backend && php ../composer.phar install && php vendor/bin/phpunit'
+docker compose -p dealsach_test down -v
 ```
 
-Run the frontend dev server:
+Run the frontend dev server in Docker:
 
 ```bash
-cd frontend
-npm run dev
+docker compose run --rm --service-ports frontend npm run dev -- --host 0.0.0.0
 ```
 
-Build the frontend:
+Build the frontend in Docker:
 
 ```bash
-cd frontend
-npm run build
+docker compose run --rm frontend npm run build
 ```
 
 Inspect Docker logs during debugging:
 
 ```bash
-docker compose --env-file backend/.env logs --tail=200 app
-docker compose --env-file backend/.env logs --tail=200 nginx
-docker compose --env-file backend/.env logs --tail=200 db
+docker compose logs --tail=200 app
+docker compose logs --tail=200 nginx
+docker compose logs --tail=200 db
 ```
 
 ## Code Style Guidelines
@@ -325,7 +322,7 @@ Before backend changes:
 
 Before frontend changes:
 
-- Run `npm run build` from `frontend/`.
+- Run `docker compose run --rm frontend npm run build`.
 - Manually inspect important responsive states for public pages, especially search, book cards, book detail, Buy flow messaging, wishlist prompts, alert flows, empty states, and admin tables.
 - Verify Vietnamese text does not overflow buttons, cards, mobile headers, filters, or status badges.
 

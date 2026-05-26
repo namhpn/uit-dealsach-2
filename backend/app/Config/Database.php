@@ -199,6 +199,27 @@ class Database extends Config
         // we don't overwrite live data on accident.
         if (ENVIRONMENT === 'testing') {
             $this->defaultGroup = 'tests';
+        } else {
+            $this->applyRuntimeDatabaseEnvironment();
+        }
+    }
+
+    private function applyRuntimeDatabaseEnvironment(): void
+    {
+        $overrides = [
+            'hostname' => getenv('database.default.hostname'),
+            'database' => getenv('database.default.database'),
+            'username' => getenv('database.default.username'),
+            'password' => getenv('database.default.password'),
+            'port'     => getenv('database.default.port'),
+        ];
+
+        foreach ($overrides as $key => $value) {
+            if ($value === false || $value === '') {
+                continue;
+            }
+
+            $this->default[$key] = $key === 'port' ? (int) $value : $value;
         }
     }
 }

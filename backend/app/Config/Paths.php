@@ -87,4 +87,15 @@ class Paths
      * value - the directory should not be publicly accessible.
      */
     public string $envDirectory = __DIR__ . '/../../';
+
+    public function __construct()
+    {
+        foreach (['cache', 'debugbar', 'logs', 'session', 'uploads'] as $directory) {
+            $path = $this->writableDirectory . DIRECTORY_SEPARATOR . $directory;
+
+            if (! is_dir($path)) {
+                @mkdir($path, 0775, true);
+            }
+        }
+    }
 }

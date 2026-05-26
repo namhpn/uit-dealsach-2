@@ -26,6 +26,192 @@ Use `diagnostic-protocol` for debugging, bug fixing, database/API/UI behavior ch
 
 Use the repo-local `rtk` skill when the `rtk` command is available. Prefer `rtk <command>` for routine shell commands to reduce token-heavy output, and use `rtk proxy <command>` when raw output is needed for exact diagnostics.
 
+## Codex Ticket Workflow
+
+Codex must work one small ticket at a time.
+
+A ticket should be small enough for a human to manually verify in 5–10 minutes. Do not combine unrelated backend, frontend, database, admin, alert, redirect, and reporting changes in one ticket unless the ticket explicitly allows it.
+
+### Required Ticket Contract
+
+Every implementation request must include:
+
+- Ticket ID
+- Goal
+- Dependencies
+- Allowed areas
+- Do not touch
+- Requirements
+- Non-goals
+- Acceptance criteria
+- Manual verification
+
+If the ticket is missing important scope boundaries, Codex must avoid broad implementation. Make the smallest safe change that satisfies the stated goal, and report any missing scope as a risk or follow-up.
+
+### Scope Control Rules
+
+Codex must:
+
+- Implement the requested ticket only.
+- Do not implement future-ticket features.
+- Do not refactor unrelated systems.
+- Do not rename, move, or restructure unrelated files.
+- Do not introduce new architecture unless the ticket explicitly requires it.
+- Do not add new dependencies unless the ticket explicitly allows them or the existing stack cannot satisfy the requirement.
+- Prefer existing helpers, components, services, models, routes, styles, and conventions.
+- Keep changes small, reviewable, and manually verifiable.
+
+### Allowed Areas and Do Not Touch
+
+The ticket’s `Allowed areas` section is authoritative.
+
+Codex may edit only the listed files/folders, plus these process files when relevant:
+
+- `docs/Repo_Current_State.md`
+- `docs/Known_Issues_And_Followups.md`
+
+The ticket’s `Do not touch` section is authoritative even if another part of the prompt is broad.
+
+If a needed change falls outside `Allowed areas`, do not make that change. Record it as a follow-up in `docs/Known_Issues_And_Followups.md` and mention it in the completion report.
+
+### Branch Workflow
+
+Use one branch per ticket.
+
+Branch naming convention:
+
+```text
+feature/t0001-short-description
+fix/t0001-short-description
+docs/t0001-short-description
+````
+
+Preferred flow:
+
+```text
+main
+  -> feature/ticket-id
+  -> build/test/manual verification
+  -> review
+  -> merge
+  -> next ticket branch
+```
+
+If a ticket goes wrong, abandon the branch rather than untangling unrelated changes from `main`.
+
+### Required Completion Report
+
+At the end of every implementation run, Codex must provide:
+
+* Summary of changes
+* Files changed
+* Commands run
+* Build/test results
+* Manual verification steps performed
+* Risks
+* Follow-up tickets
+* Docs updated
+
+Use `docs/Completion_Report_Template.md` as the report structure.
+
+### Repo State Updates
+
+After each completed ticket, update `docs/Repo_Current_State.md` with:
+
+* Current branch
+* Completed ticket
+* Relevant folder structure changes
+* Installed dependency changes
+* Available script changes
+* Build/test status
+* Known issues
+* Next recommended ticket
+
+If the ticket could not complete or verification failed, record the actual state. Do not claim success when build, tests, or manual verification were not run.
+
+### Known Issues and Follow-ups
+
+When Codex notices an issue outside the ticket scope, it must not fix it automatically.
+
+Instead, add or update an entry in:
+
+```text
+docs/Known_Issues_And_Followups.md
+```
+
+Each entry should include:
+
+* Date
+* Source ticket
+* Area
+* Issue or follow-up
+* Severity
+* Suggested future ticket
+
+### Manual Verification
+
+A passing build is not enough.
+
+Each ticket must include practical manual verification steps. Use `docs/Manual_Verification_Guide.md` for standard checks, then add ticket-specific checks.
+
+For UI work, verify relevant responsive states and browser console behavior.
+
+For backend/API/database work, verify the command, route, payload, database state, log line, or test that proves the behavior.
+
+### DealSach Product Guardrails
+
+Preserve the DealSach product boundary from `docs/requirement-doc.md`.
+
+Do not add:
+
+* Shopping cart
+* Checkout
+* Online payment
+* Order management
+* Shipping management
+* User comments
+* User reviews
+* User ratings
+* Voucher, coupon, flash-sale, or member-only discount calculation
+* Real-time price guarantees
+* Real external retailer integration beyond mock/demo scope
+
+DealSach compares last observed listed item prices and redirects users to external sellers through validated affiliate Buy links. It does not sell books directly.
+
+### Architecture Guardrails
+
+Backend:
+
+* Follow CodeIgniter 4 conventions.
+* Keep controllers thin.
+* Keep data access in models/query builders.
+* Put reusable business rules in services/libraries.
+* Preserve history through archive, deactivate, hide, or status changes rather than hard deletion where dependent history exists.
+* Keep auditability for Admin mutations, alert events, redirect events, and email deal-link events.
+
+Frontend:
+
+* Use React, TypeScript, Vite, and the existing design system.
+* Keep props and data models typed.
+* Keep user-facing copy Vietnamese-first.
+* Use VND whole-number formatting.
+* Do not imply prices are real-time guarantees.
+* Do not imply DealSach sells books directly.
+* Keep the required public disclaimer near price and Buy areas:
+
+```text
+Giá tham khảo được ghi nhận gần đây, vui lòng kiểm tra lại tại nơi bán trước khi mua.
+```
+
+Data and business rules:
+
+* Project JSON, mock/demo data, stored observations, and Admin-managed records are sources of truth for this project scope.
+* Runtime UI state must not become the persisted business model.
+* Historical price observations must not be rewritten by ordinary Admin edits.
+* Current comparison, filtering, and alert evaluation must use current eligible-offer rules.
+* Historical charts must use observation-time eligibility.
+
+
 ## Build and Test Commands
 
 Run backend commands from `backend/`. Run frontend commands from `frontend/`. The Docker PHP service mounts the repository root, so CI4 commands inside the container must explicitly `cd backend`.

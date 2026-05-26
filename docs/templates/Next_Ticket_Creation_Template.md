@@ -15,7 +15,7 @@ The reviewer/planner fills this out before creating the next ticket.
 # 1. Review Input
 
 ## Previous Ticket
-
+Use Github tool to review repository at docs/implementation_logs/
 - Merge status:
   - [ ] Not merged
   - [ ] Merged
@@ -25,21 +25,12 @@ The reviewer/planner fills this out before creating the next ticket.
 ## Codex Completion Report Summary
 
 ## Repo Current State
+Use Github tool to review repository at docs/Repo_Current_State.md
 
 ## Known Issues / Follow-ups to Consider
+Use Github tool to review repository at docs/Known_Issues_And_Followups.md
 
 ## Reviewer Notes
-
-## Scope Decision
-
-Choose one.
-
-* [ ] Continue with next planned feature ticket.
-* [ ] Fix issues discovered in the previous ticket.
-* [ ] Create a documentation/process cleanup ticket.
-* [ ] Create a tooling/dev-environment ticket.
-* [ ] Create a bug-fix ticket.
-* [ ] Split the next work into smaller tickets before implementation.
 
 ---
 

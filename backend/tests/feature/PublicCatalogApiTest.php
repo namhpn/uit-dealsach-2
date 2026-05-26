@@ -155,15 +155,18 @@ final class PublicCatalogApiTest extends CIUnitTestCase
         $this->assertFalse($this->containsTimestampKey($body));
     }
 
-    public function testDiscoveryReturnsPriceDropsAndSafePopularClickedDealsEmptySection(): void
+    public function testDiscoveryReturnsPriceDropsAndPersistedPopularClickedDeals(): void
     {
         $body = $this->json($this->get('/api/public/discovery'));
 
         $this->assertNotEmpty($body['data']['featured_books']['items']);
         $this->assertNotEmpty($body['data']['recent_price_drops']['items']);
         $this->assertGreaterThan(0, $body['data']['recent_price_drops']['items'][0]['price_drop']['amount']);
-        $this->assertSame([], $body['data']['popular_clicked_deals']['items']);
-        $this->assertStringContainsString('đang chờ ticket ghi nhận', $body['data']['popular_clicked_deals']['empty_state']);
+        $this->assertNotEmpty($body['data']['popular_clicked_deals']['items']);
+        $this->assertSame('Cà phê cùng Tony', $body['data']['popular_clicked_deals']['items'][0]['title']);
+        $this->assertSame(3, $body['data']['popular_clicked_deals']['items'][0]['popular_clicked_deal']['redirect_count_7d']);
+        $this->assertSame('Fahasa', $body['data']['popular_clicked_deals']['items'][0]['popular_clicked_deal']['top_retailer']['name']);
+        $this->assertNull($body['data']['popular_clicked_deals']['empty_state']);
     }
 
     public function testFiltersEndpointReturnsMetadataWithoutBroadNoAvailableOfferFilter(): void

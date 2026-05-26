@@ -12,9 +12,9 @@ function Header() {
 
   return (
     <header className="sticky top-0 z-50" style={{ background: C.white, borderBottom: border2 }}>
-      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 pt-3 pb-3 flex items-start gap-4">
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 pt-3 pb-3 flex flex-wrap md:flex-nowrap items-start gap-3 md:gap-4">
         {/* Logo */}
-        <a href="#" onClick={(e) => { e.preventDefault(); navigate("/"); }} className="flex items-center gap-2 shrink-0 pt-1">
+        <a href="#" onClick={(e) => { e.preventDefault(); navigate("/"); }} className="order-1 flex items-center gap-2 shrink-0 pt-1">
           <div className="w-10 h-10 flex items-center justify-center" style={{ background: C.primary, border: border2 }}>
             <BookOpen size={20} style={{ color: C.white }} />
           </div>
@@ -24,10 +24,15 @@ function Header() {
         </a>
 
         {/* Search + chips column */}
-        <div className="flex-1 flex flex-col gap-2 min-w-0">
-          <form className="flex items-stretch overflow-hidden"
+        <div className="order-3 basis-full max-w-full md:order-2 md:basis-auto md:w-auto flex-1 flex flex-col gap-2 min-w-0">
+          <form className="flex min-w-0 items-stretch overflow-hidden"
             style={{ border: searchFocused ? border3 : border2, boxShadow: searchFocused ? shadow4 : "none", transition: "box-shadow 100ms" }}
-            onSubmit={(e) => e.preventDefault()}
+            onSubmit={(e) => {
+              e.preventDefault();
+              const params = new URLSearchParams();
+              if (searchQuery.trim()) params.set("q", searchQuery.trim());
+              navigate(`/search${params.toString() ? `?${params}` : ""}`);
+            }}
           >
             <div className="flex items-center justify-center px-3 shrink-0" style={{ background: C.white, borderRight: border2 }}>
               <Search size={16} style={{ color: C.primary }} />
@@ -40,22 +45,26 @@ function Header() {
               className="flex-1 px-3 py-3 text-sm outline-none border-none min-w-0"
               style={{ background: C.white, color: C.onSurface, fontFamily: FONT }}
             />
-            <button type="submit" className="px-5 text-[12px] font-bold uppercase tracking-wide shrink-0"
+            <button type="submit" className="hidden px-3 sm:block sm:px-5 text-[12px] font-bold uppercase tracking-wide shrink-0"
               style={{ background: C.primary, color: C.white, fontFamily: FONT, borderLeft: border2 }}>
               <span>Tìm kiếm</span>
             </button>
           </form>
 
           {/* Category chips */}
-          <div className="flex items-center gap-2.5" style={{ overflowX: "clip", overflowY: "visible", flexWrap: "nowrap", paddingBottom: 4 }}>
+          <div className="flex items-center gap-2.5" style={{ overflowX: "auto", overflowY: "visible", flexWrap: "nowrap", paddingBottom: 4, scrollbarWidth: "none" }}>
             {navCategories.map(cat => (
-              <CategoryChip key={cat} label={cat} active={activeCat === cat} onClick={() => setActiveCat(activeCat === cat ? null : cat)} />
+              <CategoryChip key={cat} label={cat} active={activeCat === cat} onClick={() => {
+                const next = activeCat === cat ? null : cat;
+                setActiveCat(next);
+                if (next) navigate(`/search?category=${encodeURIComponent(next)}`);
+              }} />
             ))}
           </div>
         </div>
 
         {/* Icon buttons */}
-        <div className="hidden md:flex items-center gap-2 shrink-0 self-start">
+        <div className="hidden md:flex order-3 items-center gap-2 shrink-0 self-start">
           {[
             { icon: <Heart size={18} />, label: "Yêu thích" },
             { icon: <User size={18} />, label: "Tài khoản" },
@@ -70,7 +79,7 @@ function Header() {
         </div>
 
         {/* Mobile toggle */}
-        <button className="md:hidden p-1.5 shrink-0 mt-1"
+        <button className="order-2 md:hidden p-1.5 shrink-0 mt-1 ml-auto"
           style={{ color: C.onSurface, border: border2, background: C.white }}
           onClick={() => setMobileMenuOpen(o => !o)}>
           {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
@@ -133,7 +142,7 @@ function Footer() {
 
 export default function Root() {
   return (
-    <div className="min-h-screen" style={{ background: C.surface, color: C.onSurface, fontFamily: FONT }}>
+    <div className="min-h-screen overflow-x-hidden" style={{ background: C.surface, color: C.onSurface, fontFamily: FONT }}>
       <Header />
       <Outlet />
       <Footer />

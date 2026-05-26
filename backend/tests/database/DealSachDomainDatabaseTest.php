@@ -119,6 +119,9 @@ final class DealSachDomainDatabaseTest extends CIUnitTestCase
             'offers',
             'observation_cycles',
             'price_observations',
+            'buy_attempts',
+            'affiliate_redirects',
+            'redirect_failures',
         ];
     }
 

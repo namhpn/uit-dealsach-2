@@ -22,11 +22,15 @@ class DealSachDemoSeeder extends Seeder
         $offerIds = $this->seedOffers($bookIds, $retailerIds, $merchantIds, $now);
         $cycleIds = $this->seedObservationCycles($now);
         $this->seedPriceObservations($offerIds, $cycleIds, $now);
+        $this->seedBuyFlowEvents($offerIds, $now);
     }
 
     private function clearTables(): void
     {
         $tables = [
+            'redirect_failures',
+            'affiliate_redirects',
+            'buy_attempts',
             'price_observations',
             'observation_cycles',
             'offers',
@@ -418,6 +422,73 @@ class DealSachDemoSeeder extends Seeder
             'created_at' => $now,
             'updated_at' => $now,
         ]);
+    }
+
+    /**
+     * @param array<string, int> $offerIds
+     */
+    private function seedBuyFlowEvents(array $offerIds, string $now): void
+    {
+        $events = [
+            ['offer' => 'b1_fahasa', 'at' => '2026-05-25 10:15:00'],
+            ['offer' => 'b1_fahasa', 'at' => '2026-05-25 11:20:00'],
+            ['offer' => 'b1_tiki', 'at' => '2026-05-24 14:10:00'],
+            ['offer' => 'b2_lazada', 'at' => '2026-05-25 09:00:00'],
+            ['offer' => 'b2_lazada', 'at' => '2026-05-24 09:00:00'],
+            ['offer' => 'b3_tiki', 'at' => '2026-05-25 16:30:00'],
+            ['offer' => 'b3_tiki', 'at' => '2026-05-18 08:00:00'],
+        ];
+
+        foreach ($events as $event) {
+            $offer = $this->offerSnapshot($offerIds[$event['offer']]);
+            $payload = $this->eventPayload($offer, $event['at'], $now);
+            $this->db->table('buy_attempts')->insert($payload + [
+                'event_type' => 'buy_attempt',
+                'attempt_status' => 'recorded',
+            ]);
+            $this->db->table('affiliate_redirects')->insert($payload + [
+                'event_type' => 'affiliate_redirect',
+                'redirect_status' => 'redirected',
+            ]);
+        }
+
+        $invalidOffer = $this->offerSnapshot($offerIds['b3_shopee_invalid']);
+        $this->db->table('buy_attempts')->insert($this->eventPayload($invalidOffer, '2026-05-25 17:00:00', $now) + [
+            'event_type' => 'buy_attempt',
+            'attempt_status' => 'recorded',
+        ]);
+        $this->db->table('redirect_failures')->insert($this->eventPayload($invalidOffer, '2026-05-25 17:00:00', $now) + [
+            'event_type' => 'redirect_failure',
+            'failure_reason' => 'destination_invalid',
+        ]);
+    }
+
+    private function offerSnapshot(int $offerId): object
+    {
+        return $this->db->table('offers')
+            ->where('id', $offerId)
+            ->get()
+            ->getFirstRow();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function eventPayload(object $offer, string $eventAt, string $now): array
+    {
+        $parts = is_string($offer->affiliate_destination_url) ? (parse_url($offer->affiliate_destination_url) ?: []) : [];
+
+        return [
+            'offer_id' => (int) $offer->id,
+            'book_id' => (int) $offer->book_id,
+            'retailer_platform_id' => (int) $offer->retailer_platform_id,
+            'merchant_id' => (int) $offer->merchant_id,
+            'event_at' => $eventAt,
+            'destination_domain' => isset($parts['host']) ? strtolower((string) $parts['host']) : null,
+            'destination_path_summary' => isset($parts['path']) ? mb_substr((string) $parts['path'], 0, 255, 'UTF-8') : null,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ];
     }
 
     /**

@@ -19,7 +19,7 @@ class PublicCatalogController extends BaseController
         $result = $this->catalog->listBooks($this->request->getGet());
 
         if (! $result['ok']) {
-            return $this->response->setStatusCode(422)->setJSON([
+            return $this->apiResponse()->setStatusCode(422)->setJSON([
                 'status' => 'error',
                 'message' => 'Tham số tìm kiếm hoặc bộ lọc chưa hợp lệ.',
                 'data' => null,
@@ -27,7 +27,7 @@ class PublicCatalogController extends BaseController
             ]);
         }
 
-        return $this->response->setJSON([
+        return $this->apiResponse()->setJSON([
             'status' => 'success',
             'message' => 'Danh sách sách công khai.',
             'data' => $result['data'],
@@ -46,7 +46,7 @@ class PublicCatalogController extends BaseController
             return $this->notFound();
         }
 
-        return $this->response->setJSON([
+        return $this->apiResponse()->setJSON([
             'status' => 'success',
             'message' => 'Chi tiết sách công khai.',
             'data' => $detail,
@@ -56,7 +56,7 @@ class PublicCatalogController extends BaseController
 
     public function discovery(): ResponseInterface
     {
-        return $this->response->setJSON([
+        return $this->apiResponse()->setJSON([
             'status' => 'success',
             'message' => 'Dữ liệu khám phá công khai.',
             'data' => $this->catalog->discovery(),
@@ -66,7 +66,7 @@ class PublicCatalogController extends BaseController
 
     public function filters(): ResponseInterface
     {
-        return $this->response->setJSON([
+        return $this->apiResponse()->setJSON([
             'status' => 'success',
             'message' => 'Bộ lọc công khai.',
             'data' => $this->catalog->filters(),
@@ -76,11 +76,16 @@ class PublicCatalogController extends BaseController
 
     private function notFound(): ResponseInterface
     {
-        return $this->response->setStatusCode(404)->setJSON([
+        return $this->apiResponse()->setStatusCode(404)->setJSON([
             'status' => 'error',
             'message' => 'Không tìm thấy sách công khai phù hợp.',
             'data' => null,
             'errors' => ['book' => 'Sách không tồn tại hoặc không còn hiển thị công khai.'],
         ]);
+    }
+
+    private function apiResponse(): ResponseInterface
+    {
+        return $this->response->setHeader('Access-Control-Allow-Origin', '*');
     }
 }

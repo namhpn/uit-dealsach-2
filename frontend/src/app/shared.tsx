@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from "react";
 import { Heart, ChevronLeft, ChevronRight, TrendingDown, Flame, Star } from "lucide-react";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
+import { BookCardDto, coverFallback, formatVnd, PRICE_DISCLAIMER } from "./api";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -73,6 +74,104 @@ export const statusLabel: Record<NonNullable<Book["status"]>, string> = {
   stale_price:  "Giá tham khảo cũ",
   no_offer:     "Chưa có ưu đãi",
 };
+
+export function LoadingState({ label = "Đang tải dữ liệu..." }: { label?: string }) {
+  return (
+    <div className="p-6 text-sm font-bold" style={{ border: border2, background: C.white, boxShadow: shadow4, fontFamily: FONT }}>
+      {label}
+    </div>
+  );
+}
+
+export function EmptyState({ message }: { message: string }) {
+  return (
+    <div className="p-6 text-sm leading-relaxed" style={{ border: border2, background: C.boneWhite, fontFamily: FONT }}>
+      <strong>Chưa có dữ liệu phù hợp.</strong>
+      <p className="mt-1" style={{ color: C.onSurfaceVariant }}>{message}</p>
+    </div>
+  );
+}
+
+export function ErrorState({ message }: { message: string }) {
+  return (
+    <div className="p-6 text-sm leading-relaxed" style={{ border: border2, background: "#fff1f1", color: C.secondary, fontFamily: FONT }}>
+      <strong>Không thể tải dữ liệu.</strong>
+      <p className="mt-1">{message}</p>
+    </div>
+  );
+}
+
+export function PriceDisclaimer({ compact = false }: { compact?: boolean }) {
+  return (
+    <p className={compact ? "text-[10px] leading-snug" : "text-[12px] leading-relaxed"} style={{ color: C.onSurfaceVariant, fontFamily: FONT }}>
+      {PRICE_DISCLAIMER}
+    </p>
+  );
+}
+
+export function CoverImage({ title, src }: { title: string; src: string | null }) {
+  const [failed, setFailed] = useState(false);
+  if (!src || failed) {
+    return (
+      <div className="w-full h-full flex items-center justify-center text-3xl font-extrabold" style={{ background: C.surfaceContainer, color: C.primary, fontFamily: FONT }}>
+        {coverFallback(title)}
+      </div>
+    );
+  }
+
+  return <img src={src} alt={`Bìa sách ${title}`} className="w-full h-full object-cover" onError={() => setFailed(true)} />;
+}
+
+export function ApiBookCard({ book, showDrop = false, showPopular = false }: { book: BookCardDto; showDrop?: boolean; showPopular?: boolean }) {
+  return (
+    <Link to={`/book/${book.id}`} className="block h-full focus:outline-none focus-visible:ring-4 focus-visible:ring-emerald-300">
+      <article className="flex h-full flex-col overflow-hidden" style={{ background: C.white, border: border2, boxShadow: shadow4 }}>
+        <div className="relative" style={{ aspectRatio: "2/3", borderBottom: border2 }}>
+          <CoverImage title={book.title} src={book.cover_image} />
+          {showDrop && book.price_drop && (
+            <span className="absolute left-3 top-3 px-2 py-1 text-[11px] font-extrabold" style={{ background: C.secondary, color: C.white, border: border2, boxShadow: shadow4, fontFamily: FONT }}>
+              -{formatVnd(book.price_drop.amount)}
+            </span>
+          )}
+          {showPopular && book.popular_clicked_deal && (
+            <span className="absolute left-3 top-3 px-2 py-1 text-[11px] font-extrabold" style={{ background: C.secondary, color: C.white, border: border2, boxShadow: shadow4, fontFamily: FONT }}>
+              {book.popular_clicked_deal.redirect_count_7d} lượt
+            </span>
+          )}
+        </div>
+        <div className="flex flex-1 flex-col gap-2 p-4">
+          <p className="text-[10px] font-extrabold uppercase tracking-wide" style={{ color: C.outline, fontFamily: FONT }}>{book.category}</p>
+          <h3 className="line-clamp-2 text-[15px] font-extrabold leading-snug" style={{ color: C.onSurface, fontFamily: FONT }}>{book.title}</h3>
+          <p className="line-clamp-1 text-[12px]" style={{ color: C.onSurfaceVariant, fontFamily: FONT }}>{book.author}</p>
+          <div className="mt-auto flex flex-col gap-2 pt-2">
+            {book.lowest_eligible_price !== null ? (
+              <strong className="text-[18px] leading-none" style={{ color: C.secondary, fontFamily: FONT }}>{formatVnd(book.lowest_eligible_price)}</strong>
+            ) : (
+              <span className="self-start px-2 py-1 text-[11px] font-bold" style={{ background: C.surfaceVariant, border: `1px solid ${C.black}`, color: C.onSurfaceVariant, fontFamily: FONT }}>
+                {book.status.label}
+              </span>
+            )}
+            <div className="flex flex-wrap gap-2">
+              <span className="self-start px-2 py-1 text-[10px] font-extrabold uppercase" style={{ background: C.boneWhite, border: `1px solid ${C.black}`, color: C.onSurface, fontFamily: FONT }}>{book.offer_count} ưu đãi</span>
+              {showPopular && book.popular_clicked_deal?.top_retailer && (
+                <span className="self-start px-2 py-1 text-[10px] font-extrabold uppercase" style={{ background: C.primaryFixed, border: `1px solid ${C.black}`, color: C.primary, fontFamily: FONT }}>{book.popular_clicked_deal.top_retailer.name}</span>
+              )}
+            </div>
+            <PriceDisclaimer compact />
+          </div>
+        </div>
+      </article>
+    </Link>
+  );
+}
+
+export function ApiBookGrid({ books, showDrop = false, showPopular = false }: { books: BookCardDto[]; showDrop?: boolean; showPopular?: boolean }) {
+  return (
+    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      {books.map((book) => <ApiBookCard key={book.id} book={book} showDrop={showDrop} showPopular={showPopular} />)}
+    </div>
+  );
+}
 
 // ─── Mock Data ────────────────────────────────────────────────────────────────
 

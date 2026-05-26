@@ -123,6 +123,7 @@ class PublicCatalogService
     public function discovery(): array
     {
         $cards = array_values($this->bookCards());
+        $popularClickedDeals = $this->popularClickedDeals();
         $featured = array_values(array_filter($cards, static fn (array $card): bool => $card['is_featured']));
         usort($featured, $this->cardTitleSorter());
 
@@ -161,10 +162,52 @@ class PublicCatalogService
             ],
             'popular_clicked_deals' => [
                 'title' => 'Ưu đãi được quan tâm',
-                'items' => [],
-                'empty_state' => 'Chưa có dữ liệu ưu đãi phổ biến trong 7 ngày gần đây. Tính năng này đang chờ ticket ghi nhận lượt chuyển tiếp hợp lệ.',
+                'items' => $popularClickedDeals,
+                'empty_state' => count($popularClickedDeals) === 0 ? 'Chưa có ưu đãi phổ biến trong 7 ngày gần đây.' : null,
             ],
             'price_disclaimer' => self::PRICE_DISCLAIMER,
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function buyOfferEligibility(int $offerId): ?array
+    {
+        $offer = $this->offerRowForBuy($offerId);
+        if ($offer === null) {
+            return null;
+        }
+
+        $base = [
+            'offer_id' => (int) $offer->id,
+            'book_id' => (int) $offer->book_id,
+            'retailer_platform_id' => (int) $offer->retailer_platform_id,
+            'merchant_id' => (int) $offer->merchant_id,
+            'destination' => is_string($offer->affiliate_destination_url) ? $offer->affiliate_destination_url : null,
+        ];
+
+        if ($offer->book_status !== self::ACTIVE || $offer->retailer_status !== self::ACTIVE || $offer->merchant_status !== self::ACTIVE || ! in_array($offer->status, [self::ACTIVE, self::UNAVAILABLE], true)) {
+            return $base + ['eligible' => false, 'reason' => 'entity_inactive'];
+        }
+
+        if ((int) $offer->merchant_retailer_platform_id !== (int) $offer->retailer_platform_id) {
+            return $base + ['eligible' => false, 'reason' => 'merchant_retailer_mismatch'];
+        }
+
+        $classification = $this->classifyOffer($offer);
+        if ($classification === 'purchasable') {
+            return $base + ['eligible' => true, 'reason' => null];
+        }
+
+        return $base + [
+            'eligible' => false,
+            'reason' => match ($classification) {
+                'unavailable' => 'offer_unavailable',
+                'stale_reference' => 'offer_stale',
+                'missing_valid_seller_link' => $this->destinationFailureReason($offer),
+                default => 'entity_inactive',
+            },
         ];
     }
 
@@ -687,6 +730,7 @@ class PublicCatalogService
                 'available' => true,
                 'method' => 'affiliate_redirect',
                 'offer_id' => (int) $offer->id,
+                'url' => '/go/offers/' . (int) $offer->id,
                 'label' => 'Đến nơi bán',
                 'disclosure' => self::AFFILIATE_DISCLOSURE,
             ] : null,
@@ -816,6 +860,69 @@ class PublicCatalogService
     }
 
     /**
+     * @return list<array<string, mixed>>
+     */
+    private function popularClickedDeals(): array
+    {
+        $windowStart = $this->now->modify('-7 days')->format('Y-m-d H:i:s');
+        $rows = $this->db->table('affiliate_redirects ar')
+            ->select('ar.book_id, ar.retailer_platform_id, b.title AS book_title, r.name AS retailer_name')
+            ->join('books b', 'b.id = ar.book_id')
+            ->join('retailer_platforms r', 'r.id = ar.retailer_platform_id')
+            ->where('ar.event_at >=', $windowStart)
+            ->where('ar.event_type', 'affiliate_redirect')
+            ->where('ar.redirect_status', 'redirected')
+            ->get()
+            ->getResult();
+
+        $cards = $this->bookCards();
+        $counts = [];
+        foreach ($rows as $row) {
+            $bookId = (int) $row->book_id;
+            if (! isset($cards[$bookId])) {
+                continue;
+            }
+
+            $retailerId = (int) $row->retailer_platform_id;
+            $counts[$bookId]['total'] = ($counts[$bookId]['total'] ?? 0) + 1;
+            $counts[$bookId]['title'] = $row->book_title;
+            $counts[$bookId]['retailers'][$retailerId]['name'] = $row->retailer_name;
+            $counts[$bookId]['retailers'][$retailerId]['count'] = ($counts[$bookId]['retailers'][$retailerId]['count'] ?? 0) + 1;
+        }
+
+        $items = [];
+        foreach ($counts as $bookId => $count) {
+            $topRetailer = null;
+            foreach ($count['retailers'] as $retailer) {
+                if ($topRetailer === null || $retailer['count'] > $topRetailer['count'] || ($retailer['count'] === $topRetailer['count'] && strnatcasecmp($retailer['name'], $topRetailer['name']) < 0)) {
+                    $topRetailer = $retailer;
+                }
+            }
+
+            $items[] = $cards[$bookId] + [
+                'popular_clicked_deal' => [
+                    'redirect_count_7d' => $count['total'],
+                    'top_retailer' => $topRetailer === null ? null : [
+                        'name' => $topRetailer['name'],
+                        'redirect_count_7d' => $topRetailer['count'],
+                    ],
+                ],
+            ];
+        }
+
+        usort($items, static function (array $a, array $b): int {
+            $count = $b['popular_clicked_deal']['redirect_count_7d'] <=> $a['popular_clicked_deal']['redirect_count_7d'];
+            if ($count !== 0) {
+                return $count;
+            }
+
+            return strnatcasecmp($a['title'], $b['title']);
+        });
+
+        return array_slice($items, 0, 12);
+    }
+
+    /**
      * @return list<array{id: int, name: string, slug: string}>
      */
     private function publicRelevantRetailers(): array
@@ -852,6 +959,37 @@ class PublicCatalogService
         }
 
         return false;
+    }
+
+    private function offerRowForBuy(int $offerId): ?object
+    {
+        $latestSubquery = $this->latestObservationSubquery();
+
+        return $this->db->table('offers o')
+            ->select('o.*, b.status AS book_status, r.name AS retailer_name, r.slug AS retailer_slug, r.approved_domains, r.status AS retailer_status')
+            ->select('m.name AS merchant_name, m.slug AS merchant_slug, m.retailer_platform_id AS merchant_retailer_platform_id, m.status AS merchant_status')
+            ->select('lo.observed_at AS latest_observed_at, lo.availability_status AS latest_availability_status, lo.listed_item_price AS latest_price')
+            ->join('books b', 'b.id = o.book_id')
+            ->join('retailer_platforms r', 'r.id = o.retailer_platform_id')
+            ->join('merchants m', 'm.id = o.merchant_id')
+            ->join("({$latestSubquery}) latest", 'latest.offer_id = o.id', 'left')
+            ->join('price_observations lo', 'lo.id = latest.latest_observation_id', 'left')
+            ->where('o.id', $offerId)
+            ->get()
+            ->getFirstRow();
+    }
+
+    private function destinationFailureReason(object $offer): string
+    {
+        if ($offer->destination_status === 'missing' || ! is_string($offer->affiliate_destination_url) || $offer->affiliate_destination_url === '') {
+            return 'destination_missing';
+        }
+
+        if ($offer->destination_status === 'invalid') {
+            return 'destination_invalid';
+        }
+
+        return 'destination_unsafe';
     }
 
     /**

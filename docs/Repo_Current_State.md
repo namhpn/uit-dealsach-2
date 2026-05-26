@@ -4,11 +4,9 @@ Last updated: 2026-05-26
 
 ## Current Branch
 
-`feature/t0002-core-domain-mock-data-frontend-hygiene`
+`feature/t0003-public-catalog-read-apis`
 
-Baseline source for T0002: `chore/t0001-dockerized-dev-tooling`.
-
-Note: local `main` did not yet contain T0001 when T0002 work started, so this branch was fast-forwarded to the T0001 prerequisite branch before T0002 changes were applied.
+Baseline source for T0003: `main` at `b1c5ab4` (`Add ticket T0003`), after T0001 and T0002 were merged.
 
 ## Completed Tickets
 
@@ -17,21 +15,25 @@ Note: local `main` did not yet contain T0001 when T0002 work started, so this br
 | T0000 | 2026-05-26 | Captured baseline folder structure, scripts, dependency state, and build/test results without changing application behavior. |
 | T0001 | 2026-05-26 | Normalized Docker Compose commands, added Dockerized frontend npm service, installed frontend npm dependencies, and fixed the default backend PHPUnit baseline without runtime feature changes. |
 | T0002 | 2026-05-26 | Added core DealSach domain schema, CI4 models, deterministic Vietnamese demo seed data, backend tests, frontend Vite audit fix, and frontend generated-output ignore coverage. |
+| T0003 | 2026-05-26 | Added public catalog JSON read APIs, centralized current offer eligibility, book detail offer grouping, book-level price history, search/filter/sort/pagination, discovery sections, and backend API tests without changing frontend UI or database schema. |
 
 ## Current Folder Structure
 
-Relevant folders after T0002:
+Relevant folders after T0003:
 
 ```text
 backend/
 ├── app/
 │   ├── Config/
+│   ├── Controllers/
 │   ├── Database/
 │   │   ├── Migrations/
 │   │   └── Seeds/
+│   ├── Libraries/
 │   └── Models/
 ├── tests/
-│   └── database/
+│   ├── database/
+│   └── feature/
 └── phpunit.xml
 
 frontend/
@@ -55,6 +57,20 @@ backend/app/Models/PriceObservationModel.php
 backend/tests/database/DealSachDomainDatabaseTest.php
 ```
 
+T0003 added:
+
+```text
+backend/app/Controllers/PublicCatalogController.php
+backend/app/Libraries/PublicCatalogService.php
+backend/tests/feature/PublicCatalogApiTest.php
+```
+
+T0003 updated:
+
+```text
+backend/app/Config/Routes.php
+```
+
 ## Installed Dependencies
 
 ### Frontend
@@ -69,6 +85,7 @@ backend/tests/database/DealSachDomainDatabaseTest.php
 * No Composer dependency changes.
 * `backend/app/Config/Database.php` now lets container-provided `database.default.*` environment values override stale local `.env` database values outside PHPUnit.
 * `backend/app/Config/Paths.php` now creates missing CI4 writable subdirectories for fresh Docker named volumes.
+* T0003 added no Composer dependencies.
 
 ## Available Scripts / Commands
 
@@ -86,6 +103,7 @@ Backend:
 docker compose run --rm app sh -lc 'cd backend && php spark migrate'
 docker compose run --rm app sh -lc 'cd backend && php spark db:seed DealSachDemoSeeder'
 docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit'
+docker compose run --rm app sh -lc 'cd backend && php spark routes'
 ```
 
 ## Build/Test Status
@@ -99,6 +117,31 @@ docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit'
 | Backend | `docker compose -p dealsach_t0002 run --rm app sh -lc 'cd backend && php spark migrate'` | Passed | Clean disposable MariaDB project. |
 | Backend | `docker compose -p dealsach_t0002 run --rm app sh -lc 'cd backend && php spark db:seed DealSachDemoSeeder'` | Passed | Deterministic demo data inserted. |
 | Backend | `docker compose -p dealsach_t0002 run --rm app sh -lc 'cd backend && php vendor/bin/phpunit'` | Passed | 10 tests, 42 assertions. |
+| Backend | `php -l backend/app/Libraries/PublicCatalogService.php` | Passed | No syntax errors. |
+| Backend | `php -l backend/app/Controllers/PublicCatalogController.php` | Passed | No syntax errors. |
+| Backend | `php -l backend/tests/feature/PublicCatalogApiTest.php` | Passed | No syntax errors. |
+| Backend | `php -l backend/app/Config/Routes.php` | Passed | No syntax errors. |
+| Backend | `cd backend && php vendor/bin/phpunit tests/feature/PublicCatalogApiTest.php` | Passed | 13 tests, 82 assertions. |
+| Backend | `cd backend && php vendor/bin/phpunit` | Passed | 23 tests, 124 assertions. |
+| Backend | `docker compose -p dealsach_t0003 run --rm app sh -lc 'cd backend && php spark migrate'` | Passed | Clean disposable MariaDB project. |
+| Backend | `docker compose -p dealsach_t0003 run --rm app sh -lc 'cd backend && php spark db:seed DealSachDemoSeeder'` | Passed | Deterministic demo data inserted. |
+| Backend | `docker compose -p dealsach_t0003 run --rm app sh -lc 'cd backend && php spark routes'` | Passed | Public catalog API routes registered. |
+| Backend | `docker compose -p dealsach_t0003 run --rm app sh -lc 'cd backend && php vendor/bin/phpunit'` | Passed | 23 tests, 124 assertions. |
+
+## Public API State
+
+T0003 registers these public JSON routes:
+
+```text
+GET /api/public/books
+GET /api/public/books/{bookId}
+GET /api/public/discovery
+GET /api/public/filters
+```
+
+Catalog read behavior now lives in `App\Libraries\PublicCatalogService` and is reused by list, detail, discovery, and filters responses. It centralizes EO-001 through EO-009 current eligibility, 48-hour freshness, valid affiliate destination checks, public no-price status priority, offer grouping, price range filtering, observation-time price history, and recent price-drop calculation.
+
+`GET /api/public/discovery` returns `popular_clicked_deals` as a safe empty section until future click-event and affiliate redirect persistence tickets exist.
 
 ## Mock Data State
 
@@ -125,19 +168,19 @@ Scenario coverage:
 
 ## Manual Verification Performed
 
-1. Reviewed required docs and ticket scope.
-2. Ran Dockerized frontend install, audit, and build.
-3. Verified `.gitignore` covers `/frontend/node_modules/` and `/frontend/dist/`.
-4. Ran PHP syntax checks for the new backend migration, seeder, and test.
-5. Started a clean disposable database with `docker compose -p dealsach_t0002 up -d --build db`.
-6. Ran migrations against disposable MariaDB.
-7. Ran `DealSachDemoSeeder` against disposable MariaDB.
-8. Ran the backend PHPUnit suite.
-9. Queried seeded table counts from disposable MariaDB.
-10. Ran `git status --short` to verify generated frontend outputs are not staged/tracked.
-11. Stopped and removed the disposable Docker project with `docker compose -p dealsach_t0002 down -v`.
+1. Reviewed required docs and T0003 scope.
+2. Created branch `feature/t0003-public-catalog-read-apis` from `main`.
+3. Confirmed changes are limited to allowed backend API/read-model areas, tests, and required process docs.
+4. Ran PHP syntax checks for the new public catalog service, controller, route file, and feature test.
+5. Ran targeted public catalog feature tests locally.
+6. Ran the full backend PHPUnit suite locally.
+7. Started a clean disposable database with `docker compose -p dealsach_t0003 up -d --build db`.
+8. Ran migrations against disposable MariaDB.
+9. Ran `DealSachDemoSeeder` against disposable MariaDB.
+10. Ran `php spark routes` in Docker and confirmed the four public catalog API routes are registered.
+11. Ran the backend PHPUnit suite in Docker.
 
-Browser/UI verification was not performed because T0002 does not modify frontend source or runtime UI behavior.
+Browser/UI verification was not performed because T0003 does not modify frontend source or runtime UI behavior.
 
 ## Known Issues
 
@@ -148,10 +191,14 @@ Closed in T0002:
 * KI-0004 — frontend npm audit is clean after updating Vite to `6.4.2`.
 * KI-0005 — `.gitignore` covers frontend generated outputs.
 
-Open after T0002:
+Closed before T0003:
 
-* KI-0006 — local `main` must receive T0001 before `main...HEAD` accurately represents only T0002 changes.
+* KI-0006 — T0001 and T0002 are now merged into local `main`; T0003 started from current `main`.
+
+Open after T0003:
+
+* KI-0007 — popular clicked deals need future click-event / affiliate redirect persistence before they can show ranked public data.
 
 ## Next Recommended Ticket
 
-T0003 — Public read model/API foundation for active books, eligible offers, latest observations, stale/unavailable states, and redirect-link readiness without changing frontend UI.
+T0004 — Public frontend integration for catalog API responses, including search/list/detail/discovery rendering and responsive manual browser verification, or a backend redirect/click persistence ticket if popular clicked deals should be unlocked first.

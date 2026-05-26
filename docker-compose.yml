@@ -1,0 +1,76 @@
+services:
+  # PHP-FPM Service (CodeIgniter 4)
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: lemp_app
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - .:/var/www/html
+      - app_vendor:/var/www/html/backend/vendor
+      - app_writable:/var/www/html/backend/writable
+    env_file:
+      - ./backend/.env
+    environment:
+      CI_ENVIRONMENT: ${CI_ENVIRONMENT:?Set CI_ENVIRONMENT in backend/.env}
+      database.default.hostname: ${database_default_hostname:?Set database_default_hostname in backend/.env}
+    depends_on:
+      - db
+    networks:
+      - lemp_network
+
+  # Nginx Service
+  nginx:
+    image: nginx:alpine
+    container_name: lemp_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - .:/var/www/html:ro
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - app
+    networks:
+      - lemp_network
+
+  # MariaDB Service
+  db:
+    image: mariadb:11.4
+    container_name: lemp_db
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: ${database_default_database:?Set database_default_database in backend/.env}
+      MARIADB_USER: ${database_default_username:?Set database_default_username in backend/.env}
+      MARIADB_PASSWORD: ${database_default_password:?Set database_default_password in backend/.env}
+      MARIADB_ROOT_PASSWORD: ${database_default_password:?Set database_default_password in backend/.env}
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - lemp_network
+
+  # phpMyAdmin Service
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: lemp_pma
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    environment:
+      PMA_HOST: db
+      MYSQL_ROOT_PASSWORD: ${database_default_password:?Set database_default_password in backend/.env}
+    depends_on:
+      - db
+    networks:
+      - lemp_network
+
+networks:
+  lemp_network:
+    driver: bridge
+
+volumes:
+  db_data:
+  app_vendor:
+  app_writable:

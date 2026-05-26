@@ -1,0 +1,12 @@
+.git
+.DS_Store
+
+backend/vendor
+backend/writable/cache
+backend/writable/debugbar
+backend/writable/logs
+backend/writable/session
+backend/writable/uploads
+
+frontend/node_modules
+frontend/dist

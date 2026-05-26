@@ -12,5 +12,5 @@
 
 | ID | Title | Status | Depends On | Area |
 |---|---|---|---|---|
-| T0000 | Capture repo baseline state | Not Started | None | Process |
-| T0001 | Verify project skeleton builds | Not Started | T0000 | Frontend/Backend |
+| T0000 | Capture repo baseline state | Done | None | Process |
+| T0001 | Dockerized Developer Tooling Baseline | Done | T0000 | Tools |

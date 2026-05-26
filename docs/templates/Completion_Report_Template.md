@@ -33,6 +33,10 @@ Result:
 1. [Step]
 2. [Observed result]
 
+## Known Issues Closed
+
+* [Issue ID or “None”]
+
 ## Docs Updated
 
 * [ ] `docs/Repo_Current_State.md`

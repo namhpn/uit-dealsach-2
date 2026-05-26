@@ -64,6 +64,7 @@ Codex must report:
 - Commands run
 - Build/test results
 - Manual verification steps performed
+- Known issues closed
 - Risks
 - Follow-up tickets
 - Docs updated

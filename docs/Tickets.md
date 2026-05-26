@@ -16,4 +16,5 @@
 | T0001 | Dockerized Developer Tooling Baseline | Done | T0000 | Tools |
 | T0002 | Core Domain Schema, Mock Data, and Frontend Hygiene Baseline | Done | T0001 | Backend / Database / Mock data / Frontend dependencies |
 | T0003 | Public Catalog Read APIs and Offer Eligibility | Done | T0002 | Backend/API |
-| T0004 | Public Catalog Frontend and Affiliate Buy Flow | In Progress | T0003 | Frontend / Backend API / Database |
+| T0004 | Public Catalog Frontend and Affiliate Buy Flow | Done | T0003 | Frontend / Backend API / Database |
+| T0005 | Restore Public Frontend Design with API Data | Not Started | T0004 | Frontend / Public UI |

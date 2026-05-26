@@ -11,6 +11,7 @@ Primary references:
 - Product and business rules: `docs/requirement-doc.md`
 - Frontend requirements: `docs/frontend/frontend-req.md`
 - Frontend design system: `docs/frontend/design-system.md`
+- Manual verification standards: `docs/Manual_Verification_Guide.md`
 - Docker stack: `docker-compose.yml`
 
 Tech stack:
@@ -69,6 +70,7 @@ Codex may edit only the listed files/folders, plus these process files when rele
 
 - `docs/Repo_Current_State.md`
 - `docs/Known_Issues_And_Followups.md`
+- `docs/Manual_Verification_Guide.md`
 
 The ticket’s `Do not touch` section is authoritative even if another part of the prompt is broad.
 
@@ -157,6 +159,8 @@ Each ticket must include practical manual verification steps. Use `docs/Manual_V
 For UI work, verify relevant responsive states and browser console behavior.
 
 For backend/API/database work, verify the command, route, payload, database state, log line, or test that proves the behavior.
+
+After each completed ticket, update `docs/Manual_Verification_Guide.md` when the ticket adds or changes any standard verification command, endpoint class, workflow, browser check, Docker project pattern, or product checklist item. If no guide update is needed, say so in the completion report under Docs updated.
 
 ### DealSach Product Guardrails
 

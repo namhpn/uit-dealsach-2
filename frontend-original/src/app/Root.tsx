@@ -1,0 +1,142 @@
+import { useState } from "react";
+import { Outlet, useNavigate } from "react-router";
+import { Search, Heart, User, BookOpen, Menu, X } from "lucide-react";
+import { C, FONT, border2, border3, shadow4, navCategories, CategoryChip } from "./shared";
+
+function Header() {
+  const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [activeCat, setActiveCat] = useState<string | null>(null);
+  const [searchFocused, setSearchFocused] = useState(false);
+
+  return (
+    <header className="sticky top-0 z-50" style={{ background: C.white, borderBottom: border2 }}>
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 pt-3 pb-3 flex items-start gap-4">
+        {/* Logo */}
+        <a href="#" onClick={(e) => { e.preventDefault(); navigate("/"); }} className="flex items-center gap-2 shrink-0 pt-1">
+          <div className="w-10 h-10 flex items-center justify-center" style={{ background: C.primary, border: border2 }}>
+            <BookOpen size={20} style={{ color: C.white }} />
+          </div>
+          <span className="font-extrabold text-[22px] leading-none uppercase tracking-tight" style={{ color: C.primary, fontFamily: FONT, letterSpacing: "-0.02em" }}>
+            DealSach
+          </span>
+        </a>
+
+        {/* Search + chips column */}
+        <div className="flex-1 flex flex-col gap-2 min-w-0">
+          <form className="flex items-stretch overflow-hidden"
+            style={{ border: searchFocused ? border3 : border2, boxShadow: searchFocused ? shadow4 : "none", transition: "box-shadow 100ms" }}
+            onSubmit={(e) => e.preventDefault()}
+          >
+            <div className="flex items-center justify-center px-3 shrink-0" style={{ background: C.white, borderRight: border2 }}>
+              <Search size={16} style={{ color: C.primary }} />
+            </div>
+            <input type="text" value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => setSearchFocused(false)}
+              placeholder="Tìm sách theo tên, tác giả, ISBN..."
+              className="flex-1 px-3 py-3 text-sm outline-none border-none min-w-0"
+              style={{ background: C.white, color: C.onSurface, fontFamily: FONT }}
+            />
+            <button type="submit" className="px-5 text-[12px] font-bold uppercase tracking-wide shrink-0"
+              style={{ background: C.primary, color: C.white, fontFamily: FONT, borderLeft: border2 }}>
+              <span>Tìm kiếm</span>
+            </button>
+          </form>
+
+          {/* Category chips */}
+          <div className="flex items-center gap-2.5" style={{ overflowX: "clip", overflowY: "visible", flexWrap: "nowrap", paddingBottom: 4 }}>
+            {navCategories.map(cat => (
+              <CategoryChip key={cat} label={cat} active={activeCat === cat} onClick={() => setActiveCat(activeCat === cat ? null : cat)} />
+            ))}
+          </div>
+        </div>
+
+        {/* Icon buttons */}
+        <div className="hidden md:flex items-center gap-2 shrink-0 self-start">
+          {[
+            { icon: <Heart size={18} />, label: "Yêu thích" },
+            { icon: <User size={18} />, label: "Tài khoản" },
+          ].map(item => (
+            <button key={item.label} aria-label={item.label} title={item.label}
+              className="w-12 h-12 flex items-center justify-center"
+              style={{ color: C.onSurface, border: border2, background: C.white }}
+              onMouseEnter={e => (e.currentTarget.style.background = C.boneWhite)}
+              onMouseLeave={e => (e.currentTarget.style.background = C.white)}
+            >{item.icon}</button>
+          ))}
+        </div>
+
+        {/* Mobile toggle */}
+        <button className="md:hidden p-1.5 shrink-0 mt-1"
+          style={{ color: C.onSurface, border: border2, background: C.white }}
+          onClick={() => setMobileMenuOpen(o => !o)}>
+          {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
+        </button>
+      </div>
+
+      {mobileMenuOpen && (
+        <div className="md:hidden" style={{ background: C.white, borderTop: border2 }}>
+          <div className="flex">
+            {["Yêu thích", "Tài khoản"].map(l => (
+              <button key={l} className="flex-1 text-xs font-bold uppercase py-3 tracking-wide"
+                style={{ color: C.onSurface, fontFamily: FONT, borderRight: `1px solid ${C.black}` }}>{l}</button>
+            ))}
+          </div>
+        </div>
+      )}
+    </header>
+  );
+}
+
+function Footer() {
+  return (
+    <footer className="mt-16" style={{ background: "rgb(0,53,39)", color: C.white, borderTop: border2 }}>
+      <div className="max-w-[1200px] mx-auto px-6 py-8">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 mb-8">
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-7 h-7 flex items-center justify-center" style={{ background: C.white, border: "2px solid #fff" }}>
+                <BookOpen size={14} style={{ color: "rgb(0,53,39)" }} />
+              </div>
+              <span className="font-extrabold text-[16px] uppercase tracking-tight" style={{ fontFamily: FONT, color: C.white }}>DealSach</span>
+            </div>
+            <p className="text-[12px] leading-relaxed" style={{ color: "#80bea6", fontFamily: FONT }}>So sánh giá sách từ nhiều nhà bán lẻ uy tín tại Việt Nam. Chúng tôi không bán sách trực tiếp.</p>
+          </div>
+          {[
+            { heading: "Khám phá",  links: ["Tìm kiếm sách", "Giảm giá hôm nay", "Ưu đãi phổ biến", "Danh mục"] },
+            { heading: "Tài khoản", links: ["Đăng nhập / Đăng ký", "Danh sách yêu thích", "Cài đặt thông báo giá", "Cài đặt tài khoản"] },
+            { heading: "Thông tin", links: ["Về DealSach", "Câu hỏi thường gặp", "Chính sách bảo mật", "Điều khoản sử dụng"] },
+          ].map(col => (
+            <div key={col.heading}>
+              <h4 className="font-extrabold text-[11px] mb-3 uppercase tracking-widest" style={{ color: C.white, fontFamily: FONT }}>{col.heading}</h4>
+              <ul className="space-y-1.5">
+                {col.links.map(l => (
+                  <li key={l}><a href="#" className="text-[12px] transition-colors hover:text-white" style={{ color: "#80bea6", fontFamily: FONT }}>{l}</a></li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+        <div className="pt-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3" style={{ borderTop: "1px solid rgba(255,255,255,0.15)" }}>
+          <p className="text-[11px] leading-relaxed max-w-2xl" style={{ color: "#80bea6", fontFamily: FONT }}>
+            <strong style={{ color: C.white }}>Lưu ý:</strong> DealSach chỉ tổng hợp và so sánh giá sách từ các nhà bán lẻ bên ngoài. Chúng tôi không xử lý thanh toán, giao hàng, đổi trả hoặc hỗ trợ đơn hàng.
+          </p>
+          <p className="text-[11px] whitespace-nowrap font-bold uppercase tracking-wide" style={{ color: "#80bea6", fontFamily: FONT }}>© 2026 DealSach</p>
+        </div>
+      </div>
+    </footer>
+  );
+}
+
+export default function Root() {
+  return (
+    <div className="min-h-screen" style={{ background: C.surface, color: C.onSurface, fontFamily: FONT }}>
+      <Header />
+      <Outlet />
+      <Footer />
+    </div>
+  );
+}

@@ -6,7 +6,7 @@ Codex must record issues here instead of fixing them when they are outside the c
 
 | ID | Date | Source Ticket | Area | Issue / Follow-up | Severity | Suggested Ticket |
 |---|---:|---|---|---|---|---|
-| KI-0007 | 2026-05-26 | T0003 | Public discovery API | `popular_clicked_deals` returns a safe Vietnamese empty section because click-event, Buy Attempt, Affiliate Redirect, and redirect-failure persistence are explicitly outside T0003. Ranked popular deals need persisted successful affiliate redirects over the last 7 days. | Medium | Add backend click/redirect persistence and public popular-clicked-deals ranking. |
+| KI-0008 | 2026-05-26 | T0004 | Docker runtime | Fresh disposable `app_writable` named volumes can create `backend/writable/*` directories owned by `root`, causing the running PHP-FPM stack to return HTTP 500 until ownership is corrected. Tests and Spark commands still pass because they run in one-off containers. | Medium | Normalize writable-volume ownership for long-running Docker app containers. |
 
 ## Closed Items
 
@@ -18,3 +18,4 @@ Codex must record issues here instead of fixing them when they are outside the c
 | KI-0004 | 2026-05-26 | Closed by T0002. `docker compose run --rm frontend npm audit` reports 0 vulnerabilities after updating the existing Vite dev dependency from `6.3.5` to `6.4.2`; the high-severity issue affected `vite <=6.4.1`. |
 | KI-0005 | 2026-05-26 | Closed by T0002. `.gitignore` now covers `/frontend/node_modules/` and `/frontend/dist/` without duplicate conflicting frontend generated-output rules. |
 | KI-0006 | 2026-05-26 | Closed before T0003 implementation. T0001 and T0002 are merged into local `main`, and T0003 started from `main` at `b1c5ab4` (`Add ticket T0003`). |
+| KI-0007 | 2026-05-26 | Closed by T0004. Added Buy Attempt, Affiliate Redirect, and Redirect Failure persistence; seeded successful redirects; and updated `GET /api/public/discovery` so `popular_clicked_deals` ranks successful Affiliate Redirect records from the last 7 days with redirect counts and top retailer metadata. |

@@ -4,9 +4,9 @@ Last updated: 2026-05-26
 
 ## Current Branch
 
-`feature/t0003-public-catalog-read-apis`
+`feature/t0004-public-catalog-affiliate-buy-flow`
 
-Baseline source for T0003: `main` at `b1c5ab4` (`Add ticket T0003`), after T0001 and T0002 were merged.
+Baseline source for T0004: `main` at `8aacdbb` (`Add ticket T0004`), after T0003 was merged.
 
 ## Completed Tickets
 
@@ -16,10 +16,11 @@ Baseline source for T0003: `main` at `b1c5ab4` (`Add ticket T0003`), after T0001
 | T0001 | 2026-05-26 | Normalized Docker Compose commands, added Dockerized frontend npm service, installed frontend npm dependencies, and fixed the default backend PHPUnit baseline without runtime feature changes. |
 | T0002 | 2026-05-26 | Added core DealSach domain schema, CI4 models, deterministic Vietnamese demo seed data, backend tests, frontend Vite audit fix, and frontend generated-output ignore coverage. |
 | T0003 | 2026-05-26 | Added public catalog JSON read APIs, centralized current offer eligibility, book detail offer grouping, book-level price history, search/filter/sort/pagination, discovery sections, and backend API tests without changing frontend UI or database schema. |
+| T0004 | 2026-05-26 | Added public Buy-flow event persistence, `/go/offers/{offerId}` redirect handling, Affiliate Redirect-backed popular clicked deals, and API-backed homepage/search/detail React pages. |
 
 ## Current Folder Structure
 
-Relevant folders after T0003:
+Relevant folders after T0004:
 
 ```text
 backend/
@@ -40,35 +41,24 @@ frontend/
 ├── package.json
 ├── package-lock.json
 └── src/
+    └── app/
+        ├── api.ts
+        ├── pages/
+        └── shared.tsx
 ```
 
-T0002 added:
+T0004 added:
 
 ```text
-backend/app/Database/Migrations/2026-05-26-000001_CreateCoreDomainTables.php
-backend/app/Database/Seeds/DealSachDemoSeeder.php
-backend/app/Models/CategoryModel.php
-backend/app/Models/BookModel.php
-backend/app/Models/RetailerPlatformModel.php
-backend/app/Models/MerchantModel.php
-backend/app/Models/OfferModel.php
-backend/app/Models/ObservationCycleModel.php
-backend/app/Models/PriceObservationModel.php
-backend/tests/database/DealSachDomainDatabaseTest.php
-```
-
-T0003 added:
-
-```text
-backend/app/Controllers/PublicCatalogController.php
-backend/app/Libraries/PublicCatalogService.php
-backend/tests/feature/PublicCatalogApiTest.php
-```
-
-T0003 updated:
-
-```text
-backend/app/Config/Routes.php
+backend/app/Controllers/BuyFlowController.php
+backend/app/Database/Migrations/2026-05-26-000002_CreateBuyFlowEventTables.php
+backend/app/Libraries/BuyFlowService.php
+backend/app/Models/BuyAttemptModel.php
+backend/app/Models/AffiliateRedirectModel.php
+backend/app/Models/RedirectFailureModel.php
+backend/tests/feature/BuyFlowFeatureTest.php
+frontend/src/app/api.ts
+frontend/src/app/pages/SearchPage.tsx
 ```
 
 ## Installed Dependencies
@@ -76,16 +66,13 @@ backend/app/Config/Routes.php
 ### Frontend
 
 * `frontend/package-lock.json` remains the npm lockfile.
-* `vite` was updated from `6.3.5` to `6.4.2` to resolve the high-severity npm audit issue affecting `vite <=6.4.1`.
-* No new runtime dependencies were added.
+* No new runtime dependencies were added in T0004.
 * `frontend/node_modules/` and `frontend/dist/` are ignored by `.gitignore`.
 
 ### Backend
 
 * No Composer dependency changes.
-* `backend/app/Config/Database.php` now lets container-provided `database.default.*` environment values override stale local `.env` database values outside PHPUnit.
-* `backend/app/Config/Paths.php` now creates missing CI4 writable subdirectories for fresh Docker named volumes.
-* T0003 added no Composer dependencies.
+* T0004 added no Composer dependencies.
 
 ## Available Scripts / Commands
 
@@ -95,6 +82,7 @@ Frontend:
 docker compose run --rm frontend npm install
 docker compose run --rm frontend npm audit
 docker compose run --rm frontend npm run build
+docker compose run --rm --service-ports frontend npm run dev -- --host 0.0.0.0
 ```
 
 Backend:
@@ -110,42 +98,35 @@ docker compose run --rm app sh -lc 'cd backend && php spark routes'
 
 | Area | Command | Last Result | Notes |
 |---|---|---|---|
-| Frontend | `docker compose run --rm frontend npm install` | Passed | 289 packages audited, 0 vulnerabilities after Vite update. |
-| Frontend | `docker compose run --rm frontend npm audit` | Passed | 0 vulnerabilities. |
-| Frontend | `docker compose run --rm frontend npm run build` | Passed | Existing Vite chunk-size warning remains; no UI source changed. |
-| Backend | PHP lint for new migration, seeder, and test | Passed | No syntax errors. |
-| Backend | `docker compose -p dealsach_t0002 run --rm app sh -lc 'cd backend && php spark migrate'` | Passed | Clean disposable MariaDB project. |
-| Backend | `docker compose -p dealsach_t0002 run --rm app sh -lc 'cd backend && php spark db:seed DealSachDemoSeeder'` | Passed | Deterministic demo data inserted. |
-| Backend | `docker compose -p dealsach_t0002 run --rm app sh -lc 'cd backend && php vendor/bin/phpunit'` | Passed | 10 tests, 42 assertions. |
-| Backend | `php -l backend/app/Libraries/PublicCatalogService.php` | Passed | No syntax errors. |
-| Backend | `php -l backend/app/Controllers/PublicCatalogController.php` | Passed | No syntax errors. |
-| Backend | `php -l backend/tests/feature/PublicCatalogApiTest.php` | Passed | No syntax errors. |
-| Backend | `php -l backend/app/Config/Routes.php` | Passed | No syntax errors. |
-| Backend | `cd backend && php vendor/bin/phpunit tests/feature/PublicCatalogApiTest.php` | Passed | 13 tests, 82 assertions. |
-| Backend | `cd backend && php vendor/bin/phpunit` | Passed | 23 tests, 124 assertions. |
-| Backend | `docker compose -p dealsach_t0003 run --rm app sh -lc 'cd backend && php spark migrate'` | Passed | Clean disposable MariaDB project. |
-| Backend | `docker compose -p dealsach_t0003 run --rm app sh -lc 'cd backend && php spark db:seed DealSachDemoSeeder'` | Passed | Deterministic demo data inserted. |
-| Backend | `docker compose -p dealsach_t0003 run --rm app sh -lc 'cd backend && php spark routes'` | Passed | Public catalog API routes registered. |
-| Backend | `docker compose -p dealsach_t0003 run --rm app sh -lc 'cd backend && php vendor/bin/phpunit'` | Passed | 23 tests, 124 assertions. |
+| Backend | PHP lint for T0004 migration, controllers, service, models, route file, and tests | Passed | No syntax errors. |
+| Backend | `cd backend && php vendor/bin/phpunit` | Passed | 27 tests, 149 assertions. |
+| Backend | `docker compose -p dealsach_t0004 run --rm app sh -lc 'cd backend && php spark migrate'` | Passed | Clean disposable MariaDB project; Buy-flow event tables created. |
+| Backend | `docker compose -p dealsach_t0004 run --rm app sh -lc 'cd backend && php spark db:seed DealSachDemoSeeder'` | Passed | Demo books, observations, Buy Attempts, Affiliate Redirects, and Redirect Failures inserted. |
+| Backend | `docker compose -p dealsach_t0004 run --rm app sh -lc 'cd backend && php spark routes'` | Passed | Public catalog API routes and `GET /go/offers/{offerId}` registered. |
+| Backend | `docker compose -p dealsach_t0004 run --rm app sh -lc 'cd backend && php vendor/bin/phpunit'` | Passed | 27 tests, 149 assertions. |
+| Frontend | `docker compose run --rm frontend npm run build` | Passed | Existing Vite chunk-size warning remains. Host-local `npm run build` failed before code compilation because the host `frontend/node_modules` is missing Rollup's optional native package; Dockerized build is the repo-standard result. |
 
 ## Public API State
 
-T0003 registers these public JSON routes:
+Registered public routes after T0004:
 
 ```text
 GET /api/public/books
 GET /api/public/books/{bookId}
 GET /api/public/discovery
 GET /api/public/filters
+GET /go/offers/{offerId}
 ```
 
-Catalog read behavior now lives in `App\Libraries\PublicCatalogService` and is reused by list, detail, discovery, and filters responses. It centralizes EO-001 through EO-009 current eligibility, 48-hour freshness, valid affiliate destination checks, public no-price status priority, offer grouping, price range filtering, observation-time price history, and recent price-drop calculation.
+Catalog read behavior lives in `App\Libraries\PublicCatalogService` and is reused by list, detail, discovery, filters, and Buy-flow eligibility checks. It centralizes current eligibility, 48-hour freshness, valid affiliate destination checks, public no-price status priority, offer grouping, price range filtering, observation-time price history, recent price-drop calculation, and popular-clicked deal ranking.
 
-`GET /api/public/discovery` returns `popular_clicked_deals` as a safe empty section until future click-event and affiliate redirect persistence tickets exist.
+T0004 adds `App\Libraries\BuyFlowService` for Buy Attempt, Affiliate Redirect, and Redirect Failure event writes. `GET /go/offers/{offerId}` records a Buy Attempt for known offers, validates current eligible-offer and approved-domain destination rules, records Affiliate Redirect only on successful external redirects, and records Redirect Failure for known invalid or ineligible offers.
+
+`GET /api/public/discovery` now ranks `popular_clicked_deals` from successful Affiliate Redirect records in the last 7 days using `Asia/Ho_Chi_Minh`, grouped by book and sorted by redirect count descending then title ascending. Cards include redirect count and top retailer metadata.
 
 ## Mock Data State
 
-Seeded counts from disposable MariaDB:
+Seeded counts from disposable MariaDB after T0004:
 
 | Table | Count |
 |---|---:|
@@ -155,6 +136,9 @@ Seeded counts from disposable MariaDB:
 | offers | 24 |
 | observation_cycles | 14 |
 | price_observations | 170 |
+| buy_attempts | 8 |
+| affiliate_redirects | 7 |
+| redirect_failures | 1 |
 
 Scenario coverage:
 
@@ -165,40 +149,41 @@ Scenario coverage:
 * 2 unavailable-offer scenarios.
 * 2 stale-price scenarios.
 * 4 redirect-failure offer scenarios through missing or invalid destinations.
+* Seeded successful Affiliate Redirect scenarios for popular clicked deals.
 
 ## Manual Verification Performed
 
-1. Reviewed required docs and T0003 scope.
-2. Created branch `feature/t0003-public-catalog-read-apis` from `main`.
-3. Confirmed changes are limited to allowed backend API/read-model areas, tests, and required process docs.
-4. Ran PHP syntax checks for the new public catalog service, controller, route file, and feature test.
-5. Ran targeted public catalog feature tests locally.
-6. Ran the full backend PHPUnit suite locally.
-7. Started a clean disposable database with `docker compose -p dealsach_t0003 up -d --build db`.
-8. Ran migrations against disposable MariaDB.
-9. Ran `DealSachDemoSeeder` against disposable MariaDB.
-10. Ran `php spark routes` in Docker and confirmed the four public catalog API routes are registered.
-11. Ran the backend PHPUnit suite in Docker.
-
-Browser/UI verification was not performed because T0003 does not modify frontend source or runtime UI behavior.
+1. Reviewed required docs and T0004 scope.
+2. Created branch `feature/t0004-public-catalog-affiliate-buy-flow` from `main`.
+3. Confirmed changes are limited to allowed backend Buy-flow/API, frontend public UI, tests, and required process docs.
+4. Ran PHP syntax checks for new and changed backend files.
+5. Ran local backend PHPUnit.
+6. Started a clean disposable database with `docker compose -p dealsach_t0004 up -d --build db`.
+7. Ran migrations against disposable MariaDB.
+8. Ran `DealSachDemoSeeder` against disposable MariaDB.
+9. Ran `php spark routes` in Docker and confirmed public catalog API routes plus `GET /go/offers/{offerId}`.
+10. Ran Docker backend PHPUnit.
+11. Ran Docker frontend build.
+12. Started the disposable full stack and Dockerized Vite dev server.
+13. Captured homepage at 1366px: API-backed hero, featured books, and discovery sections rendered.
+14. Captured search page at 360px with `q=Tony&availability=available_now`: filters and mobile header rendered; category chips remain horizontally scrollable.
+15. Captured book detail at 1366px: API-backed metadata, grouped offers, Buy action, price disclaimer, affiliate disclosure, and price history rendered.
+16. Verified `GET /go/offers/5` returns HTTP 302 with `Location: https://tiki.vn/nha-gia-kim-demo`.
+17. Verified `GET /go/offers/6` returns HTTP 409 Vietnamese failure page.
+18. Verified `GET /api/public/discovery` returns CORS-enabled JSON and popular clicked deal metadata from persisted Affiliate Redirect records.
 
 ## Known Issues
 
 See `docs/Known_Issues_And_Followups.md`.
 
-Closed in T0002:
+Closed in T0004:
 
-* KI-0004 — frontend npm audit is clean after updating Vite to `6.4.2`.
-* KI-0005 — `.gitignore` covers frontend generated outputs.
+* KI-0007 — popular clicked deals now use persisted successful Affiliate Redirect records.
 
-Closed before T0003:
+Open after T0004:
 
-* KI-0006 — T0001 and T0002 are now merged into local `main`; T0003 started from current `main`.
-
-Open after T0003:
-
-* KI-0007 — popular clicked deals need future click-event / affiliate redirect persistence before they can show ranked public data.
+* KI-0008 — fresh disposable long-running Docker app containers can need writable-volume ownership normalization before serving HTTP traffic.
 
 ## Next Recommended Ticket
 
-T0004 — Public frontend integration for catalog API responses, including search/list/detail/discovery rendering and responsive manual browser verification, or a backend redirect/click persistence ticket if popular clicked deals should be unlocked first.
+T0005 — Normalize long-running Docker writable-volume ownership, or continue with the next small public feature ticket after merging T0004.

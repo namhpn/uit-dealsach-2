@@ -4,7 +4,7 @@ Last updated: 2026-05-27
 
 ## Current Branch
 
-`feature/t0008-authenticated-wishlist`
+`feature-t0009-price-alert-apis`
 
 Baseline source for T0007: local `main` after T0006 merge.
 
@@ -21,6 +21,7 @@ Baseline source for T0007: local `main` after T0006 merge.
 | T0006 | 2026-05-27 | Closed T0005 review gaps: header categories now load from public filters, homepage featured books render as API-backed category shelves, duplicate homepage search was removed, demo data better exercises featured shelves and popular clicked deals, and Docker startup normalizes `backend/writable` ownership automatically. |
 | T0007 | 2026-05-27 | Added backend email verification, mock outbound email storage, user session persistence, auth JSON endpoints, and tests for request limits, code lifecycle, session rejection, logout, and existing public API stability. |
 | T0008 | 2026-05-27 | Added authenticated wishlist persistence, JSON wishlist APIs, frontend email-code auth state/dialog, wishlist route/page, and wishlist actions on cards and book detail. |
+| T0009 | 2026-05-27 | Added price alert persistence, alert event history, account-level alert email preferences, authenticated alert/preference JSON APIs, and backend tests for alert creation, duplicate rules, owner scoping, lifecycle actions, expiry normalization, preferences, and public API stability. |
 
 ## Current Folder Structure
 
@@ -131,6 +132,27 @@ docs/Manual_Verification_Guide.md
 docs/Repo_Current_State.md
 ```
 
+T0009 changed:
+
+```text
+backend/app/Config/Routes.php
+backend/app/Controllers/PriceAlertController.php
+backend/app/Controllers/AlertPreferenceController.php
+backend/app/Database/Migrations/2026-05-27-000003_CreatePriceAlertTables.php
+backend/app/Database/Seeds/DealSachDemoSeeder.php
+backend/app/Libraries/PublicCatalogService.php
+backend/app/Libraries/PriceAlertService.php
+backend/app/Libraries/AlertPreferenceService.php
+backend/app/Models/PriceAlertModel.php
+backend/app/Models/PriceAlertEventModel.php
+backend/app/Models/UserAlertPreferenceModel.php
+backend/tests/database/PriceAlertDatabaseTest.php
+backend/tests/feature/PriceAlertFeatureTest.php
+docs/Manual_Verification_Guide.md
+docs/Repo_Current_State.md
+docs/Known_Issues_And_Followups.md
+```
+
 ## Installed Dependencies
 
 ### Frontend
@@ -146,6 +168,7 @@ docs/Repo_Current_State.md
 * T0006 added no Composer dependency changes.
 * T0007 added no Composer dependency changes.
 * T0008 added no frontend or backend dependency changes.
+* T0009 added no frontend, backend, Composer, or npm dependency changes.
 
 ## Available Scripts / Commands
 
@@ -167,6 +190,7 @@ docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit'
 docker compose run --rm app sh -lc 'cd backend && php spark routes'
 docker compose run --rm app sh -lc 'cd backend && php spark routes | grep -E "api/auth|email-code|logout|me"'
 docker compose run --rm app sh -lc 'cd backend && php spark routes | grep -E "api/user/wishlist"'
+docker compose run --rm app sh -lc 'cd backend && php spark routes | grep -E "api/user/alerts|api/user/alert-preferences"'
 ```
 
 ## Build/Test Status
@@ -202,6 +226,11 @@ docker compose run --rm app sh -lc 'cd backend && php spark routes | grep -E "ap
 | Frontend | `docker compose -p dealsach_t0008 run --rm frontend npm run build` | Passed for T0008 | Existing Vite chunk-size warning remains. |
 | API/Auth/Wishlist | HTTP auth and wishlist flow through `http://localhost` | Passed for T0008 | Guest wishlist returned 401; requested and verified email code; add and duplicate-add returned success; duplicate row count stayed 1; list included book-card metadata and `added_at`; remove returned success; final status returned `wishlisted: false`. |
 | API/Public stability | `GET /api/public/filters`; `GET /api/public/discovery`; `GET /api/public/books`; `GET /go/offers/5` | Passed for T0008 | Public APIs returned 200; Buy redirect returned `302 https://tiki.vn/nha-gia-kim-demo`. |
+| Backend | `find backend/app/Controllers backend/app/Libraries backend/app/Models backend/app/Database/Migrations backend/tests/database backend/tests/feature -name '*.php' -print0 \| xargs -0 -n1 php -l` | Passed for T0009 | Host PHP 8.5 syntax check; no syntax errors in checked backend app and test files. |
+| Backend | `docker compose -p dealsach_t0009 run --rm app sh -lc 'cd backend && php vendor/bin/phpunit --filter PriceAlert'` | Passed for T0009 | Docker PHP 8.2 runtime: 11 tests, 191 assertions. |
+| Backend | `docker compose -p dealsach_t0009 run --rm app sh -lc 'cd backend && php vendor/bin/phpunit'` | Passed for T0009 | Docker PHP 8.2 runtime: 56 tests, 519 assertions. |
+| Backend/Docker DB | `docker compose -p dealsach_t0009 run --rm -e database.default.hostname=db -e database.default.database=dealsach -e database.default.username=dealsach -e database.default.password=dealsach app sh -lc 'cd backend && php spark migrate && php spark db:seed DealSachDemoSeeder'` | Passed for T0009 | Clean disposable MariaDB project with explicit demo DB environment variables; first run before MariaDB readiness returned `Connection refused`, rerun after logs showed `ready for connections` passed. |
+| Backend routes | `docker compose -p dealsach_t0009 run --rm -e database.default.hostname=db -e database.default.database=dealsach -e database.default.username=dealsach -e database.default.password=dealsach app sh -lc 'cd backend && php spark routes \| grep -E "api/user/alerts\|api/user/alert-preferences"'` | Passed for T0009 | Confirmed alert list/detail/create/update/pause/reactivate/renew/restart-tracking/disable and alert preference read/update routes. |
 
 ## Public API State
 
@@ -233,6 +262,22 @@ POST /api/user/wishlist/books/{bookId}
 DELETE /api/user/wishlist/books/{bookId}
 ```
 
+Registered alert routes after T0009:
+
+```text
+GET /api/user/alerts
+GET /api/user/alerts/{alertId}
+POST /api/user/alerts
+PATCH /api/user/alerts/{alertId}
+POST /api/user/alerts/{alertId}/pause
+POST /api/user/alerts/{alertId}/reactivate
+POST /api/user/alerts/{alertId}/renew
+POST /api/user/alerts/{alertId}/restart-tracking
+POST /api/user/alerts/{alertId}/disable
+GET /api/user/alert-preferences
+PATCH /api/user/alert-preferences
+```
+
 Catalog read behavior lives in `App\Libraries\PublicCatalogService` and is reused by list, detail, discovery, filters, and Buy-flow eligibility checks. It centralizes current eligibility, 48-hour freshness, valid affiliate destination checks, public no-price status priority, offer grouping, price range filtering, observation-time price history, recent price-drop calculation, and popular-clicked deal ranking.
 
 T0004 adds `App\Libraries\BuyFlowService` for Buy Attempt, Affiliate Redirect, and Redirect Failure event writes. `GET /go/offers/{offerId}` records a Buy Attempt for known offers, validates current eligible-offer and approved-domain destination rules, records Affiliate Redirect only on successful external redirects, and records Redirect Failure for known invalid or ineligible offers.
@@ -242,6 +287,8 @@ T0004 adds `App\Libraries\BuyFlowService` for Buy Attempt, Affiliate Redirect, a
 T0007 adds `App\Libraries\EmailVerificationService` and `App\Libraries\AuthService`. Verification requests normalize email, enforce 60-second cooldown, 5/hour and 10/day request limits, invalidate older active codes, store SHA-256 code hashes, and write deterministic mock emails to `outbound_emails`. Verification creates or reuses active users, rejects deactivated users, marks codes used, invalidates remaining active codes, creates 7-day hashed-token sessions, and sets an HTTP-only same-origin cookie.
 
 T0008 adds `App\Libraries\WishlistService` and `App\Controllers\WishlistController`. Wishlist endpoints require an active session from `AuthService`, store one `wishlist_items` row per user/book pair, treat duplicate adds and missing removes as no-op successes, reject archived or nonexistent books on add, and keep existing archived-book wishlist entries visible with an archived marker.
+
+T0009 adds `App\Libraries\PriceAlertService`, `App\Libraries\AlertPreferenceService`, `App\Controllers\PriceAlertController`, and `App\Controllers\AlertPreferenceController`. Alert endpoints require an active session from `AuthService`, support target-price and new-lowest alert creation, enforce non-terminal duplicate rules, normalize past-due non-terminal alerts to Expired on service reads/actions, record alert events for creation and state-changing actions, and do not evaluate alerts or send alert emails. Alert preferences default to enabled when no row exists and update account-level email suppression without changing individual alert statuses.
 
 ## Mock Data State
 
@@ -278,6 +325,8 @@ T0006 expanded featured and popular-clicked demo coverage:
 T0007 adds account-access tables but no seeded demo accounts. `DealSachDemoSeeder` now clears `user_sessions`, `outbound_emails`, `email_verification_codes`, and `users` before reseeding catalog and Buy-flow demo data.
 
 T0008 adds the `wishlist_items` table. Demo seeding does not create wishlist rows; wishlist state is user-specific and created through authenticated API calls or tests.
+
+T0009 adds `price_alerts`, `price_alert_events`, and `user_alert_preferences`. Demo seeding clears these tables before account and catalog tables but does not create alert rows; alert state is user-specific and created through authenticated API calls or tests.
 
 ## Manual Verification Performed
 
@@ -336,6 +385,18 @@ T0007:
 15. Verified guest `GET /api/auth/me` after logout.
 16. Verified public API stability: `GET /api/public/books` returned 200 and `GET /go/offers/5` returned `302 https://tiki.vn/nha-gia-kim-demo`.
 
+T0009:
+
+1. Reviewed required docs and `docs/implementation_logs/T0009.md`.
+2. Created branch `feature-t0009-price-alert-apis` after the normal slash branch name failed in this environment.
+3. Added alert, alert-event, and alert-preference migrations, models, services, controllers, routes, seed cleanup, and backend database/feature tests within T0009 allowed areas.
+4. Ran host PHP syntax checks across backend app, migration, database test, and feature test files; all checked files reported no syntax errors.
+5. Ran Dockerized alert PHPUnit subset: `11 tests, 191 assertions`.
+6. Ran Dockerized full backend PHPUnit: `56 tests, 519 assertions`.
+7. Verified clean disposable MariaDB migrations and `DealSachDemoSeeder` with explicit demo DB environment variables; first attempts before DB readiness returned `Connection refused`, rerun after MariaDB logged `ready for connections` passed.
+8. Confirmed alert and alert-preference routes with `php spark routes | grep -E "api/user/alerts|api/user/alert-preferences"`.
+9. Public catalog and Buy-flow smoke stability are covered by `PriceAlertFeatureTest::testPublicCatalogAndBuyFlowSmokeStillPassAfterAlertMigration`, which verifies public filters, discovery, books, and `GET /go/offers/{offerId}`.
+
 ## Known Issues
 
 See `docs/Known_Issues_And_Followups.md`.
@@ -348,6 +409,10 @@ Closed in T0006:
 
 * KI-0008 — fresh disposable long-running Docker app containers now normalize `backend/writable` ownership during startup without a manual `chown`.
 
+Open after T0009:
+
+* KI-0010 — this workspace has no `.env` or `backend/.env`, so default `docker compose` database variables are blank. T0009 Docker DB checks used explicit demo environment variables instead of adding config files outside ticket scope.
+
 ## Next Recommended Ticket
 
-T0008 — Continue with the next small account-dependent feature ticket, such as frontend auth screens or wishlist persistence, while keeping KI-0009 as a separate low-priority demo-asset follow-up.
+T0010 — Implement the next small alert-related ticket, likely frontend alert management integration, after reviewing T0009 APIs and keeping KI-0009/KI-0010 as separate follow-ups.

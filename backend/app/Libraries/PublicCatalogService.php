@@ -319,6 +319,53 @@ class PublicCatalogService
     }
 
     /**
+     * @return array<string, mixed>|null
+     */
+    public function activeBookSummary(int $bookId): ?array
+    {
+        $book = $this->activeBookRows()[$bookId] ?? null;
+        if ($book === null) {
+            return null;
+        }
+
+        return [
+            'id' => (int) $book->id,
+            'title' => $book->title,
+            'author' => $book->author,
+            'publisher' => $book->publisher,
+            'category_name' => $book->category_name,
+            'category_slug' => $book->category_slug,
+            'cover_image' => $book->cover_image,
+        ];
+    }
+
+    /**
+     * @return array{price: int, offer_count: int}|null
+     */
+    public function currentLowestEligiblePriceSummary(int $bookId): ?array
+    {
+        $card = $this->bookCards()[$bookId] ?? null;
+        if ($card === null || $card['lowest_eligible_price'] === null) {
+            return null;
+        }
+
+        return [
+            'price' => (int) $card['lowest_eligible_price'],
+            'offer_count' => (int) $card['offer_count'],
+        ];
+    }
+
+    public function lowestObservationTimeEligiblePrice(int $bookId): ?int
+    {
+        $history = $this->priceHistoryForBook($bookId);
+        if ($history === []) {
+            return null;
+        }
+
+        return min(array_map(static fn (array $row): int => (int) $row['lowest_price'], $history));
+    }
+
+    /**
      * @param array<string, mixed> $query
      *
      * @return array<string, string>

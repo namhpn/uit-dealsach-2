@@ -28,6 +28,10 @@ class DealSachDemoSeeder extends Seeder
     private function clearTables(): void
     {
         $tables = [
+            'price_alert_events',
+            'user_alert_preferences',
+            'price_alerts',
+            'wishlist_items',
             'user_sessions',
             'outbound_emails',
             'email_verification_codes',

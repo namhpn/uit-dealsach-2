@@ -4,7 +4,7 @@ Last updated: 2026-05-27
 
 ## Current Branch
 
-`feature/t0012-admin-foundation`
+`t0013-admin-catalog-management`
 
 Baseline source for T0007: local `main` after T0006 merge.
 
@@ -25,6 +25,7 @@ Baseline source for T0007: local `main` after T0006 merge.
 | T0010 | 2026-05-27 | Added frontend price-alert API helpers, authenticated `/alerts` management page, book-detail alert creation controls, alert lifecycle actions, and account-level alert email preference controls. |
 | T0011 | 2026-05-27 | Added deterministic alert evaluation, mock alert emails, email deal-link click tracking, disable-alert links, alert notification persistence, focused backend tests, and authenticated `/account` settings integration. |
 | T0012 | 2026-05-27 | Added restricted Admin APIs, Admin audit persistence, deterministic seeded first Admin setup, user deactivation/reactivation safety behavior, Admin alert disabling, focused backend tests, and build-safe Admin frontend pages. |
+| T0013 | 2026-05-27 | Added Admin catalog APIs and pages for categories, books, retailer platforms, merchants, offers, and mock price observations, with audit logging, lifecycle effects, offer validation, eligibility review, and focused tests. |
 
 ## Current Folder Structure
 
@@ -161,6 +162,29 @@ docs/Repo_Current_State.md
 docs/Known_Issues_And_Followups.md
 ```
 
+T0013 changed:
+
+```text
+backend/app/Config/Routes.php
+backend/app/Controllers/AdminController.php
+backend/app/Libraries/AdminAuditService.php
+backend/app/Libraries/AdminCatalogService.php
+backend/tests/feature/AdminCatalogFeatureTest.php
+frontend/src/app/api.ts
+frontend/src/app/routes.tsx
+frontend/src/app/pages/AdminPage.tsx
+frontend/src/app/pages/AdminCatalogPage.tsx
+frontend/src/app/pages/AdminBooksPage.tsx
+frontend/src/app/pages/AdminBookDetailPage.tsx
+frontend/src/app/pages/AdminCategoriesPage.tsx
+frontend/src/app/pages/AdminRetailersPage.tsx
+frontend/src/app/pages/AdminMerchantsPage.tsx
+frontend/src/app/pages/AdminOffersPage.tsx
+docs/Manual_Verification_Guide.md
+docs/implementation_logs/T0013.md
+docs/Repo_Current_State.md
+```
+
 T0008 changed:
 
 ```text
@@ -235,6 +259,7 @@ docs/Repo_Current_State.md
 * T0010 added no frontend, backend, Composer, or npm dependency changes.
 * T0011 added no frontend, backend, Composer, or npm dependency changes.
 * T0012 added no frontend, backend, Composer, or npm dependency changes.
+* T0013 added no frontend, backend, Composer, or npm dependency changes.
 
 ## Available Scripts / Commands
 
@@ -258,6 +283,8 @@ docker compose run --rm app sh -lc 'cd backend && php spark routes | grep -E "ap
 docker compose run --rm app sh -lc 'cd backend && php spark routes | grep -E "api/user/wishlist"'
 docker compose run --rm app sh -lc 'cd backend && php spark routes | grep -E "api/user/alerts|api/user/alert-preferences"'
 docker compose run --rm app sh -lc 'cd backend && php spark alerts:evaluate'
+docker compose -p dealsach_t0013 run --rm --build app sh -lc 'cd backend && php vendor/bin/phpunit --filter AdminCatalog'
+docker compose -p dealsach_t0013 run --rm app sh -lc 'cd backend && php spark routes | grep -E "api/admin/(categories|books|retailers|merchants|offers)"'
 docker compose run --rm app sh -lc 'cd backend && php spark routes | grep -E "email/deals|alerts/disable"'
 docker compose run --rm app sh -lc 'cd backend && php spark routes | grep -E "api/admin"'
 ```
@@ -295,6 +322,12 @@ docker compose run --rm app sh -lc 'cd backend && php spark routes | grep -E "ap
 | Frontend | `docker compose -p dealsach_t0012 run --rm frontend npm run build` | Passed for T0012 | Existing Vite chunk-size warning remains. |
 | Backend/Docker | `docker compose -p dealsach_t0012 run --rm --build app sh -lc 'cd backend && php spark migrate && php spark db:seed DealSachDemoSeeder'` | Passed for T0012 | `admin_audit_logs` migration ran and `DealSachDemoSeeder` completed. |
 | Backend/Docker | Admin route and seed DB checks | Passed for T0012 | `api/admin/*` routes registered; `admin@dealsach.test` seeded as active Admin; `admin_audit_logs` table exists. Full stack `up` was blocked by host port `8080` conflict for phpMyAdmin; tracked as KI-0011. |
+| Backend | `find backend/app/Controllers backend/app/Libraries backend/app/Models backend/app/Database/Migrations backend/tests/database backend/tests/feature -name '*.php' -print0 \| xargs -0 -n1 php -l` | Passed for T0013 | No syntax errors in changed backend app and test files. |
+| Backend | `docker compose -p dealsach_t0013 run --rm --build app sh -lc 'cd backend && php vendor/bin/phpunit --filter AdminCatalog'` | Passed for T0013 | 5 tests, 41 assertions. |
+| Backend | `docker compose -p dealsach_t0013 run --rm --build app sh -lc 'cd backend && php vendor/bin/phpunit'` | Passed for T0013 | 69 tests, 653 assertions. |
+| Frontend | `docker compose -p dealsach_t0013 run --rm frontend npm run build` | Passed for T0013 | Existing Vite chunk-size warning remains. |
+| Backend/Docker | `docker compose -p dealsach_t0013 run --rm --build app sh -lc 'cd backend && php spark migrate && php spark db:seed DealSachDemoSeeder'` | Passed for T0013 | Clean migration and seed completed. |
+| Backend routes | `docker compose -p dealsach_t0013 run --rm app sh -lc 'cd backend && php spark routes \| grep -E "api/admin/(categories\|books\|retailers\|merchants\|offers)"'` | Passed for T0013 | Confirmed Admin catalog list, create, update, archive/restore, offer detail, and observation routes. |
 | API/Public stability | `GET /api/public/books`; `GET /go/offers/5` | Passed for T0007 | Public books returned HTTP 200; Buy redirect returned `302 https://tiki.vn/nha-gia-kim-demo`. |
 | Backend | `cd backend && php vendor/bin/phpunit` | Passed for T0008 | Host PHP 8.4 / SQLite runtime: 45 tests, 331 assertions. |
 | Backend | `docker compose -p dealsach_t0008 run --rm app sh -lc 'cd backend && php spark migrate && php spark db:seed DealSachDemoSeeder'` | Passed for T0008 | Clean disposable MariaDB project created `wishlist_items` after account-access tables and seeded demo data. |
@@ -369,6 +402,38 @@ POST /api/admin/alerts/{alertId}/disable
 GET /api/admin/audit
 ```
 
+Registered Admin catalog routes after T0013:
+
+```text
+GET /api/admin/categories
+POST /api/admin/categories
+PATCH /api/admin/categories/{categoryId}
+POST /api/admin/categories/{categoryId}/archive
+POST /api/admin/categories/{categoryId}/restore
+GET /api/admin/books
+POST /api/admin/books
+GET /api/admin/books/{bookId}
+PATCH /api/admin/books/{bookId}
+POST /api/admin/books/{bookId}/archive
+POST /api/admin/books/{bookId}/restore
+GET /api/admin/retailers
+POST /api/admin/retailers
+PATCH /api/admin/retailers/{retailerId}
+POST /api/admin/retailers/{retailerId}/archive
+POST /api/admin/retailers/{retailerId}/restore
+GET /api/admin/merchants
+POST /api/admin/merchants
+PATCH /api/admin/merchants/{merchantId}
+POST /api/admin/merchants/{merchantId}/archive
+POST /api/admin/merchants/{merchantId}/restore
+GET /api/admin/offers
+POST /api/admin/offers
+GET /api/admin/offers/{offerId}
+PATCH /api/admin/offers/{offerId}
+GET /api/admin/offers/{offerId}/observations
+POST /api/admin/offers/{offerId}/observations
+```
+
 Catalog read behavior lives in `App\Libraries\PublicCatalogService` and is reused by list, detail, discovery, filters, and Buy-flow eligibility checks. It centralizes current eligibility, 48-hour freshness, valid affiliate destination checks, public no-price status priority, offer grouping, price range filtering, observation-time price history, recent price-drop calculation, and popular-clicked deal ranking.
 
 T0004 adds `App\Libraries\BuyFlowService` for Buy Attempt, Affiliate Redirect, and Redirect Failure event writes. `GET /go/offers/{offerId}` records a Buy Attempt for known offers, validates current eligible-offer and approved-domain destination rules, records Affiliate Redirect only on successful external redirects, and records Redirect Failure for known invalid or ineligible offers.
@@ -382,6 +447,8 @@ T0008 adds `App\Libraries\WishlistService` and `App\Controllers\WishlistControll
 T0009 adds `App\Libraries\PriceAlertService`, `App\Libraries\AlertPreferenceService`, `App\Controllers\PriceAlertController`, and `App\Controllers\AlertPreferenceController`. Alert endpoints require an active session from `AuthService`, support target-price and new-lowest alert creation, enforce non-terminal duplicate rules, normalize past-due non-terminal alerts to Expired on service reads/actions, record alert events for creation and state-changing actions, and do not evaluate alerts or send alert emails. Alert preferences default to enabled when no row exists and update account-level email suppression without changing individual alert statuses.
 
 T0012 adds `App\Controllers\AdminController`, `App\Libraries\AdminService`, and `App\Libraries\AdminAuditService`. Admin endpoints require an active authenticated user with `role=admin`, reject guests with 401, reject registered non-admin users with 403, audit Admin mutations, block self/last-active-Admin deactivation, invalidate sessions for deactivated users, disable their Active alerts, and preserve historical records.
+
+T0013 adds `App\Libraries\AdminCatalogService` through `AdminController`. Admin catalog mutations audit create, update, archive, restore, offer-status, and mock-observation writes; mask affiliate URLs to domain/path summaries; validate active categories for books; enforce merchant-retailer consistency; validate `https://` affiliate destinations against approved retailer domains; pause Active alerts when books are archived; and capture observation-time state for newly added mock observations.
 
 ## Mock Data State
 
@@ -500,6 +567,19 @@ T0010:
 6. Confirmed the disposable `dealsach_t0010` DB container was left running after tests, then stopped the project with `docker compose -p dealsach_t0010 down`.
 7. Did not create browser screenshots, browser/UI automation tests, or visual-regression artifacts. Interactive browser checks for `/alerts` and book-detail alert creation remain a recommended manual follow-up before merge if visual evidence is required.
 
+T0013:
+
+1. Reviewed required docs and `docs/implementation_logs/T0013.md`.
+2. Created branch `t0013-admin-catalog-management`; the preferred slash branch name could not be created inside the sandbox because `.git` refs were read-only until Git command escalation was approved.
+3. Added Admin catalog APIs, service behavior, audit masking, focused AdminCatalog feature tests, typed frontend API helpers, and Admin catalog routes/pages within T0013 allowed areas.
+4. Ran PHP syntax checks across backend controllers, libraries, models, migrations, and tests; all checked files reported no syntax errors.
+5. Ran Dockerized AdminCatalog PHPUnit subset: `5 tests, 41 assertions`.
+6. Ran Dockerized full backend PHPUnit: `69 tests, 653 assertions`.
+7. Ran Dockerized frontend build; Vite build passed with the existing chunk-size warning.
+8. Ran clean disposable migration and `DealSachDemoSeeder`; both completed.
+9. Confirmed Admin catalog routes with `php spark routes | grep -E "api/admin/(categories|books|retailers|merchants|offers)"`.
+10. Did not create browser automation, screenshots, Cypress, Playwright, or visual-regression artifacts. Interactive browser checks for the new Admin catalog pages remain recommended before merge if visual evidence is required.
+
 ## Known Issues
 
 See `docs/Known_Issues_And_Followups.md`.
@@ -512,10 +592,11 @@ Closed in T0006:
 
 * KI-0008 — fresh disposable long-running Docker app containers now normalize `backend/writable` ownership during startup without a manual `chown`.
 
-Open after T0012:
+Open after T0013:
 
 * KI-0009 remains open — demo book cover paths still rely on fallback rendering because the referenced `/demo/covers/*` image files are not present.
 * KI-0011 remains open — full-stack `docker compose up` verification can be blocked when host port `8080` is already allocated for phpMyAdmin.
+* KI-0012 remains open — category display metadata needs concrete schema fields before Admin can manage more than name, slug, and status.
 
 ## Next Recommended Ticket
 

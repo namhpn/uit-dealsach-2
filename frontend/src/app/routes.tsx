@@ -10,6 +10,12 @@ import AdminPage from "./pages/AdminPage";
 import AdminUsersPage from "./pages/AdminUsersPage";
 import AdminAlertsPage from "./pages/AdminAlertsPage";
 import AdminAuditPage from "./pages/AdminAuditPage";
+import AdminBooksPage from "./pages/AdminBooksPage";
+import AdminBookDetailPage from "./pages/AdminBookDetailPage";
+import AdminCategoriesPage from "./pages/AdminCategoriesPage";
+import AdminMerchantsPage from "./pages/AdminMerchantsPage";
+import AdminOffersPage from "./pages/AdminOffersPage";
+import AdminRetailersPage from "./pages/AdminRetailersPage";
 
 export const router = createBrowserRouter([
   {
@@ -24,6 +30,12 @@ export const router = createBrowserRouter([
       { path: "account", Component: AccountPage },
       { path: "admin", Component: AdminPage },
       { path: "admin/users", Component: AdminUsersPage },
+      { path: "admin/books", Component: AdminBooksPage },
+      { path: "admin/categories", Component: AdminCategoriesPage },
+      { path: "admin/retailers", Component: AdminRetailersPage },
+      { path: "admin/merchants", Component: AdminMerchantsPage },
+      { path: "admin/offers", Component: AdminOffersPage },
+      { path: "admin/offers/:id", Component: AdminBookDetailPage },
       { path: "admin/alerts", Component: AdminAlertsPage },
       { path: "admin/audit", Component: AdminAuditPage },
     ],

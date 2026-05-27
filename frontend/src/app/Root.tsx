@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router";
-import { Search, Heart, User, BookOpen, Menu, X } from "lucide-react";
+import { Search, Heart, User, BookOpen, Menu, X, LogOut } from "lucide-react";
 import { apiErrorMessage, fetchFilters, FiltersResponse } from "./api";
+import { AuthProvider, useAuth } from "./auth";
 import { C, FONT, border2, border3, shadow4, CategoryChip } from "./shared";
 
 function Header() {
   const navigate = useNavigate();
   const location = useLocation();
+  const auth = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
@@ -82,17 +84,38 @@ function Header() {
 
         {/* Icon buttons */}
         <div className="hidden md:flex order-3 items-center gap-2 shrink-0 self-start">
-          {[
-            { icon: <Heart size={18} />, label: "Yêu thích" },
-            { icon: <User size={18} />, label: "Tài khoản" },
-          ].map(item => (
-            <button key={item.label} aria-label={item.label} title={item.label}
+          <button
+            aria-label="Danh sách yêu thích"
+            title="Danh sách yêu thích"
+            className="w-12 h-12 flex items-center justify-center"
+            style={{ color: C.onSurface, border: border2, background: C.white }}
+            onClick={() => auth.authenticated ? navigate("/wishlist") : auth.openAuthDialog()}
+            onMouseEnter={e => (e.currentTarget.style.background = C.boneWhite)}
+            onMouseLeave={e => (e.currentTarget.style.background = C.white)}
+          >
+            <Heart size={18} />
+          </button>
+          {auth.authenticated ? (
+            <div className="flex items-center gap-2 px-3 h-12" style={{ border: border2, background: C.white, fontFamily: FONT }}>
+              <User size={16} />
+              <span className="max-w-[150px] truncate text-[12px] font-bold">{auth.user?.email}</span>
+              <button type="button" onClick={() => auth.logout()} title="Đăng xuất" aria-label="Đăng xuất" className="flex h-7 w-7 items-center justify-center" style={{ border: `1px solid ${C.black}`, background: C.boneWhite }}>
+                <LogOut size={13} />
+              </button>
+            </div>
+          ) : (
+            <button
+              aria-label="Tài khoản"
+              title="Tài khoản"
               className="w-12 h-12 flex items-center justify-center"
               style={{ color: C.onSurface, border: border2, background: C.white }}
+              onClick={auth.openAuthDialog}
               onMouseEnter={e => (e.currentTarget.style.background = C.boneWhite)}
               onMouseLeave={e => (e.currentTarget.style.background = C.white)}
-            >{item.icon}</button>
-          ))}
+            >
+              <User size={18} />
+            </button>
+          )}
         </div>
 
         {/* Mobile toggle */}
@@ -106,10 +129,18 @@ function Header() {
       {mobileMenuOpen && (
         <div className="md:hidden" style={{ background: C.white, borderTop: border2 }}>
           <div className="flex">
-            {["Yêu thích", "Tài khoản"].map(l => (
-              <button key={l} className="flex-1 text-xs font-bold uppercase py-3 tracking-wide"
-                style={{ color: C.onSurface, fontFamily: FONT, borderRight: `1px solid ${C.black}` }}>{l}</button>
-            ))}
+            <button className="flex-1 text-xs font-bold uppercase py-3 tracking-wide"
+              onClick={() => auth.authenticated ? navigate("/wishlist") : auth.openAuthDialog()}
+              style={{ color: C.onSurface, fontFamily: FONT, borderRight: `1px solid ${C.black}` }}>Yêu thích</button>
+            {auth.authenticated ? (
+              <button className="flex-1 text-xs font-bold uppercase py-3 tracking-wide"
+                onClick={() => auth.logout()}
+                style={{ color: C.onSurface, fontFamily: FONT, borderRight: `1px solid ${C.black}` }}>Đăng xuất</button>
+            ) : (
+              <button className="flex-1 text-xs font-bold uppercase py-3 tracking-wide"
+                onClick={auth.openAuthDialog}
+                style={{ color: C.onSurface, fontFamily: FONT, borderRight: `1px solid ${C.black}` }}>Tài khoản</button>
+            )}
           </div>
         </div>
       )}
@@ -157,12 +188,20 @@ function Footer() {
   );
 }
 
-export default function Root() {
+function AppShell() {
   return (
     <div className="min-h-screen overflow-x-hidden" style={{ background: C.surface, color: C.onSurface, fontFamily: FONT }}>
       <Header />
       <Outlet />
       <Footer />
     </div>
+  );
+}
+
+export default function Root() {
+  return (
+    <AuthProvider>
+      <AppShell />
+    </AuthProvider>
   );
 }

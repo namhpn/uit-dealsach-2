@@ -19,3 +19,10 @@ $routes->group('api/auth', static function (RouteCollection $routes): void {
     $routes->get('me', 'AuthController::me');
     $routes->post('logout', 'AuthController::logout');
 });
+
+$routes->group('api/user', static function (RouteCollection $routes): void {
+    $routes->get('wishlist', 'WishlistController::index');
+    $routes->get('wishlist/books/(:num)', 'WishlistController::status/$1');
+    $routes->post('wishlist/books/(:num)', 'WishlistController::add/$1');
+    $routes->delete('wishlist/books/(:num)', 'WishlistController::remove/$1');
+});

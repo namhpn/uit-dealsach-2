@@ -1,7 +1,8 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Flame, Heart, Star, TrendingDown } from "lucide-react";
 import { Link, useNavigate } from "react-router";
-import { BookCardDto, coverFallback, FilterOption, formatVnd, PRICE_DISCLAIMER } from "./api";
+import { addWishlistBook, apiErrorMessage, BookCardDto, coverFallback, fetchWishlistStatus, FilterOption, formatVnd, PRICE_DISCLAIMER, removeWishlistBook } from "./api";
+import { useAuth } from "./auth";
 
 export interface DealBanner {
   id: number;
@@ -233,6 +234,7 @@ function BookPrice({ book, compact = false }: { book: BookCardDto; compact?: boo
 
 export function ApiBookCard({ book }: { book: BookCardDto }) {
   const [pressed, setPressed] = useState(false);
+  const wishlist = useWishlistControl(book);
 
   return (
     <Link
@@ -247,14 +249,19 @@ export function ApiBookCard({ book }: { book: BookCardDto }) {
         <CoverImage title={book.title} src={book.cover_image} />
         <button
           type="button"
-          onClick={(event) => event.preventDefault()}
-          aria-label="Cần đăng nhập để lưu sách"
-          title="Cần đăng nhập để lưu sách"
+          onClick={wishlist.toggle}
+          aria-label={wishlist.label}
+          title={wishlist.label}
           className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center"
-          style={{ background: C.white, border: border2 }}
+          style={{ background: wishlist.wishlisted ? C.primaryFixed : C.white, border: border2 }}
         >
-          <Heart size={13} style={{ color: C.black }} />
+          <Heart size={13} fill={wishlist.wishlisted ? C.primary : "none"} style={{ color: wishlist.wishlisted ? C.primary : C.black }} />
         </button>
+        {wishlist.error && (
+          <span className="absolute bottom-2 left-2 right-2 px-2 py-1 text-[10px] font-bold" style={{ background: "#fff1f1", color: C.secondary, border: `1px solid ${C.black}`, fontFamily: FONT }}>
+            {wishlist.error}
+          </span>
+        )}
       </div>
       <div className="flex flex-1 flex-col gap-1 p-3">
         <p className="text-[10px] font-bold uppercase leading-none" style={{ color: C.outline, fontFamily: FONT }}>{book.category}</p>
@@ -308,6 +315,7 @@ export function ApiBookCarousel({ books }: { books: BookCardDto[] }) {
 export function ApiDealBookCard({ book, showDrop = false, showDeal = false, compact = false }: { book: BookCardDto; showDrop?: boolean; showDeal?: boolean; compact?: boolean }) {
   const navigate = useNavigate();
   const [pressed, setPressed] = useState(false);
+  const wishlist = useWishlistControl(book);
   const dropRotate = book.id % 2 === 0 ? "rotate(2deg)" : "rotate(-3deg)";
   const cardWidth = compact ? 200 : 280;
   const coverH = compact ? 220 : 320;
@@ -333,6 +341,16 @@ export function ApiDealBookCard({ book, showDrop = false, showDeal = false, comp
             <Flame size={14} />{book.popular_clicked_deal.redirect_count_7d.toLocaleString("vi-VN")}
           </div>
         )}
+        <button
+          type="button"
+          onClick={wishlist.toggle}
+          aria-label={wishlist.label}
+          title={wishlist.label}
+          className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center"
+          style={{ background: wishlist.wishlisted ? C.primaryFixed : C.white, border: border2, boxShadow: shadow4 }}
+        >
+          <Heart size={14} fill={wishlist.wishlisted ? C.primary : "none"} style={{ color: wishlist.wishlisted ? C.primary : C.black }} />
+        </button>
       </div>
       <div className={`flex flex-1 flex-col gap-1 ${compact ? "p-3" : "p-5"}`}>
         <p className="text-[10px] font-bold uppercase leading-none" style={{ color: C.outline, fontFamily: FONT }}>{book.category}</p>
@@ -353,6 +371,61 @@ export function ApiDealBookCard({ book, showDrop = false, showDeal = false, comp
       </div>
     </div>
   );
+}
+
+function useWishlistControl(book: BookCardDto) {
+  const auth = useAuth();
+  const [wishlisted, setWishlisted] = useState(Boolean(book.wishlisted));
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setWishlisted(Boolean(book.wishlisted));
+  }, [book.wishlisted]);
+
+  useEffect(() => {
+    if (!auth.authenticated) {
+      setWishlisted(false);
+      return;
+    }
+    let alive = true;
+    fetchWishlistStatus(book.id)
+      .then((status) => {
+        if (alive) setWishlisted(status.wishlisted);
+      })
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [auth.authenticated, book.id]);
+
+  async function toggle(event: React.MouseEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    setError(null);
+
+    if (!auth.authenticated) {
+      auth.openAuthDialog();
+      return;
+    }
+
+    setBusy(true);
+    try {
+      const next = wishlisted ? await removeWishlistBook(book.id) : await addWishlistBook(book.id);
+      setWishlisted(next.wishlisted);
+    } catch (err) {
+      setError(apiErrorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return {
+    wishlisted,
+    error,
+    toggle,
+    label: busy ? "Đang cập nhật danh sách yêu thích" : wishlisted ? "Bỏ khỏi danh sách yêu thích" : "Lưu vào danh sách yêu thích",
+  };
 }
 
 export function ApiDealSection({ title, icon, books, empty, showDrop = false, showDeal = false }: { title: string; icon: React.ReactNode; books: BookCardDto[]; empty: string | null; showDrop?: boolean; showDeal?: boolean }) {

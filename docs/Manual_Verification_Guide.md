@@ -177,6 +177,56 @@ Use this section for backend tickets that add or change email verification or se
 
    Expected result: a Vietnamese success envelope and an expired `dealsach_session` cookie.
 
+## Wishlist API Verification
+
+Use this section for tickets that add or change authenticated wishlist APIs.
+
+1. Confirm routes are registered:
+
+   ```bash
+   docker compose run --rm app sh -lc 'cd backend && php spark routes | grep -E "api/user/wishlist"'
+   ```
+
+   Expected result: list, status, add, and remove wishlist routes are present.
+
+2. Confirm guest access is rejected:
+
+   ```bash
+   curl -i http://localhost/api/user/wishlist
+   ```
+
+   Expected result: HTTP 401 with Vietnamese JSON containing `status`, `message`, `data`, and `errors`.
+
+3. Authenticate using the Auth API verification flow above, then add a book:
+
+   ```bash
+   curl -i -b /tmp/dealsach-auth-cookies.txt \
+     -X POST http://localhost/api/user/wishlist/books/1
+   ```
+
+   Expected result: Vietnamese success envelope with `wishlisted: true`.
+
+4. Add the same book again and verify no duplicate row exists:
+
+   ```bash
+   curl -i -b /tmp/dealsach-auth-cookies.txt \
+     -X POST http://localhost/api/user/wishlist/books/1
+   docker compose exec db sh -lc 'mariadb -u"$MARIADB_USER" -p"$MARIADB_PASSWORD" "$MARIADB_DATABASE" -N -e "SELECT COUNT(*) FROM wishlist_items WHERE user_id=1 AND book_id=1"'
+   ```
+
+   Expected result: add returns success and the count remains `1`.
+
+5. Check status, list, remove, and confirm status again:
+
+   ```bash
+   curl -s -b /tmp/dealsach-auth-cookies.txt http://localhost/api/user/wishlist/books/1
+   curl -s -b /tmp/dealsach-auth-cookies.txt http://localhost/api/user/wishlist
+   curl -i -b /tmp/dealsach-auth-cookies.txt -X DELETE http://localhost/api/user/wishlist/books/1
+   curl -s -b /tmp/dealsach-auth-cookies.txt http://localhost/api/user/wishlist/books/1
+   ```
+
+   Expected result: status changes from `wishlisted: true` to `wishlisted: false`, and the list includes book-card metadata plus `added_at` before removal.
+
 ## Public Catalog API Checks
 
 Use this section for DealSach catalog read endpoints.

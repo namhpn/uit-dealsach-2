@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router";
 import { ChevronLeft, ChevronRight, ExternalLink, Heart, Info } from "lucide-react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { apiErrorMessage, BookCardDto, BookDetailResponse, fetchBookDetail, fetchDiscovery, formatDate, formatVnd, OfferDto } from "../api";
+import { addWishlistBook, apiErrorMessage, BookCardDto, BookDetailResponse, fetchBookDetail, fetchDiscovery, fetchWishlistStatus, formatDate, formatVnd, OfferDto, removeWishlistBook } from "../api";
+import { useAuth } from "../auth";
 import {
   ApiDealBookCard,
   C,
@@ -44,7 +45,17 @@ function CoverCarousel({ title, category, image }: { title: string; category: st
   );
 }
 
-function HeroSection({ data }: { data: BookDetailResponse }) {
+function HeroSection({
+  data,
+  wishlisted,
+  wishlistError,
+  onToggleWishlist,
+}: {
+  data: BookDetailResponse;
+  wishlisted: boolean;
+  wishlistError: string | null;
+  onToggleWishlist: () => void;
+}) {
   return (
     <section style={{ background: C.surfaceLow, border: border4, boxShadow: shadow8 }}>
       <div className="flex flex-col gap-10 p-8 md:p-12 lg:flex-row lg:gap-14">
@@ -94,15 +105,20 @@ function HeroSection({ data }: { data: BookDetailResponse }) {
             </div>
 
             <button
-              disabled
               className="flex flex-col items-center justify-center gap-1.5 px-5 py-4 text-[11px] font-bold uppercase"
-              title="Tính năng danh sách yêu thích cần đăng nhập."
-              style={{ border: border2, background: C.white, color: C.onSurface, fontFamily: FONT, boxShadow: shadow4, minWidth: 120, cursor: "not-allowed" }}
+              title={wishlisted ? "Bỏ khỏi danh sách yêu thích" : "Lưu vào danh sách yêu thích"}
+              onClick={onToggleWishlist}
+              style={{ border: border2, background: wishlisted ? C.primaryFixed : C.white, color: wishlisted ? C.primary : C.onSurface, fontFamily: FONT, boxShadow: shadow4, minWidth: 120, cursor: "pointer" }}
             >
-              <Heart size={20} />
-              Cần đăng nhập
+              <Heart size={20} fill={wishlisted ? C.primary : "none"} />
+              {wishlisted ? "Đã lưu" : "Lưu sách"}
             </button>
           </div>
+          {wishlistError && (
+            <p className="text-[12px] font-bold leading-relaxed" style={{ color: C.secondary, fontFamily: FONT }}>
+              {wishlistError}
+            </p>
+          )}
         </div>
       </div>
     </section>
@@ -331,10 +347,13 @@ function DisclaimerBlock({ data }: { data: BookDetailResponse }) {
 
 export default function ProductDetailPage() {
   const { id } = useParams();
+  const auth = useAuth();
   const [data, setData] = useState<BookDetailResponse | null>(null);
   const [related, setRelated] = useState<BookCardDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [wishlisted, setWishlisted] = useState(false);
+  const [wishlistError, setWishlistError] = useState<string | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -367,6 +386,41 @@ export default function ProductDetailPage() {
     };
   }, [id]);
 
+  useEffect(() => {
+    if (!id || !auth.authenticated) {
+      setWishlisted(false);
+      return undefined;
+    }
+
+    let alive = true;
+    fetchWishlistStatus(Number(id))
+      .then((status) => {
+        if (alive) setWishlisted(status.wishlisted);
+      })
+      .catch(() => undefined);
+
+    return () => {
+      alive = false;
+    };
+  }, [auth.authenticated, id]);
+
+  async function toggleWishlist() {
+    setWishlistError(null);
+    if (!auth.authenticated) {
+      auth.openAuthDialog();
+      return;
+    }
+
+    if (!id) return;
+
+    try {
+      const next = wishlisted ? await removeWishlistBook(Number(id)) : await addWishlistBook(Number(id));
+      setWishlisted(next.wishlisted);
+    } catch (err) {
+      setWishlistError(apiErrorMessage(err));
+    }
+  }
+
   const hasAnyOffers = useMemo(() => {
     if (!data) return false;
     return Object.values(data.offers).some((group) => group.length > 0);
@@ -382,7 +436,7 @@ export default function ProductDetailPage() {
 
   return (
     <main className="mx-auto flex max-w-[1200px] flex-col gap-12 px-4 py-10 sm:px-8">
-      <HeroSection data={data} />
+      <HeroSection data={data} wishlisted={wishlisted} wishlistError={wishlistError} onToggleWishlist={toggleWishlist} />
       {hasAnyOffers ? <MarketPriceList data={data} /> : <EmptyState message="Sách này chưa có ưu đãi công khai để so sánh." />}
       <TechnicalDetails data={data} />
       <RelatedBooks books={related} />

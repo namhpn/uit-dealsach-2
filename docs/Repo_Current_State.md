@@ -4,7 +4,7 @@ Last updated: 2026-05-27
 
 ## Current Branch
 
-`feature/t0007-backend-email-session-foundation`
+`feature/t0008-authenticated-wishlist`
 
 Baseline source for T0007: local `main` after T0006 merge.
 
@@ -20,6 +20,7 @@ Baseline source for T0007: local `main` after T0006 merge.
 | T0005 | 2026-05-26 | Restored the public homepage and book detail Neubrutalist visual structure from `frontend-original/` while preserving API-backed discovery, search, detail, offer grouping, and Buy-flow behavior. |
 | T0006 | 2026-05-27 | Closed T0005 review gaps: header categories now load from public filters, homepage featured books render as API-backed category shelves, duplicate homepage search was removed, demo data better exercises featured shelves and popular clicked deals, and Docker startup normalizes `backend/writable` ownership automatically. |
 | T0007 | 2026-05-27 | Added backend email verification, mock outbound email storage, user session persistence, auth JSON endpoints, and tests for request limits, code lifecycle, session rejection, logout, and existing public API stability. |
+| T0008 | 2026-05-27 | Added authenticated wishlist persistence, JSON wishlist APIs, frontend email-code auth state/dialog, wishlist route/page, and wishlist actions on cards and book detail. |
 
 ## Current Folder Structure
 
@@ -109,6 +110,27 @@ docs/Manual_Verification_Guide.md
 docs/Repo_Current_State.md
 ```
 
+T0008 changed:
+
+```text
+backend/app/Config/Routes.php
+backend/app/Controllers/WishlistController.php
+backend/app/Database/Migrations/2026-05-27-000002_CreateWishlistItemsTable.php
+backend/app/Libraries/WishlistService.php
+backend/app/Models/WishlistItemModel.php
+backend/tests/database/WishlistDatabaseTest.php
+backend/tests/feature/WishlistFeatureTest.php
+frontend/src/app/api.ts
+frontend/src/app/Root.tsx
+frontend/src/app/routes.tsx
+frontend/src/app/shared.tsx
+frontend/src/app/auth/
+frontend/src/app/pages/ProductDetailPage.tsx
+frontend/src/app/pages/WishlistPage.tsx
+docs/Manual_Verification_Guide.md
+docs/Repo_Current_State.md
+```
+
 ## Installed Dependencies
 
 ### Frontend
@@ -123,6 +145,7 @@ docs/Repo_Current_State.md
 * T0004 added no Composer dependencies.
 * T0006 added no Composer dependency changes.
 * T0007 added no Composer dependency changes.
+* T0008 added no frontend or backend dependency changes.
 
 ## Available Scripts / Commands
 
@@ -143,6 +166,7 @@ docker compose run --rm app sh -lc 'cd backend && php spark db:seed DealSachDemo
 docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit'
 docker compose run --rm app sh -lc 'cd backend && php spark routes'
 docker compose run --rm app sh -lc 'cd backend && php spark routes | grep -E "api/auth|email-code|logout|me"'
+docker compose run --rm app sh -lc 'cd backend && php spark routes | grep -E "api/user/wishlist"'
 ```
 
 ## Build/Test Status
@@ -171,6 +195,13 @@ docker compose run --rm app sh -lc 'cd backend && php spark routes | grep -E "ap
 | Backend | `docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit'` | Passed for T0007 | Docker PHP 8.2 test runtime: 37 tests, 258 assertions. |
 | API/Auth | HTTP auth flow through `http://localhost` | Passed for T0007 | Requested code for `tester@example.com`, confirmed mock outbox code, verified session cookie, read authenticated `/api/auth/me`, logged out with expired cookie, and confirmed guest `/api/auth/me`. |
 | API/Public stability | `GET /api/public/books`; `GET /go/offers/5` | Passed for T0007 | Public books returned HTTP 200; Buy redirect returned `302 https://tiki.vn/nha-gia-kim-demo`. |
+| Backend | `cd backend && php vendor/bin/phpunit` | Passed for T0008 | Host PHP 8.4 / SQLite runtime: 45 tests, 331 assertions. |
+| Backend | `docker compose -p dealsach_t0008 run --rm app sh -lc 'cd backend && php spark migrate && php spark db:seed DealSachDemoSeeder'` | Passed for T0008 | Clean disposable MariaDB project created `wishlist_items` after account-access tables and seeded demo data. |
+| Backend | `docker compose -p dealsach_t0008 run --rm app sh -lc 'cd backend && php spark routes | grep -E "api/user/wishlist"'` | Passed for T0008 | Confirmed wishlist list, status, add, and remove routes. |
+| Backend | `docker compose -p dealsach_t0008 run --rm app sh -lc 'cd backend && php vendor/bin/phpunit'` | Passed for T0008 | Docker PHP 8.2 runtime: 45 tests, 331 assertions. |
+| Frontend | `docker compose -p dealsach_t0008 run --rm frontend npm run build` | Passed for T0008 | Existing Vite chunk-size warning remains. |
+| API/Auth/Wishlist | HTTP auth and wishlist flow through `http://localhost` | Passed for T0008 | Guest wishlist returned 401; requested and verified email code; add and duplicate-add returned success; duplicate row count stayed 1; list included book-card metadata and `added_at`; remove returned success; final status returned `wishlisted: false`. |
+| API/Public stability | `GET /api/public/filters`; `GET /api/public/discovery`; `GET /api/public/books`; `GET /go/offers/5` | Passed for T0008 | Public APIs returned 200; Buy redirect returned `302 https://tiki.vn/nha-gia-kim-demo`. |
 
 ## Public API State
 
@@ -193,6 +224,15 @@ GET /api/auth/me
 POST /api/auth/logout
 ```
 
+Registered wishlist routes after T0008:
+
+```text
+GET /api/user/wishlist
+GET /api/user/wishlist/books/{bookId}
+POST /api/user/wishlist/books/{bookId}
+DELETE /api/user/wishlist/books/{bookId}
+```
+
 Catalog read behavior lives in `App\Libraries\PublicCatalogService` and is reused by list, detail, discovery, filters, and Buy-flow eligibility checks. It centralizes current eligibility, 48-hour freshness, valid affiliate destination checks, public no-price status priority, offer grouping, price range filtering, observation-time price history, recent price-drop calculation, and popular-clicked deal ranking.
 
 T0004 adds `App\Libraries\BuyFlowService` for Buy Attempt, Affiliate Redirect, and Redirect Failure event writes. `GET /go/offers/{offerId}` records a Buy Attempt for known offers, validates current eligible-offer and approved-domain destination rules, records Affiliate Redirect only on successful external redirects, and records Redirect Failure for known invalid or ineligible offers.
@@ -200,6 +240,8 @@ T0004 adds `App\Libraries\BuyFlowService` for Buy Attempt, Affiliate Redirect, a
 `GET /api/public/discovery` now ranks `popular_clicked_deals` from successful Affiliate Redirect records in the last 7 days using `Asia/Ho_Chi_Minh`, grouped by book and sorted by redirect count descending then title ascending. Cards include redirect count and top retailer metadata.
 
 T0007 adds `App\Libraries\EmailVerificationService` and `App\Libraries\AuthService`. Verification requests normalize email, enforce 60-second cooldown, 5/hour and 10/day request limits, invalidate older active codes, store SHA-256 code hashes, and write deterministic mock emails to `outbound_emails`. Verification creates or reuses active users, rejects deactivated users, marks codes used, invalidates remaining active codes, creates 7-day hashed-token sessions, and sets an HTTP-only same-origin cookie.
+
+T0008 adds `App\Libraries\WishlistService` and `App\Controllers\WishlistController`. Wishlist endpoints require an active session from `AuthService`, store one `wishlist_items` row per user/book pair, treat duplicate adds and missing removes as no-op successes, reject archived or nonexistent books on add, and keep existing archived-book wishlist entries visible with an archived marker.
 
 ## Mock Data State
 
@@ -234,6 +276,8 @@ T0006 expanded featured and popular-clicked demo coverage:
 * Discovery popular clicked deals include multiple ranked books across Tiki, Fahasa, Lazada, and Shopee.
 
 T0007 adds account-access tables but no seeded demo accounts. `DealSachDemoSeeder` now clears `user_sessions`, `outbound_emails`, `email_verification_codes`, and `users` before reseeding catalog and Buy-flow demo data.
+
+T0008 adds the `wishlist_items` table. Demo seeding does not create wishlist rows; wishlist state is user-specific and created through authenticated API calls or tests.
 
 ## Manual Verification Performed
 

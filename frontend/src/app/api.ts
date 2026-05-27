@@ -10,7 +10,8 @@ export type BookStatusValue =
   | "missing_valid_seller_link"
   | "temporarily_unavailable"
   | "stale_reference"
-  | "no_tracked_offer";
+  | "no_tracked_offer"
+  | "archived";
 
 export interface BookCardDto {
   id: number;
@@ -36,6 +37,32 @@ export interface BookCardDto {
     redirect_count_7d: number;
     top_retailer: { name: string; redirect_count_7d: number } | null;
   };
+  wishlisted?: boolean;
+  archived?: boolean;
+  added_at?: string;
+  wishlist_item_id?: number;
+}
+
+export interface CurrentUserDto {
+  id: number;
+  email: string;
+  role: "registered" | "admin";
+  status: "active" | "deactivated";
+  alert_email_enabled: boolean;
+}
+
+export interface AuthStateDto {
+  authenticated: boolean;
+  user: CurrentUserDto | null;
+}
+
+export interface WishlistStatusDto {
+  book_id: number;
+  wishlisted: boolean;
+}
+
+export interface WishlistListResponse {
+  items: BookCardDto[];
 }
 
 export interface DiscoverySection {
@@ -161,9 +188,58 @@ export async function fetchBookDetail(bookId: string): Promise<BookDetailRespons
   return apiGet<BookDetailResponse>(`/api/public/books/${bookId}`);
 }
 
+export async function requestEmailCode(email: string): Promise<{ email: string; resent_after_seconds: number }> {
+  return apiRequest("/api/auth/email-code/request", {
+    method: "POST",
+    credentials: "include",
+    body: JSON.stringify({ email }),
+  });
+}
+
+export async function verifyEmailCode(email: string, code: string): Promise<{ user: CurrentUserDto; session_expires_at: string }> {
+  return apiRequest("/api/auth/email-code/verify", {
+    method: "POST",
+    credentials: "include",
+    body: JSON.stringify({ email, code }),
+  });
+}
+
+export async function fetchCurrentUser(): Promise<AuthStateDto> {
+  return apiRequest("/api/auth/me", { credentials: "include" });
+}
+
+export async function logoutCurrentUser(): Promise<AuthStateDto> {
+  return apiRequest("/api/auth/logout", { method: "POST", credentials: "include" });
+}
+
+export async function fetchWishlist(): Promise<WishlistListResponse> {
+  return apiRequest("/api/user/wishlist", { credentials: "include" });
+}
+
+export async function fetchWishlistStatus(bookId: number): Promise<WishlistStatusDto> {
+  return apiRequest(`/api/user/wishlist/books/${bookId}`, { credentials: "include" });
+}
+
+export async function addWishlistBook(bookId: number): Promise<WishlistStatusDto> {
+  return apiRequest(`/api/user/wishlist/books/${bookId}`, { method: "POST", credentials: "include" });
+}
+
+export async function removeWishlistBook(bookId: number): Promise<WishlistStatusDto> {
+  return apiRequest(`/api/user/wishlist/books/${bookId}`, { method: "DELETE", credentials: "include" });
+}
+
 async function apiGet<T>(path: string): Promise<T> {
+  return apiRequest<T>(path);
+}
+
+async function apiRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
   const response = await fetch(`${API_ORIGIN}${path}`, {
-    headers: { Accept: "application/json" },
+    ...init,
+    headers: {
+      Accept: "application/json",
+      ...(init.body ? { "Content-Type": "application/json" } : {}),
+      ...init.headers,
+    },
   });
   const body = (await response.json()) as ApiEnvelope<T>;
 

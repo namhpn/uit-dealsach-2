@@ -355,6 +355,32 @@ class PublicCatalogService
         ];
     }
 
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function currentEligibleOffersForBook(int $bookId): array
+    {
+        $offers = [];
+
+        foreach ($this->publicRelevantOffersByBook()[$bookId] ?? [] as $offer) {
+            if ($this->classifyOffer($offer) !== 'purchasable') {
+                continue;
+            }
+
+            $offers[] = [
+                'offer_id' => (int) $offer->id,
+                'price' => (int) $offer->latest_price,
+                'retailer_name' => (string) $offer->retailer_name,
+                'merchant_name' => (string) $offer->merchant_name,
+                'observed_at' => (string) $offer->latest_observed_at,
+            ];
+        }
+
+        usort($offers, static fn (array $a, array $b): int => [$a['price'], $a['offer_id']] <=> [$b['price'], $b['offer_id']]);
+
+        return $offers;
+    }
+
     public function lowestObservationTimeEligiblePrice(int $bookId): ?int
     {
         $history = $this->priceHistoryForBook($bookId);

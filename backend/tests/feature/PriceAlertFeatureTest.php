@@ -1,7 +1,9 @@
 <?php
 
 use App\Database\Seeds\DealSachDemoSeeder;
+use App\Libraries\AlertNotificationService;
 use App\Libraries\AuthService;
+use Config\Database;
 use CodeIgniter\Test\CIUnitTestCase;
 use CodeIgniter\Test\DatabaseTestTrait;
 use CodeIgniter\Test\FeatureTestTrait;
@@ -228,6 +230,104 @@ final class PriceAlertFeatureTest extends CIUnitTestCase
         $this->assertSame('https://tiki.vn/nha-gia-kim-demo', $result->response()->getHeaderLine('Location'));
     }
 
+    public function testEvaluatorWritesTargetAlertEmailAndAvoidsDuplicateUnchangedNotifications(): void
+    {
+        $token = $this->createAuthenticatedSession('notify-alert@example.com');
+        $bookId = $this->bookIdByIsbn('9786041000003');
+        $alertId = $this->createTargetAlert($token, $bookId, 200000);
+        $offerId = $this->offerIdByTitle('Nhà giả kim - tái bản');
+
+        $this->appendObservation($offerId, 80000, '2026-05-27 12:00:00');
+        $summary = $this->evaluateAt('2026-05-27 12:05:00');
+
+        $this->assertSame(1, $summary['triggered']);
+        $this->assertSame(1, $summary['emailed']);
+        $email = $this->db->table('outbound_emails')->where('email_type', 'price_alert_target_price')->get()->getFirstRow();
+        $this->assertNotNull($email);
+        $this->assertStringContainsString('Nhà giả kim', $email->body_text);
+        $this->assertStringContainsString('Giá tham khảo được ghi nhận gần đây', $email->body_text);
+        $this->assertSame(1, $this->db->table('email_deal_links')->where('price_alert_id', $alertId)->countAllResults());
+        $this->assertSame(1, (int) $this->db->table('price_alerts')->where('id', $alertId)->get()->getFirstRow()->notification_count);
+
+        $again = $this->evaluateAt('2026-05-27 12:10:00');
+        $this->assertSame(0, $again['triggered']);
+        $this->assertSame(1, $this->db->table('outbound_emails')->where('email_type', 'price_alert_target_price')->countAllResults());
+    }
+
+    public function testNewLowestPendingBaselineAndSuppressedPreferenceDoNotWriteTriggeredEmailOrCount(): void
+    {
+        $token = $this->createAuthenticatedSession('suppressed-alert@example.com');
+        $bookId = $this->bookIdByIsbn('9786041000007');
+        $alertId = $this->createNewLowestAlert($token, $bookId);
+        $offerId = $this->offerIdByTitle('Nghĩ giàu làm giàu');
+
+        $this->appendObservation($offerId, 120000, '2026-05-27 12:00:00');
+        $baseline = $this->evaluateAt('2026-05-27 12:05:00');
+        $this->assertSame(1, $baseline['baseline_set']);
+
+        $this->patchJson('/api/user/alert-preferences', ['alert_emails_enabled' => false], $token)->assertOK();
+        $this->appendObservation($offerId, 110000, '2026-05-27 13:00:00');
+        $suppressed = $this->evaluateAt('2026-05-27 13:05:00');
+        $this->assertSame(1, $suppressed['suppressed']);
+        $this->assertSame(0, $this->db->table('outbound_emails')->where('email_type', 'price_alert_new_lowest')->countAllResults());
+        $this->assertSame(0, $this->db->table('price_alert_events')->where('price_alert_id', $alertId)->where('event_type', 'triggered')->countAllResults());
+        $this->assertSame(0, (int) $this->db->table('price_alerts')->where('id', $alertId)->get()->getFirstRow()->notification_count);
+    }
+
+    public function testFailedMockEmailRetriesAndDoesNotUpdateSuccessFields(): void
+    {
+        $token = $this->createAuthenticatedSession('fail-alert@example.com');
+        $bookId = $this->bookIdByIsbn('9786041000003');
+        $alertId = $this->createTargetAlert($token, $bookId, 200000);
+
+        $this->appendObservation($this->offerIdByTitle('Nhà giả kim - tái bản'), 79000, '2026-05-27 12:00:00');
+        $summary = $this->evaluateAt('2026-05-27 12:05:00');
+
+        $this->assertSame(1, $summary['triggered']);
+        $this->assertSame(2, $summary['failed']);
+        $this->assertSame(2, $this->db->table('outbound_emails')->where('normalized_recipient_email', 'fail-alert@example.com')->where('status', 'failed')->countAllResults());
+        $alert = $this->db->table('price_alerts')->where('id', $alertId)->get()->getFirstRow();
+        $this->assertSame(0, (int) $alert->notification_count);
+        $this->assertNull($alert->last_notified_price);
+    }
+
+    public function testDealLinkClickDisableLinkAndAutoPauseAfterThreeSuccessfulEmails(): void
+    {
+        $token = $this->createAuthenticatedSession('links-alert@example.com');
+        $bookId = $this->bookIdByIsbn('9786041000003');
+        $alertId = $this->createTargetAlert($token, $bookId, 200000);
+        $offerId = $this->offerIdByTitle('Nhà giả kim - tái bản');
+        $redirectsBeforeEmailClick = $this->db->table('affiliate_redirects')->countAllResults();
+
+        foreach ([80000, 79000, 78000] as $index => $price) {
+            $this->appendObservation($offerId, $price, '2026-05-27 ' . (12 + $index) . ':00:00');
+            $this->evaluateAt('2026-05-27 ' . (12 + $index) . ':05:00');
+        }
+
+        $alert = $this->db->table('price_alerts')->where('id', $alertId)->get()->getFirstRow();
+        $this->assertSame('Auto-paused', $alert->status);
+        $this->assertSame(3, (int) $alert->notification_count);
+
+        $dealLink = $this->db->table('email_deal_links')->where('price_alert_id', $alertId)->orderBy('id', 'ASC')->get()->getFirstRow();
+        $dealToken = $this->plainTokenForHash('email_deal_links', (string) $dealLink->token_hash);
+        $click = $this->requestGet('/email/deals/' . $dealToken);
+        $click->assertStatus(302);
+        $this->assertStringEndsWith('/book/' . $bookId . '#offers', $click->response()->getHeaderLine('Location'));
+        $this->assertSame(1, $this->db->table('email_deal_link_clicks')->where('email_deal_link_id', $dealLink->id)->countAllResults());
+        $this->assertSame($redirectsBeforeEmailClick, $this->db->table('affiliate_redirects')->countAllResults());
+
+        $disableRow = $this->db->table('alert_disable_tokens')->where('price_alert_id', $alertId)->orderBy('id', 'ASC')->get()->getFirstRow();
+        $disableToken = $this->plainTokenForHash('alert_disable_tokens', (string) $disableRow->token_hash);
+        $disable = $this->requestGet('/alerts/disable/' . $disableToken);
+        $disable->assertOK();
+        $this->assertSame('Disabled', $this->db->table('price_alerts')->where('id', $alertId)->get()->getFirstRow()->status);
+        $this->assertSame(1, $this->db->table('price_alert_events')->where('price_alert_id', $alertId)->where('event_type', 'disabled_by_email_link')->countAllResults());
+
+        $reuse = $this->requestGet('/alerts/disable/' . $disableToken);
+        $reuse->assertOK();
+        $this->assertStringContainsString('&#273;&atilde; &#273;&#432;&#7907;c t&#7855;t', $reuse->getBody());
+    }
+
     private function createTargetAlert(string $token, int $bookId, int $targetPrice): int
     {
         $result = $this->postJson('/api/user/alerts', ['book_id' => $bookId, 'alert_type' => 'target_price', 'target_price' => $targetPrice], $token);
@@ -326,5 +426,64 @@ final class PriceAlertFeatureTest extends CIUnitTestCase
         $this->assertIsArray($decoded);
 
         return $decoded;
+    }
+
+    /**
+     * @return array<string, int>
+     */
+    private function evaluateAt(string $now): array
+    {
+        return (new AlertNotificationService(Database::connect(), new DateTimeImmutable($now, new DateTimeZone('Asia/Ho_Chi_Minh'))))->evaluate();
+    }
+
+    private function appendObservation(int $offerId, int $price, string $observedAt): void
+    {
+        $offer = $this->db->table('offers o')
+            ->select('o.*, b.status AS book_status, r.status AS retailer_status, m.status AS merchant_status, m.retailer_platform_id AS merchant_retailer_platform_id')
+            ->join('books b', 'b.id = o.book_id')
+            ->join('retailer_platforms r', 'r.id = o.retailer_platform_id')
+            ->join('merchants m', 'm.id = o.merchant_id')
+            ->where('o.id', $offerId)
+            ->get()
+            ->getFirstRow();
+
+        $cycleId = (int) $this->db->table('observation_cycles')->select('id')->orderBy('id', 'DESC')->get()->getFirstRow()->id;
+        $this->db->table('price_observations')->insert([
+            'offer_id' => $offerId,
+            'observation_cycle_id' => $cycleId,
+            'observed_at' => $observedAt,
+            'availability_status' => 'available',
+            'listed_item_price' => $price,
+            'book_status_at_observation' => $offer->book_status,
+            'offer_status_at_observation' => $offer->status,
+            'retailer_status_at_observation' => $offer->retailer_status,
+            'merchant_status_at_observation' => $offer->merchant_status,
+            'merchant_retailer_consistent_at_observation' => (int) $offer->merchant_retailer_platform_id === (int) $offer->retailer_platform_id ? 1 : 0,
+            'destination_status_at_observation' => $offer->destination_status,
+            'created_at' => $observedAt,
+            'updated_at' => $observedAt,
+        ]);
+    }
+
+    private function plainTokenForHash(string $table, string $hash): string
+    {
+        $email = $this->db->table('outbound_emails')
+            ->orderBy('id', 'ASC')
+            ->get()
+            ->getResult();
+
+        foreach ($email as $row) {
+            if (! preg_match_all('#/(?:email/deals|alerts/disable)/([a-f0-9]{48})#', (string) $row->body_text, $matches)) {
+                continue;
+            }
+
+            foreach ($matches[1] as $token) {
+                if (hash('sha256', $token) === $hash) {
+                    return $token;
+                }
+            }
+        }
+
+        $this->fail('Missing plain token for ' . $table);
     }
 }

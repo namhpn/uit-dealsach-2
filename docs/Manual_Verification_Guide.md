@@ -346,6 +346,44 @@ Use this section for tickets that add or change authenticated price alert APIs.
 
    Expected result: default preference is enabled for users without a preference row; updating the preference does not change individual alert statuses.
 
+## Alert Notification Engine Verification
+
+Use this section for tickets that add or change alert evaluation, mock alert emails, email deal links, or disable-alert links.
+
+1. Confirm PHP syntax for the changed backend alert surface:
+
+   ```bash
+   find backend/app/Commands backend/app/Controllers backend/app/Libraries backend/app/Models backend/app/Database/Migrations backend/tests/database backend/tests/feature -name '*.php' -print0 | xargs -0 -n1 php -l
+   ```
+
+   Expected result: no syntax errors.
+
+2. Run alert-focused tests:
+
+   ```bash
+   docker compose -p dealsach_t0011 run --rm -e database.default.hostname=db app sh -lc 'cd backend && php vendor/bin/phpunit --filter Alert'
+   ```
+
+   Expected result: alert evaluator, mock email, suppression, failed retry, deal-link click, disable-link, and auto-pause tests pass.
+
+3. Run a clean migration, seed, and evaluator command:
+
+   ```bash
+   docker compose -p dealsach_t0011 up -d --build db
+   docker compose -p dealsach_t0011 exec db sh -lc 'mariadb-admin ping -u"$MARIADB_USER" -p"$MARIADB_PASSWORD" --silent'
+   docker compose -p dealsach_t0011 run --rm -e database.default.hostname=db app sh -lc 'cd backend && php spark migrate && php spark db:seed DealSachDemoSeeder && php spark alerts:evaluate'
+   ```
+
+   Expected result: migrations include `CreateAlertNotificationTables`, seed completes, and `alerts:evaluate` prints evaluated, triggered, emailed, suppressed, failed, baseline-set, expired, and auto-paused counts.
+
+4. Verify email-link routes are registered:
+
+   ```bash
+   docker compose -p dealsach_t0011 run --rm -e database.default.hostname=db app sh -lc 'cd backend && php spark routes | grep -E "email/deals|alerts/disable"'
+   ```
+
+   Expected result: public DealSach landing and disable-link routes are present.
+
 ## Public Catalog API Checks
 
 Use this section for DealSach catalog read endpoints.

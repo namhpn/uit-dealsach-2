@@ -21,6 +21,9 @@ final class PriceAlertDatabaseTest extends CIUnitTestCase
         $this->assertTrue($this->db->tableExists('price_alerts'));
         $this->assertTrue($this->db->tableExists('price_alert_events'));
         $this->assertTrue($this->db->tableExists('user_alert_preferences'));
+        $this->assertTrue($this->db->tableExists('email_deal_links'));
+        $this->assertTrue($this->db->tableExists('email_deal_link_clicks'));
+        $this->assertTrue($this->db->tableExists('alert_disable_tokens'));
 
         foreach ([
             'id',
@@ -47,6 +50,18 @@ final class PriceAlertDatabaseTest extends CIUnitTestCase
 
         foreach (['user_id', 'alert_emails_enabled', 'created_at', 'updated_at'] as $field) {
             $this->assertTrue($this->db->fieldExists($field, 'user_alert_preferences'), sprintf('Missing user_alert_preferences.%s', $field));
+        }
+
+        foreach (['id', 'price_alert_id', 'outbound_email_id', 'book_id', 'token_hash', 'landing_path', 'created_at', 'updated_at'] as $field) {
+            $this->assertTrue($this->db->fieldExists($field, 'email_deal_links'), sprintf('Missing email_deal_links.%s', $field));
+        }
+
+        foreach (['id', 'email_deal_link_id', 'price_alert_id', 'book_id', 'clicked_at', 'ip_address', 'user_agent', 'created_at', 'updated_at'] as $field) {
+            $this->assertTrue($this->db->fieldExists($field, 'email_deal_link_clicks'), sprintf('Missing email_deal_link_clicks.%s', $field));
+        }
+
+        foreach (['id', 'price_alert_id', 'token_hash', 'expires_at', 'used_at', 'created_at', 'updated_at'] as $field) {
+            $this->assertTrue($this->db->fieldExists($field, 'alert_disable_tokens'), sprintf('Missing alert_disable_tokens.%s', $field));
         }
     }
 

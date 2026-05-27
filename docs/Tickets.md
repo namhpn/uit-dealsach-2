@@ -23,4 +23,5 @@
 | T0008 | Authenticated Wishlist APIs and Frontend Integration | Done | T0007 | Backend/API / Frontend auth / Wishlist |
 | T0009 | Price Alert Domain and Authenticated Management APIs | Done | T0008 | Backend/API / Alerts |
 | T0010 | Frontend Price Alert Management Integration | Done | T0007, T0008, T0009 | Frontend |
-| T0011 | Alert Notification Engine and Account Settings | In Progress | T0007, T0009, T0010 | Full-stack |
+| T0011 | Alert Notification Engine and Account Settings | Done | T0007, T0009, T0010 | Full-stack |
+| T0012 | Admin Foundation, Audit Trail, Users, and Alerts | In Progress | T0007, T0009, T0011 | Full-stack |

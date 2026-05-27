@@ -25,4 +25,5 @@
 | T0010 | Frontend Price Alert Management Integration | Done | T0007, T0008, T0009 | Frontend |
 | T0011 | Alert Notification Engine and Account Settings | Done | T0007, T0009, T0010 | Full-stack |
 | T0012 | Admin Foundation, Audit Trail, Users, and Alerts | Done | T0007, T0009, T0011 | Full-stack |
-| T0013 | Admin Catalog Management | In Progress | T0002, T0003, T0004, T0012 | Full-stack |
+| T0013 | Admin Catalog Management | Done | T0002, T0003, T0004, T0012 | Full-stack |
+| T0014 | Admin Dashboard Reports | In Progress | T0004, T0011, T0012, T0013 | Full-stack |

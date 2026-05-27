@@ -19,3 +19,4 @@
 | T0004 | Public Catalog Frontend and Affiliate Buy Flow | Done | T0003 | Frontend / Backend API / Database |
 | T0005 | Restore Public Frontend Design with API Data | Done | T0004 | Frontend / Public UI |
 | T0006 | Close T0005 Review Gaps and Docker Verification Blocker | Done | T0005 | Public frontend / demo data / Dev tooling |
+| T0007 | Backend Email Verification and Session Foundation | In Progress | T0006 | Backend auth |

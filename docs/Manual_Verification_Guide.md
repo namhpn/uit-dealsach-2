@@ -120,6 +120,63 @@ Use this section for backend tickets that add or change JSON APIs.
 
 5. For database-backed API behavior, verify the result against the seeded database state, a focused PHPUnit feature test, or both.
 
+## Auth API Verification
+
+Use this section for backend tickets that add or change email verification or session APIs.
+
+1. Confirm routes are registered:
+
+   ```bash
+   docker compose run --rm app sh -lc 'cd backend && php spark routes | grep -E "api/auth|email-code|logout|me"'
+   ```
+
+2. Request a verification code:
+
+   ```bash
+   curl -i -c /tmp/dealsach-auth-cookies.txt \
+     -H 'Content-Type: application/json' \
+     -d '{"email":"tester@example.com"}' \
+     http://localhost/api/auth/email-code/request
+   ```
+
+   Expected result: a Vietnamese success envelope that does not include the verification code.
+
+3. Inspect the mock outbox without printing database credentials:
+
+   ```bash
+   docker compose exec db sh -lc 'mariadb -u"$MARIADB_USER" -p"$MARIADB_PASSWORD" "$MARIADB_DATABASE" -N -e "SELECT body_text FROM outbound_emails WHERE normalized_recipient_email='\''tester@example.com'\'' ORDER BY id DESC LIMIT 1"'
+   ```
+
+   Expected result: one mock email body containing a 6-digit code and 10-minute expiry copy.
+
+4. Verify the code:
+
+   ```bash
+   curl -i -b /tmp/dealsach-auth-cookies.txt -c /tmp/dealsach-auth-cookies.txt \
+     -H 'Content-Type: application/json' \
+     -d '{"email":"tester@example.com","code":"<CODE_FROM_MOCK_OUTBOX>"}' \
+     http://localhost/api/auth/email-code/verify
+   ```
+
+   Expected result: a Vietnamese success envelope, active user data, and an HTTP-only `dealsach_session` cookie.
+
+5. Read current account state:
+
+   ```bash
+   curl -s -b /tmp/dealsach-auth-cookies.txt http://localhost/api/auth/me
+   ```
+
+   Expected result: `authenticated` is `true` and the user email is `tester@example.com`.
+
+6. Log out:
+
+   ```bash
+   curl -i -b /tmp/dealsach-auth-cookies.txt -c /tmp/dealsach-auth-cookies.txt \
+     -X POST http://localhost/api/auth/logout
+   ```
+
+   Expected result: a Vietnamese success envelope and an expired `dealsach_session` cookie.
+
 ## Public Catalog API Checks
 
 Use this section for DealSach catalog read endpoints.

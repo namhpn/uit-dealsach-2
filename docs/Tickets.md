@@ -21,4 +21,5 @@
 | T0006 | Close T0005 Review Gaps and Docker Verification Blocker | Done | T0005 | Public frontend / demo data / Dev tooling |
 | T0007 | Backend Email Verification and Session Foundation | Done | T0006 | Backend auth |
 | T0008 | Authenticated Wishlist APIs and Frontend Integration | Done | T0007 | Backend/API / Frontend auth / Wishlist |
-| T0009 | Price Alert Domain and Authenticated Management APIs | In Process | T0008 | Backend/API / Alerts |
+| T0009 | Price Alert Domain and Authenticated Management APIs | Done | T0008 | Backend/API / Alerts |
+| T0010 | Frontend Price Alert Management Integration | In Progress | T0007, T0008, T0009 | Frontend |

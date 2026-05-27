@@ -65,6 +65,56 @@ export interface WishlistListResponse {
   items: BookCardDto[];
 }
 
+export type PriceAlertType = "target_price" | "new_lowest_price";
+export type PriceAlertStatus = "Active" | "Paused" | "Auto-paused" | "Expired" | "Disabled";
+
+export interface PriceAlertBookDto {
+  id: number;
+  title: string;
+  author: string;
+  publisher: string;
+  category_name: string;
+  category_slug: string;
+  cover_image: string | null;
+}
+
+export interface PriceAlertEventDto {
+  id: number;
+  event_type: string;
+  previous_status: PriceAlertStatus | null;
+  new_status: PriceAlertStatus | null;
+  summary: Record<string, unknown> | null;
+  created_at: string;
+}
+
+export interface PriceAlertDto {
+  id: number;
+  book_id: number;
+  book: PriceAlertBookDto | null;
+  alert_type: PriceAlertType;
+  status: PriceAlertStatus;
+  target_price: number | null;
+  baseline_price: number | null;
+  baseline_pending: boolean;
+  comparison_price: number | null;
+  last_notified_price: number | null;
+  notification_count: number;
+  expires_at: string;
+  current_lowest_eligible_price: { price: number; offer_count: number } | null;
+  alert_emails_enabled: boolean;
+  recent_events: PriceAlertEventDto[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PriceAlertListResponse {
+  items: PriceAlertDto[];
+}
+
+export interface AlertPreferenceDto {
+  alert_emails_enabled: boolean;
+}
+
 export interface DiscoverySection {
   title: string;
   items: BookCardDto[];
@@ -228,6 +278,66 @@ export async function removeWishlistBook(bookId: number): Promise<WishlistStatus
   return apiRequest(`/api/user/wishlist/books/${bookId}`, { method: "DELETE", credentials: "include" });
 }
 
+export async function fetchPriceAlerts(): Promise<PriceAlertListResponse> {
+  return apiRequest("/api/user/alerts", { credentials: "include" });
+}
+
+export async function fetchPriceAlert(alertId: number): Promise<PriceAlertDto> {
+  return apiRequest(`/api/user/alerts/${alertId}`, { credentials: "include" });
+}
+
+export async function createPriceAlert(payload: { book_id: number; alert_type: PriceAlertType; target_price?: number }): Promise<PriceAlertDto> {
+  return apiRequest("/api/user/alerts", {
+    method: "POST",
+    credentials: "include",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updatePriceAlertTarget(alertId: number, targetPrice: number): Promise<PriceAlertDto> {
+  return apiRequest(`/api/user/alerts/${alertId}`, {
+    method: "PATCH",
+    credentials: "include",
+    body: JSON.stringify({ target_price: targetPrice }),
+  });
+}
+
+export async function pausePriceAlert(alertId: number): Promise<PriceAlertDto> {
+  return alertAction(alertId, "pause");
+}
+
+export async function reactivatePriceAlert(alertId: number): Promise<PriceAlertDto> {
+  return alertAction(alertId, "reactivate");
+}
+
+export async function renewPriceAlert(alertId: number): Promise<PriceAlertDto> {
+  return alertAction(alertId, "renew");
+}
+
+export async function restartPriceAlertTracking(alertId: number): Promise<PriceAlertDto> {
+  return alertAction(alertId, "restart-tracking");
+}
+
+export async function disablePriceAlert(alertId: number): Promise<PriceAlertDto> {
+  return alertAction(alertId, "disable");
+}
+
+export async function fetchAlertPreferences(): Promise<AlertPreferenceDto> {
+  return apiRequest("/api/user/alert-preferences", { credentials: "include" });
+}
+
+export async function updateAlertPreferences(alertEmailsEnabled: boolean): Promise<AlertPreferenceDto> {
+  return apiRequest("/api/user/alert-preferences", {
+    method: "PATCH",
+    credentials: "include",
+    body: JSON.stringify({ alert_emails_enabled: alertEmailsEnabled }),
+  });
+}
+
+function alertAction(alertId: number, action: "pause" | "reactivate" | "renew" | "restart-tracking" | "disable"): Promise<PriceAlertDto> {
+  return apiRequest(`/api/user/alerts/${alertId}/${action}`, { method: "POST", credentials: "include" });
+}
+
 async function apiGet<T>(path: string): Promise<T> {
   return apiRequest<T>(path);
 }
@@ -261,6 +371,13 @@ export function formatVnd(value: number): string {
 export function formatDate(value: string): string {
   const [year, month, day] = value.split("-");
   return year && month && day ? `${day}/${month}/${year}` : value;
+}
+
+export function formatDateTime(value: string): string {
+  const [date, time = ""] = value.split(" ");
+  const formattedDate = formatDate(date);
+  const formattedTime = time.slice(0, 5);
+  return formattedTime ? `${formattedDate} ${formattedTime}` : formattedDate;
 }
 
 export function apiErrorMessage(error: unknown): string {

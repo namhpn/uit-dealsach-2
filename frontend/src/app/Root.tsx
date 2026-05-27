@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router";
-import { Search, Heart, User, BookOpen, Menu, X, LogOut } from "lucide-react";
+import { Search, Heart, User, BookOpen, Menu, X, LogOut, Bell } from "lucide-react";
 import { apiErrorMessage, fetchFilters, FiltersResponse } from "./api";
 import { AuthProvider, useAuth } from "./auth";
 import { C, FONT, border2, border3, shadow4, CategoryChip } from "./shared";
@@ -95,6 +95,17 @@ function Header() {
           >
             <Heart size={18} />
           </button>
+          <button
+            aria-label="Cảnh báo giá"
+            title="Cảnh báo giá"
+            className="w-12 h-12 flex items-center justify-center"
+            style={{ color: C.onSurface, border: border2, background: C.white }}
+            onClick={() => auth.authenticated ? navigate("/alerts") : auth.openAuthDialog()}
+            onMouseEnter={e => (e.currentTarget.style.background = C.boneWhite)}
+            onMouseLeave={e => (e.currentTarget.style.background = C.white)}
+          >
+            <Bell size={18} />
+          </button>
           {auth.authenticated ? (
             <div className="flex items-center gap-2 px-3 h-12" style={{ border: border2, background: C.white, fontFamily: FONT }}>
               <User size={16} />
@@ -132,6 +143,9 @@ function Header() {
             <button className="flex-1 text-xs font-bold uppercase py-3 tracking-wide"
               onClick={() => auth.authenticated ? navigate("/wishlist") : auth.openAuthDialog()}
               style={{ color: C.onSurface, fontFamily: FONT, borderRight: `1px solid ${C.black}` }}>Yêu thích</button>
+            <button className="flex-1 text-xs font-bold uppercase py-3 tracking-wide"
+              onClick={() => auth.authenticated ? navigate("/alerts") : auth.openAuthDialog()}
+              style={{ color: C.onSurface, fontFamily: FONT, borderRight: `1px solid ${C.black}` }}>Cảnh báo</button>
             {auth.authenticated ? (
               <button className="flex-1 text-xs font-bold uppercase py-3 tracking-wide"
                 onClick={() => auth.logout()}

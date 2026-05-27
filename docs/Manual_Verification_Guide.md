@@ -227,6 +227,52 @@ Use this section for tickets that add or change authenticated wishlist APIs.
 
    Expected result: status changes from `wishlisted: true` to `wishlisted: false`, and the list includes book-card metadata plus `added_at` before removal.
 
+## Frontend Alert Management Verification
+
+Use this section for tickets that add or change the authenticated React price-alert UI.
+
+1. Run the frontend build:
+
+   ```bash
+   docker compose -p dealsach_t0010 run --rm frontend npm run build
+   ```
+
+   Expected result: the Vite build succeeds without installing new runtime dependencies. The existing chunk-size warning is acceptable unless the ticket specifically targets bundle splitting.
+
+2. Run backend tests to confirm the alert API contract remains stable:
+
+   ```bash
+   docker compose -p dealsach_t0010 run --rm app sh -lc 'cd backend && php vendor/bin/phpunit'
+   ```
+
+   Expected result: PHPUnit exits 0.
+
+3. Start the app and open `/alerts` as a guest.
+
+   Expected result: the existing email-code auth dialog opens, and the page also shows a Vietnamese prompt without duplicating a separate login UI.
+
+4. Authenticate with the email-code flow, then open `/book/<BOOK_ID>`.
+
+   Expected result: the book detail page shows target-price and new-lowest-price alert creation controls. Target-price input accepts whole-number VND only.
+
+5. Create both alert types from book detail, then open `/alerts`.
+
+   Expected result: both alerts appear with book title, cover fallback when needed, category, alert type, status, target or baseline fields, expiry, notification count, current price, and comparison price when returned by the API.
+
+6. Exercise only actions that are visible for the current status:
+
+   * Active: update target price for target-price alerts, pause, restart tracking for new-lowest alerts, disable.
+   * Paused: update target price for target-price alerts, reactivate, restart tracking for new-lowest alerts, disable.
+   * Auto-paused: reactivate or disable.
+   * Expired: renew or open the book detail page to create a new alert.
+   * Disabled: history-only state; no reactivation control.
+
+   Expected result: the UI updates the changed alert or shows the backend Vietnamese validation/conflict message.
+
+7. Toggle the account-level alert email preference on `/alerts`.
+
+   Expected result: the preference state changes, the UI explains that email suppression does not alter individual alert statuses, and existing alert statuses remain unchanged.
+
 ## Price Alert API Verification
 
 Use this section for tickets that add or change authenticated price alert APIs.

@@ -5,6 +5,8 @@ use CodeIgniter\Router\RouteCollection;
 /** @var RouteCollection $routes */
 $routes->get('/', 'Home::index');
 $routes->get('go/offers/(:num)', 'BuyFlowController::offer/$1');
+$routes->get('email/deals/(:segment)', 'AlertEmailLinkController::deal/$1');
+$routes->get('alerts/disable/(:segment)', 'AlertEmailLinkController::disable/$1');
 
 $routes->group('api/public', static function (RouteCollection $routes): void {
     $routes->get('books', 'PublicCatalogController::books');

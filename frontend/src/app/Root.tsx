@@ -109,7 +109,7 @@ function Header() {
           {auth.authenticated ? (
             <div className="flex items-center gap-2 px-3 h-12" style={{ border: border2, background: C.white, fontFamily: FONT }}>
               <User size={16} />
-              <span className="max-w-[150px] truncate text-[12px] font-bold">{auth.user?.email}</span>
+              <button type="button" onClick={() => navigate("/account")} className="max-w-[150px] truncate text-[12px] font-bold text-left" title="Cài đặt tài khoản">{auth.user?.email}</button>
               <button type="button" onClick={() => auth.logout()} title="Đăng xuất" aria-label="Đăng xuất" className="flex h-7 w-7 items-center justify-center" style={{ border: `1px solid ${C.black}`, background: C.boneWhite }}>
                 <LogOut size={13} />
               </button>
@@ -148,8 +148,8 @@ function Header() {
               style={{ color: C.onSurface, fontFamily: FONT, borderRight: `1px solid ${C.black}` }}>Cảnh báo</button>
             {auth.authenticated ? (
               <button className="flex-1 text-xs font-bold uppercase py-3 tracking-wide"
-                onClick={() => auth.logout()}
-                style={{ color: C.onSurface, fontFamily: FONT, borderRight: `1px solid ${C.black}` }}>Đăng xuất</button>
+                onClick={() => navigate("/account")}
+                style={{ color: C.onSurface, fontFamily: FONT, borderRight: `1px solid ${C.black}` }}>Tài khoản</button>
             ) : (
               <button className="flex-1 text-xs font-bold uppercase py-3 tracking-wide"
                 onClick={auth.openAuthDialog}

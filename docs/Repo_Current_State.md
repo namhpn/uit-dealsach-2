@@ -4,7 +4,7 @@ Last updated: 2026-05-27
 
 ## Current Branch
 
-`feature/t0010-price-alert-frontend`
+`feature/t0011-alert-notification-engine`
 
 Baseline source for T0007: local `main` after T0006 merge.
 
@@ -23,6 +23,7 @@ Baseline source for T0007: local `main` after T0006 merge.
 | T0008 | 2026-05-27 | Added authenticated wishlist persistence, JSON wishlist APIs, frontend email-code auth state/dialog, wishlist route/page, and wishlist actions on cards and book detail. |
 | T0009 | 2026-05-27 | Added price alert persistence, alert event history, account-level alert email preferences, authenticated alert/preference JSON APIs, and backend tests for alert creation, duplicate rules, owner scoping, lifecycle actions, expiry normalization, preferences, and public API stability. |
 | T0010 | 2026-05-27 | Added frontend price-alert API helpers, authenticated `/alerts` management page, book-detail alert creation controls, alert lifecycle actions, and account-level alert email preference controls. |
+| T0011 | 2026-05-27 | Added deterministic alert evaluation, mock alert emails, email deal-link click tracking, disable-alert links, alert notification persistence, focused backend tests, and authenticated `/account` settings integration. |
 
 ## Current Folder Structure
 
@@ -112,6 +113,29 @@ docs/Manual_Verification_Guide.md
 docs/Repo_Current_State.md
 ```
 
+T0011 changed:
+
+```text
+backend/app/Commands/EvaluateAlerts.php
+backend/app/Controllers/AlertEmailLinkController.php
+backend/app/Config/Routes.php
+backend/app/Database/Migrations/2026-05-27-000004_CreateAlertNotificationTables.php
+backend/app/Libraries/AlertNotificationService.php
+backend/app/Libraries/PublicCatalogService.php
+backend/app/Models/AlertDisableTokenModel.php
+backend/app/Models/EmailDealLinkClickModel.php
+backend/app/Models/EmailDealLinkModel.php
+backend/tests/database/PriceAlertDatabaseTest.php
+backend/tests/feature/PriceAlertFeatureTest.php
+frontend/src/app/Root.tsx
+frontend/src/app/routes.tsx
+frontend/src/app/pages/AccountPage.tsx
+docs/Manual_Verification_Guide.md
+docs/implementation_logs/T0011.md
+docs/Repo_Current_State.md
+docs/Known_Issues_And_Followups.md
+```
+
 T0008 changed:
 
 ```text
@@ -184,6 +208,7 @@ docs/Repo_Current_State.md
 * T0008 added no frontend or backend dependency changes.
 * T0009 added no frontend, backend, Composer, or npm dependency changes.
 * T0010 added no frontend, backend, Composer, or npm dependency changes.
+* T0011 added no frontend, backend, Composer, or npm dependency changes.
 
 ## Available Scripts / Commands
 
@@ -206,6 +231,8 @@ docker compose run --rm app sh -lc 'cd backend && php spark routes'
 docker compose run --rm app sh -lc 'cd backend && php spark routes | grep -E "api/auth|email-code|logout|me"'
 docker compose run --rm app sh -lc 'cd backend && php spark routes | grep -E "api/user/wishlist"'
 docker compose run --rm app sh -lc 'cd backend && php spark routes | grep -E "api/user/alerts|api/user/alert-preferences"'
+docker compose run --rm app sh -lc 'cd backend && php spark alerts:evaluate'
+docker compose run --rm app sh -lc 'cd backend && php spark routes | grep -E "email/deals|alerts/disable"'
 ```
 
 ## Build/Test Status

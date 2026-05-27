@@ -5,6 +5,7 @@ import ProductDetailPage from "./pages/ProductDetailPage";
 import SearchPage from "./pages/SearchPage";
 import WishlistPage from "./pages/WishlistPage";
 import AlertsPage from "./pages/AlertsPage";
+import AccountPage from "./pages/AccountPage";
 
 export const router = createBrowserRouter([
   {
@@ -16,6 +17,7 @@ export const router = createBrowserRouter([
       { path: "book/:id", Component: ProductDetailPage },
       { path: "wishlist", Component: WishlistPage },
       { path: "alerts", Component: AlertsPage },
+      { path: "account", Component: AccountPage },
     ],
   },
 ]);

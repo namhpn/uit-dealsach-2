@@ -115,6 +115,49 @@ export interface AlertPreferenceDto {
   alert_emails_enabled: boolean;
 }
 
+export interface AdminUserDto {
+  id: number;
+  email: string;
+  role: "registered" | "admin";
+  status: "active" | "deactivated";
+  alert_email_enabled: boolean;
+  wishlist_count: number;
+  alert_count: number;
+  active_alert_count: number;
+  active_session_count?: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminAlertDto {
+  id: number;
+  user_id: number;
+  user_email: string;
+  book_id: number;
+  book_title: string;
+  alert_type: PriceAlertType;
+  status: PriceAlertStatus;
+  target_price: number | null;
+  notification_count: number;
+  expires_at: string;
+  recent_events: PriceAlertEventDto[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminAuditLogDto {
+  id: number;
+  admin_user_id: number | null;
+  actor_email: string;
+  action_type: string;
+  entity_type: string;
+  entity_id: string;
+  summary: string;
+  before: Record<string, unknown> | null;
+  after: Record<string, unknown> | null;
+  created_at: string;
+}
+
 export interface DiscoverySection {
   title: string;
   items: BookCardDto[];
@@ -332,6 +375,31 @@ export async function updateAlertPreferences(alertEmailsEnabled: boolean): Promi
     credentials: "include",
     body: JSON.stringify({ alert_emails_enabled: alertEmailsEnabled }),
   });
+}
+
+export async function fetchAdminUsers(params = new URLSearchParams()): Promise<{ items: AdminUserDto[] }> {
+  const query = params.toString();
+  return apiRequest(`/api/admin/users${query ? `?${query}` : ""}`, { credentials: "include" });
+}
+
+export async function deactivateAdminUser(userId: number): Promise<AdminUserDto> {
+  return apiRequest(`/api/admin/users/${userId}/deactivate`, { method: "POST", credentials: "include" });
+}
+
+export async function reactivateAdminUser(userId: number): Promise<AdminUserDto> {
+  return apiRequest(`/api/admin/users/${userId}/reactivate`, { method: "POST", credentials: "include" });
+}
+
+export async function fetchAdminAlerts(): Promise<{ items: AdminAlertDto[] }> {
+  return apiRequest("/api/admin/alerts", { credentials: "include" });
+}
+
+export async function disableAdminAlert(alertId: number): Promise<AdminAlertDto> {
+  return apiRequest(`/api/admin/alerts/${alertId}/disable`, { method: "POST", credentials: "include" });
+}
+
+export async function fetchAdminAuditLogs(): Promise<{ items: AdminAuditLogDto[] }> {
+  return apiRequest("/api/admin/audit", { credentials: "include" });
 }
 
 function alertAction(alertId: number, action: "pause" | "reactivate" | "renew" | "restart-tracking" | "disable"): Promise<PriceAlertDto> {

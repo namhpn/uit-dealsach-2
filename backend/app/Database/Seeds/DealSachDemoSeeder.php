@@ -23,11 +23,16 @@ class DealSachDemoSeeder extends Seeder
         $cycleIds = $this->seedObservationCycles($now);
         $this->seedPriceObservations($offerIds, $cycleIds, $now);
         $this->seedBuyFlowEvents($offerIds, $now);
+        $this->seedSetupAdmin($now);
     }
 
     private function clearTables(): void
     {
         $tables = [
+            'admin_audit_logs',
+            'alert_disable_tokens',
+            'email_deal_link_clicks',
+            'email_deal_links',
             'price_alert_events',
             'user_alert_preferences',
             'price_alerts',
@@ -55,6 +60,19 @@ class DealSachDemoSeeder extends Seeder
         }
 
         $this->db->enableForeignKeyChecks();
+    }
+
+    private function seedSetupAdmin(string $now): void
+    {
+        $this->db->table('users')->insert([
+            'normalized_email' => 'admin@dealsach.test',
+            'display_email' => 'admin@dealsach.test',
+            'role' => 'admin',
+            'status' => 'active',
+            'alert_email_enabled' => 1,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
     }
 
     /**

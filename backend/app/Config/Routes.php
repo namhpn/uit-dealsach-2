@@ -39,3 +39,15 @@ $routes->group('api/user', static function (RouteCollection $routes): void {
     $routes->get('alert-preferences', 'AlertPreferenceController::show');
     $routes->patch('alert-preferences', 'AlertPreferenceController::update');
 });
+
+$routes->group('api/admin', static function (RouteCollection $routes): void {
+    $routes->get('me', 'AdminController::me');
+    $routes->get('users', 'AdminController::users');
+    $routes->get('users/(:num)', 'AdminController::user/$1');
+    $routes->post('users/(:num)/deactivate', 'AdminController::deactivateUser/$1');
+    $routes->post('users/(:num)/reactivate', 'AdminController::reactivateUser/$1');
+    $routes->get('alerts', 'AdminController::alerts');
+    $routes->get('alerts/(:num)', 'AdminController::alert/$1');
+    $routes->post('alerts/(:num)/disable', 'AdminController::disableAlert/$1');
+    $routes->get('audit', 'AdminController::audit');
+});

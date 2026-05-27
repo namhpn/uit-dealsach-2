@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
+import type { FormEvent } from "react";
 import { Link, useParams } from "react-router";
-import { ChevronLeft, ChevronRight, ExternalLink, Heart, Info } from "lucide-react";
+import { Bell, ChevronLeft, ChevronRight, ExternalLink, Heart, Info, TrendingDown } from "lucide-react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { addWishlistBook, apiErrorMessage, BookCardDto, BookDetailResponse, fetchBookDetail, fetchDiscovery, fetchWishlistStatus, formatDate, formatVnd, OfferDto, removeWishlistBook } from "../api";
+import { addWishlistBook, apiErrorMessage, BookCardDto, BookDetailResponse, createPriceAlert, fetchBookDetail, fetchDiscovery, fetchWishlistStatus, formatDate, formatVnd, OfferDto, removeWishlistBook } from "../api";
 import { useAuth } from "../auth";
 import {
   ApiDealBookCard,
@@ -149,6 +150,127 @@ function OfferGroup({ title, description, offers, disclosure }: { title: string;
         </div>
       ) : (
         <EmptyState message="Chưa có ưu đãi trong nhóm này." />
+      )}
+    </section>
+  );
+}
+
+function AlertCreationPanel({ data }: { data: BookDetailResponse }) {
+  const auth = useAuth();
+  const [targetPrice, setTargetPrice] = useState("");
+  const [targetError, setTargetError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [busy, setBusy] = useState<"target" | "lowest" | null>(null);
+
+  async function createTargetAlert(event: FormEvent) {
+    event.preventDefault();
+    setTargetError(null);
+    setSuccess(null);
+
+    if (!auth.authenticated) {
+      auth.openAuthDialog();
+      return;
+    }
+    if (!/^[0-9]+$/.test(targetPrice) || Number(targetPrice) <= 0) {
+      setTargetError("Giá mục tiêu phải là số nguyên VND lớn hơn 0.");
+      return;
+    }
+
+    setBusy("target");
+    try {
+      await createPriceAlert({ book_id: data.book.id, alert_type: "target_price", target_price: Number(targetPrice) });
+      setSuccess("Đã lưu cảnh báo giá mục tiêu. Nếu cảnh báo tương tự đã tồn tại, DealSach dùng lại cảnh báo hiện có.");
+    } catch (err) {
+      setTargetError(apiErrorMessage(err));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function createNewLowestAlert() {
+    setTargetError(null);
+    setSuccess(null);
+
+    if (!auth.authenticated) {
+      auth.openAuthDialog();
+      return;
+    }
+
+    setBusy("lowest");
+    try {
+      await createPriceAlert({ book_id: data.book.id, alert_type: "new_lowest_price" });
+      setSuccess("Đã lưu cảnh báo giá thấp mới. Nếu cảnh báo tương tự đã tồn tại, DealSach dùng lại cảnh báo hiện có.");
+    } catch (err) {
+      setTargetError(apiErrorMessage(err));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  return (
+    <section className="grid grid-cols-1 gap-5 lg:grid-cols-[1.1fr_0.9fr]" style={{ background: C.white, border: border2, boxShadow: shadow8 }}>
+      <div className="p-5 md:p-6" style={{ borderRight: "0" }}>
+        <div className="mb-4 flex items-center gap-3">
+          <Bell size={22} style={{ color: C.primary }} />
+          <div>
+            <h2 className="text-[18px] font-extrabold uppercase" style={{ fontFamily: FONT }}>Tạo cảnh báo giá</h2>
+            <p className="mt-1 text-[13px] leading-relaxed" style={{ color: C.onSurfaceVariant, fontFamily: FONT }}>
+              DealSach gửi email khi điều kiện giá phù hợp trong các lần quan sát sau. Giá hiển thị vẫn là giá tham khảo gần đây.
+            </p>
+          </div>
+        </div>
+
+        <form onSubmit={createTargetAlert} className="flex flex-col gap-3 sm:flex-row sm:items-start">
+          <label className="flex min-w-0 flex-1 flex-col gap-1 text-[11px] font-extrabold uppercase" style={{ color: C.onSurfaceVariant, fontFamily: FONT }}>
+            Giá mục tiêu VND
+            <input
+              value={targetPrice}
+              onChange={(event) => setTargetPrice(event.target.value.replace(/\D/g, ""))}
+              placeholder="Ví dụ: 90000"
+              inputMode="numeric"
+              className="px-3 py-2 text-sm normal-case outline-none"
+              style={{ border: border2, color: C.onSurface, fontFamily: FONT }}
+            />
+          </label>
+          <button
+            type="submit"
+            disabled={busy !== null}
+            className="flex items-center justify-center gap-2 px-4 py-2.5 text-[12px] font-extrabold uppercase disabled:opacity-50 sm:mt-[19px]"
+            style={{ background: C.primary, color: C.white, border: border2, boxShadow: shadow4, fontFamily: FONT }}
+          >
+            <Bell size={13} />
+            {busy === "target" ? "Đang tạo..." : "Nhắc giá mục tiêu"}
+          </button>
+        </form>
+      </div>
+
+      <div className="flex flex-col justify-between gap-4 p-5 md:p-6" style={{ background: C.boneWhite, borderTop: border2 }}>
+        <div>
+          <div className="mb-3 flex items-center gap-2">
+            <TrendingDown size={20} style={{ color: C.secondary }} />
+            <h3 className="text-[15px] font-extrabold uppercase" style={{ fontFamily: FONT }}>Giá thấp mới</h3>
+          </div>
+          <p className="text-[13px] leading-relaxed" style={{ color: C.onSurfaceVariant, fontFamily: FONT }}>
+            Theo dõi từ giá đủ điều kiện hiện tại, hoặc chờ mốc đầu tiên nếu sách chưa có giá đủ điều kiện.
+          </p>
+        </div>
+        <button
+          type="button"
+          disabled={busy !== null}
+          onClick={createNewLowestAlert}
+          className="flex items-center justify-center gap-2 px-4 py-2.5 text-[12px] font-extrabold uppercase disabled:opacity-50"
+          style={{ background: C.white, color: C.onSurface, border: border2, boxShadow: shadow4, fontFamily: FONT }}
+        >
+          <TrendingDown size={13} />
+          {busy === "lowest" ? "Đang tạo..." : "Nhắc khi có giá thấp mới"}
+        </button>
+      </div>
+      {(targetError || success) && (
+        <div className="p-4 lg:col-span-2" style={{ borderTop: border2, background: targetError ? "#fff1f1" : C.primaryFixed }}>
+          <p role={targetError ? "alert" : "status"} className="text-[12px] font-bold leading-relaxed" style={{ color: targetError ? C.secondary : C.primary, fontFamily: FONT }}>
+            {targetError ?? success}
+          </p>
+        </div>
       )}
     </section>
   );
@@ -437,6 +559,7 @@ export default function ProductDetailPage() {
   return (
     <main className="mx-auto flex max-w-[1200px] flex-col gap-12 px-4 py-10 sm:px-8">
       <HeroSection data={data} wishlisted={wishlisted} wishlistError={wishlistError} onToggleWishlist={toggleWishlist} />
+      <AlertCreationPanel data={data} />
       {hasAnyOffers ? <MarketPriceList data={data} /> : <EmptyState message="Sách này chưa có ưu đãi công khai để so sánh." />}
       <TechnicalDetails data={data} />
       <RelatedBooks books={related} />

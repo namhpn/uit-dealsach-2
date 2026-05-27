@@ -4,7 +4,7 @@ Last updated: 2026-05-27
 
 ## Current Branch
 
-`feature-t0009-price-alert-apis`
+`feature/t0010-price-alert-frontend`
 
 Baseline source for T0007: local `main` after T0006 merge.
 
@@ -22,6 +22,7 @@ Baseline source for T0007: local `main` after T0006 merge.
 | T0007 | 2026-05-27 | Added backend email verification, mock outbound email storage, user session persistence, auth JSON endpoints, and tests for request limits, code lifecycle, session rejection, logout, and existing public API stability. |
 | T0008 | 2026-05-27 | Added authenticated wishlist persistence, JSON wishlist APIs, frontend email-code auth state/dialog, wishlist route/page, and wishlist actions on cards and book detail. |
 | T0009 | 2026-05-27 | Added price alert persistence, alert event history, account-level alert email preferences, authenticated alert/preference JSON APIs, and backend tests for alert creation, duplicate rules, owner scoping, lifecycle actions, expiry normalization, preferences, and public API stability. |
+| T0010 | 2026-05-27 | Added frontend price-alert API helpers, authenticated `/alerts` management page, book-detail alert creation controls, alert lifecycle actions, and account-level alert email preference controls. |
 
 ## Current Folder Structure
 
@@ -153,6 +154,19 @@ docs/Repo_Current_State.md
 docs/Known_Issues_And_Followups.md
 ```
 
+T0010 changed:
+
+```text
+frontend/src/app/api.ts
+frontend/src/app/Root.tsx
+frontend/src/app/routes.tsx
+frontend/src/app/pages/ProductDetailPage.tsx
+frontend/src/app/pages/AlertsPage.tsx
+docs/Manual_Verification_Guide.md
+docs/implementation_logs/T0010.md
+docs/Repo_Current_State.md
+```
+
 ## Installed Dependencies
 
 ### Frontend
@@ -169,6 +183,7 @@ docs/Known_Issues_And_Followups.md
 * T0007 added no Composer dependency changes.
 * T0008 added no frontend or backend dependency changes.
 * T0009 added no frontend, backend, Composer, or npm dependency changes.
+* T0010 added no frontend, backend, Composer, or npm dependency changes.
 
 ## Available Scripts / Commands
 
@@ -218,6 +233,8 @@ docker compose run --rm app sh -lc 'cd backend && php spark routes | grep -E "ap
 | Backend | `docker compose run --rm app sh -lc 'cd backend && php spark routes | grep -E "api/auth|email-code|logout|me"'` | Passed for T0007 | Confirmed `POST /api/auth/email-code/request`, `POST /api/auth/email-code/verify`, `GET /api/auth/me`, and `POST /api/auth/logout`. |
 | Backend | `docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit'` | Passed for T0007 | Docker PHP 8.2 test runtime: 37 tests, 258 assertions. |
 | API/Auth | HTTP auth flow through `http://localhost` | Passed for T0007 | Requested code for `tester@example.com`, confirmed mock outbox code, verified session cookie, read authenticated `/api/auth/me`, logged out with expired cookie, and confirmed guest `/api/auth/me`. |
+| Frontend | `docker compose -p dealsach_t0010 run --rm frontend npm run build` | Passed for T0010 | Vite build completed; existing chunk-size warning remains. |
+| Backend | `docker compose -p dealsach_t0010 run --rm app sh -lc 'cd backend && php vendor/bin/phpunit'` | Passed for T0010 | Docker PHP 8.2 test runtime: 56 tests, 520 assertions. |
 | API/Public stability | `GET /api/public/books`; `GET /go/offers/5` | Passed for T0007 | Public books returned HTTP 200; Buy redirect returned `302 https://tiki.vn/nha-gia-kim-demo`. |
 | Backend | `cd backend && php vendor/bin/phpunit` | Passed for T0008 | Host PHP 8.4 / SQLite runtime: 45 tests, 331 assertions. |
 | Backend | `docker compose -p dealsach_t0008 run --rm app sh -lc 'cd backend && php spark migrate && php spark db:seed DealSachDemoSeeder'` | Passed for T0008 | Clean disposable MariaDB project created `wishlist_items` after account-access tables and seeded demo data. |
@@ -397,6 +414,16 @@ T0009:
 8. Confirmed alert and alert-preference routes with `php spark routes | grep -E "api/user/alerts|api/user/alert-preferences"`.
 9. Public catalog and Buy-flow smoke stability are covered by `PriceAlertFeatureTest::testPublicCatalogAndBuyFlowSmokeStillPassAfterAlertMigration`, which verifies public filters, discovery, books, and `GET /go/offers/{offerId}`.
 
+T0010:
+
+1. Reviewed required docs and `docs/implementation_logs/T0010.md`.
+2. Created branch `feature/t0010-price-alert-frontend` from local `main`.
+3. Added frontend alert DTOs/API helpers, `/alerts` route/page, header alert navigation, book-detail alert creation controls, lifecycle action controls, and account-level alert email preference UI within T0010 allowed areas.
+4. Ran `docker compose -p dealsach_t0010 run --rm frontend npm run build`; Vite build passed with the existing chunk-size warning.
+5. Ran `docker compose -p dealsach_t0010 run --rm app sh -lc 'cd backend && php vendor/bin/phpunit'`; Docker PHP 8.2 PHPUnit passed with `56 tests, 520 assertions`.
+6. Confirmed the disposable `dealsach_t0010` DB container was left running after tests, then stopped the project with `docker compose -p dealsach_t0010 down`.
+7. Did not create browser screenshots, browser/UI automation tests, or visual-regression artifacts. Interactive browser checks for `/alerts` and book-detail alert creation remain a recommended manual follow-up before merge if visual evidence is required.
+
 ## Known Issues
 
 See `docs/Known_Issues_And_Followups.md`.
@@ -409,10 +436,11 @@ Closed in T0006:
 
 * KI-0008 — fresh disposable long-running Docker app containers now normalize `backend/writable` ownership during startup without a manual `chown`.
 
-Open after T0009:
+Open after T0010:
 
 * KI-0010 — this workspace has no `.env` or `backend/.env`, so default `docker compose` database variables are blank. T0009 Docker DB checks used explicit demo environment variables instead of adding config files outside ticket scope.
+* KI-0009 remains open — demo book cover paths still rely on fallback rendering because the referenced `/demo/covers/*` image files are not present.
 
 ## Next Recommended Ticket
 
-T0010 — Implement the next small alert-related ticket, likely frontend alert management integration, after reviewing T0009 APIs and keeping KI-0009/KI-0010 as separate follow-ups.
+Run an interactive browser/manual verification pass for the authenticated alert UI if visual evidence is required, or continue with the next planned DealSach account/admin ticket while keeping KI-0009 and KI-0010 separate.

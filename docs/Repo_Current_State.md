@@ -1,12 +1,12 @@
 # Repo Current State
 
-Last updated: 2026-05-26
+Last updated: 2026-05-27
 
 ## Current Branch
 
-`feature/t0005-restore-public-frontend-design`
+`feature/t0006-close-review-gaps`
 
-Baseline source for T0005: `main`, after T0004 was merged locally.
+Baseline source for T0006: `main` at `e78bc49` (`Add ticket T0006`).
 
 ## Completed Tickets
 
@@ -18,6 +18,7 @@ Baseline source for T0005: `main`, after T0004 was merged locally.
 | T0003 | 2026-05-26 | Added public catalog JSON read APIs, centralized current offer eligibility, book detail offer grouping, book-level price history, search/filter/sort/pagination, discovery sections, and backend API tests without changing frontend UI or database schema. |
 | T0004 | 2026-05-26 | Added public Buy-flow event persistence, `/go/offers/{offerId}` redirect handling, Affiliate Redirect-backed popular clicked deals, and API-backed homepage/search/detail React pages. |
 | T0005 | 2026-05-26 | Restored the public homepage and book detail Neubrutalist visual structure from `frontend-original/` while preserving API-backed discovery, search, detail, offer grouping, and Buy-flow behavior. |
+| T0006 | 2026-05-27 | Closed T0005 review gaps: header categories now load from public filters, homepage featured books render as API-backed category shelves, duplicate homepage search was removed, demo data better exercises featured shelves and popular clicked deals, and Docker startup normalizes `backend/writable` ownership automatically. |
 
 ## Current Folder Structure
 
@@ -73,6 +74,21 @@ docs/Repo_Current_State.md
 docs/Known_Issues_And_Followups.md
 ```
 
+T0006 changed:
+
+```text
+Dockerfile
+docker/php-entrypoint.sh
+backend/app/Database/Seeds/DealSachDemoSeeder.php
+backend/tests/feature/PublicCatalogApiTest.php
+frontend/src/app/Root.tsx
+frontend/src/app/pages/HomePage.tsx
+frontend/src/app/shared.tsx
+docs/Manual_Verification_Guide.md
+docs/Repo_Current_State.md
+docs/Known_Issues_And_Followups.md
+```
+
 ## Installed Dependencies
 
 ### Frontend
@@ -85,6 +101,7 @@ docs/Known_Issues_And_Followups.md
 
 * No Composer dependency changes.
 * T0004 added no Composer dependencies.
+* T0006 added no Composer dependency changes.
 
 ## Available Scripts / Commands
 
@@ -118,8 +135,13 @@ docker compose run --rm app sh -lc 'cd backend && php spark routes'
 | Backend | `docker compose -p dealsach_t0004 run --rm app sh -lc 'cd backend && php vendor/bin/phpunit'` | Passed | 27 tests, 149 assertions. |
 | Frontend | `docker compose run --rm frontend npm run build` | Passed | Existing Vite chunk-size warning remains. Host-local `npm run build` failed before code compilation because the host `frontend/node_modules` is missing Rollup's optional native package; Dockerized build is the repo-standard result. |
 | Frontend | `docker compose run --rm frontend npm run build` | Passed for T0005 | Existing Vite chunk-size warning remains. |
+| Frontend | `docker compose -p dealsach_t0006 run --rm frontend npm run build` | Passed for T0006 | Existing Vite chunk-size warning remains. |
 | Manual UI | Chrome headless screenshots at `/`, `/book/3`, and `/search?q=Tony&availability=available_now` | Passed for T0005 | Verified desktop 1366px homepage/detail and 360px mobile search render without unintended horizontal scrolling in captured states. |
+| Manual UI | Chrome headless screenshots at `/` 1366px, `/` 360px, and `/search?q=Tony&availability=available_now` 360px | Passed for T0006 | Verified homepage section order, no duplicate homepage search input, API-backed featured category shelves, and mobile rendering. Screenshots saved in `/private/tmp/dealsach-t0006-home-1366.png`, `/private/tmp/dealsach-t0006-home-360.png`, and `/private/tmp/dealsach-t0006-search-360.png`. |
 | API/Buy flow | `curl -s -o /dev/null -w '%{http_code} %{redirect_url}\n' http://localhost/go/offers/5` | Passed for T0005 | Returned `302 https://tiki.vn/nha-gia-kim-demo` after KI-0008 writable ownership workaround. |
+| API/Buy flow | `curl -s -o /dev/null -w '%{http_code} %{redirect_url}\n' http://localhost/go/offers/5` | Passed for T0006 | Returned `302 https://tiki.vn/nha-gia-kim-demo` on a fresh disposable stack without manual `chown`. |
+| Backend | `docker compose -p dealsach_t0006 run --rm app sh -lc 'cd backend && php vendor/bin/phpunit'` | Passed for T0006 | 27 tests, 161 assertions. |
+| Docker runtime | `docker compose -p dealsach_t0006 up -d --build`; migrate/seed; writable/API/redirect checks | Passed for T0006 | `backend/writable` paths owned by `www-data www-data`; `GET /api/public/filters` and `GET /api/public/discovery` returned 200. Initial first migrate attempt hit MariaDB startup timing with `Connection refused`, rerun passed after DB was ready. |
 
 ## Public API State
 
@@ -166,6 +188,11 @@ Scenario coverage:
 * 4 redirect-failure offer scenarios through missing or invalid destinations.
 * Seeded successful Affiliate Redirect scenarios for popular clicked deals.
 
+T0006 expanded featured and popular-clicked demo coverage:
+
+* Featured books now span 6 active API filter categories: `cong-nghe`, `kinh-te`, `ky-nang-song`, `lich-su`, `thieu-nhi`, and `van-hoc-viet-nam`.
+* Discovery popular clicked deals include multiple ranked books across Tiki, Fahasa, Lazada, and Shopee.
+
 ## Manual Verification Performed
 
 T0005:
@@ -187,6 +214,23 @@ T0005:
 15. Captured book detail at 1366px: original-style hero, disabled wishlist affordance, best-price block, market-price row, affiliate disclosure, and grouped offer structure rendered.
 16. Captured search at 360px and 1600px height: mobile header, horizontally scrollable category chips, filters, result card, pagination, and required disclaimer rendered without unintended horizontal scrolling in the captured state.
 
+T0006:
+
+1. Reviewed required docs and `docs/implementation_logs/T0006.md`.
+2. Created branch `feature/t0006-close-review-gaps` from `main`.
+3. Confirmed `rg -n "navCategories|featuredCategories|priceDropBooks|popularDeals" frontend/src/app` returns no active runtime mock arrays/header category list.
+4. Ran `docker compose -p dealsach_t0006 up -d --build`; fresh app container started with `php-fpm` as the long-running process.
+5. Ran migrations and `DealSachDemoSeeder`; the first attempt hit MariaDB startup timing, rerun passed.
+6. Verified `backend/writable`, `cache`, `logs`, `session`, and `uploads` are owned by `www-data www-data` inside the running app container.
+7. Verified `GET /api/public/filters` returned 200 with the active seeded category slugs.
+8. Verified `GET /api/public/discovery` returned 200 with featured books grouped across multiple categories and popular clicked deal metadata.
+9. Verified `GET /go/offers/5` returned `302 https://tiki.vn/nha-gia-kim-demo` without manual ownership correction.
+10. Ran Dockerized backend PHPUnit and frontend build; both passed.
+11. Captured homepage at 1366px and 360px plus mobile search at 360px. Screenshots:
+    * `/private/tmp/dealsach-t0006-home-1366.png`
+    * `/private/tmp/dealsach-t0006-home-360.png`
+    * `/private/tmp/dealsach-t0006-search-360.png`
+
 ## Known Issues
 
 See `docs/Known_Issues_And_Followups.md`.
@@ -195,10 +239,10 @@ Closed in T0004:
 
 * KI-0007 — popular clicked deals now use persisted successful Affiliate Redirect records.
 
-Open after T0004:
+Closed in T0006:
 
-* KI-0008 — fresh disposable long-running Docker app containers can need writable-volume ownership normalization before serving HTTP traffic. T0005 verification hit this issue and used `docker compose -p dealsach_t0005 exec app sh -lc 'chown -R www-data:www-data backend/writable'` as a disposable-stack workaround.
+* KI-0008 — fresh disposable long-running Docker app containers now normalize `backend/writable` ownership during startup without a manual `chown`.
 
 ## Next Recommended Ticket
 
-T0006 — Normalize long-running Docker writable-volume ownership, or continue with the next small public feature ticket after merging T0005.
+T0007 — Decide whether to add real demo cover image assets for `/demo/covers/*`, or continue with the next small public feature ticket. T0006 verification still shows graceful cover fallback cards because the referenced demo cover files are absent.

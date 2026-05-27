@@ -1,14 +1,33 @@
-import { useState } from "react";
-import { Outlet, useNavigate } from "react-router";
+import { useEffect, useState } from "react";
+import { Outlet, useLocation, useNavigate } from "react-router";
 import { Search, Heart, User, BookOpen, Menu, X } from "lucide-react";
-import { C, FONT, border2, border3, shadow4, navCategories, CategoryChip } from "./shared";
+import { apiErrorMessage, fetchFilters, FiltersResponse } from "./api";
+import { C, FONT, border2, border3, shadow4, CategoryChip } from "./shared";
 
 function Header() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [activeCat, setActiveCat] = useState<string | null>(null);
   const [searchFocused, setSearchFocused] = useState(false);
+  const [filters, setFilters] = useState<FiltersResponse | null>(null);
+  const [filterError, setFilterError] = useState<string | null>(null);
+  const activeCategory = location.pathname === "/search" ? new URLSearchParams(location.search).get("category") : null;
+
+  useEffect(() => {
+    let alive = true;
+    fetchFilters()
+      .then((response) => {
+        if (alive) setFilters(response);
+      })
+      .catch((err) => {
+        if (alive) setFilterError(apiErrorMessage(err));
+      });
+
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   return (
     <header className="sticky top-0 z-50" style={{ background: C.white, borderBottom: border2 }}>
@@ -52,12 +71,10 @@ function Header() {
           </form>
 
           {/* Category chips */}
-          <div className="flex items-center gap-2.5" style={{ overflowX: "auto", overflowY: "visible", flexWrap: "nowrap", paddingBottom: 4, scrollbarWidth: "none" }}>
-            {navCategories.map(cat => (
-              <CategoryChip key={cat.slug} label={cat.label} active={activeCat === cat.slug} onClick={() => {
-                const next = activeCat === cat.slug ? null : cat.slug;
-                setActiveCat(next);
-                if (next) navigate(`/search?category=${encodeURIComponent(next)}`);
+          <div className="flex items-center gap-2.5" style={{ overflowX: "auto", overflowY: "visible", flexWrap: "nowrap", paddingBottom: 4, scrollbarWidth: "none" }} title={filterError ?? undefined}>
+            {filters?.categories.map(cat => (
+              <CategoryChip key={cat.slug} label={cat.name} active={activeCategory === cat.slug} onClick={() => {
+                navigate(`/search?category=${encodeURIComponent(cat.slug)}`);
               }} />
             ))}
           </div>

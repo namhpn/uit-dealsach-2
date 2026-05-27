@@ -23,3 +23,9 @@ RUN cd backend && composer install --no-interaction --prefer-dist --optimize-aut
 
 COPY backend ./backend
 RUN chown -R www-data:www-data backend/writable
+
+COPY docker/php-entrypoint.sh /usr/local/bin/dealsach-php-entrypoint
+RUN chmod +x /usr/local/bin/dealsach-php-entrypoint
+
+ENTRYPOINT ["dealsach-php-entrypoint"]
+CMD ["php-fpm"]

@@ -85,6 +85,14 @@ docker compose run --rm --service-ports frontend npm run dev -- --host 0.0.0.0
    docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit'
    ```
 
+5. For Docker runtime tickets or HTTP verification, confirm the long-running app container owns writable runtime paths without manual correction:
+
+   ```bash
+   docker compose exec app sh -lc 'ls -ld backend/writable backend/writable/cache backend/writable/logs backend/writable/session backend/writable/uploads'
+   ```
+
+   Expected result: the listed paths are owned by `www-data www-data`, and public HTTP/API checks do not require a manual `chown`.
+
 ## API Verification
 
 Use this section for backend tickets that add or change JSON APIs.

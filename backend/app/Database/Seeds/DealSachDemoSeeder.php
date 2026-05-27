@@ -167,7 +167,7 @@ class DealSachDemoSeeder extends Seeder
                 'description' => 'Góc nhìn phổ thông về tài sản, nợ và thói quen tài chính.',
                 'cover_image' => '/demo/covers/cha-giau-cha-ngheo.jpg',
                 'primary_category_id' => $categoryIds['kinh-te'],
-                'is_featured' => 0,
+                'is_featured' => 1,
                 'status' => 'active',
             ],
             [
@@ -179,7 +179,7 @@ class DealSachDemoSeeder extends Seeder
                 'description' => 'Các nguyên tắc viết mã dễ đọc, dễ bảo trì.',
                 'cover_image' => '/demo/covers/clean-code.jpg',
                 'primary_category_id' => $categoryIds['cong-nghe'],
-                'is_featured' => 0,
+                'is_featured' => 1,
                 'status' => 'active',
             ],
             [
@@ -203,7 +203,7 @@ class DealSachDemoSeeder extends Seeder
                 'description' => 'Tác phẩm thiếu nhi kinh điển của văn học Việt Nam.',
                 'cover_image' => '/demo/covers/de-men-phieu-luu-ky.jpg',
                 'primary_category_id' => $categoryIds['thieu-nhi'],
-                'is_featured' => 0,
+                'is_featured' => 1,
                 'status' => 'active',
             ],
             [
@@ -215,7 +215,7 @@ class DealSachDemoSeeder extends Seeder
                 'description' => 'Một công trình phổ thông về lịch sử Việt Nam.',
                 'cover_image' => '/demo/covers/viet-nam-su-luoc.jpg',
                 'primary_category_id' => $categoryIds['lich-su'],
-                'is_featured' => 0,
+                'is_featured' => 1,
                 'status' => 'active',
             ],
         ];
@@ -366,6 +366,11 @@ class DealSachDemoSeeder extends Seeder
             'b5_shopee_missing' => [136000, 135000, 133000, 132000, 130000, 129000, 127000, 126000, 124000, 122000, 121000, 119000, 118000, 118000],
             'b6_fahasa' => [90000, 90000, 89000, 89000, 88000, 88000, 87000, 87000, 86000, 86000, 85000, 85000, 84000, 84000],
             'b6_tiki_unavailable' => [92000, 92000, 91000, 91000, 90000, 90000, 89000, 89000, 88000, 88000, 87000, 87000, null, null],
+            'b8_shopee' => [142000, 141000, 140000, 138000, 137000, 136000, 134000, 132000, 130000, 129000, 127000, 126000, 125000, 125000],
+            'b9_tiki' => [214000, 214000, 211000, 211000, 209000, 207000, 206000, 204000, 202000, 199000, 197000, 196000, 195000, 195000],
+            'b11_tiki' => [76000, 76000, 75000, 75000, 74000, 74000, 73000, 73000, 72000, 71000, 70000, 70000, 69000, 69000],
+            'b11_fahasa' => [79000, 78000, 77000, 77000, 76000, 75000, 74000, 74000, 73000, 72000, 71000, 70000, 69000, 69000],
+            'b12_shopee' => [168000, 168000, 166000, 165000, 164000, 162000, 161000, 159000, 158000, 156000, 154000, 153000, 152000, 152000],
         ];
 
         $snapshot = [
@@ -437,6 +442,10 @@ class DealSachDemoSeeder extends Seeder
             ['offer' => 'b2_lazada', 'at' => '2026-05-24 09:00:00'],
             ['offer' => 'b3_tiki', 'at' => '2026-05-25 16:30:00'],
             ['offer' => 'b3_tiki', 'at' => '2026-05-18 08:00:00'],
+            ['offer' => 'b5_tiki', 'at' => '2026-05-25 13:45:00'],
+            ['offer' => 'b8_shopee', 'at' => '2026-05-24 18:05:00'],
+            ['offer' => 'b11_tiki', 'at' => '2026-05-25 19:15:00'],
+            ['offer' => 'b12_shopee', 'at' => '2026-05-23 20:30:00'],
         ];
 
         foreach ($events as $event) {

@@ -158,11 +158,14 @@ final class PublicCatalogApiTest extends CIUnitTestCase
     public function testDiscoveryReturnsPriceDropsAndPersistedPopularClickedDeals(): void
     {
         $body = $this->json($this->get('/api/public/discovery'));
+        $featuredCategorySlugs = array_unique(array_column($body['data']['featured_books']['items'], 'category_slug'));
 
         $this->assertNotEmpty($body['data']['featured_books']['items']);
+        $this->assertGreaterThanOrEqual(4, count($featuredCategorySlugs));
         $this->assertNotEmpty($body['data']['recent_price_drops']['items']);
         $this->assertGreaterThan(0, $body['data']['recent_price_drops']['items'][0]['price_drop']['amount']);
         $this->assertNotEmpty($body['data']['popular_clicked_deals']['items']);
+        $this->assertGreaterThanOrEqual(5, count($body['data']['popular_clicked_deals']['items']));
         $this->assertSame('Cà phê cùng Tony', $body['data']['popular_clicked_deals']['items'][0]['title']);
         $this->assertSame(3, $body['data']['popular_clicked_deals']['items'][0]['popular_clicked_deal']['redirect_count_7d']);
         $this->assertSame('Fahasa', $body['data']['popular_clicked_deals']['items'][0]['popular_clicked_deal']['top_retailer']['name']);
@@ -178,6 +181,11 @@ final class PublicCatalogApiTest extends CIUnitTestCase
         $this->assertContains('missing_valid_seller_link', $availabilityValues);
         $this->assertNotContains('no_available_offer', $availabilityValues);
         $this->assertContains('Tiki', array_column($body['data']['retailers'], 'name'));
+
+        $categorySlugs = array_column($body['data']['categories'], 'slug');
+        $this->assertContains('cong-nghe', $categorySlugs);
+        $this->assertContains('kinh-te', $categorySlugs);
+        $this->assertNotContains('tai-chinh', $categorySlugs);
     }
 
     private function bookIdByIsbn(string $isbn): int

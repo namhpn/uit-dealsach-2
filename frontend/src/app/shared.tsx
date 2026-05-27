@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Flame, Heart, Star, TrendingDown } from "lucide-react";
 import { Link, useNavigate } from "react-router";
-import { BookCardDto, coverFallback, formatVnd, PRICE_DISCLAIMER } from "./api";
+import { BookCardDto, coverFallback, FilterOption, formatVnd, PRICE_DISCLAIMER } from "./api";
 
 export interface DealBanner {
   id: number;
@@ -44,16 +44,6 @@ export const border3 = `3px solid ${C.black}`;
 export const border4 = `4px solid ${C.black}`;
 
 export const fmt = (n: number) => `${n.toLocaleString("vi-VN")} đ`;
-
-export const navCategories = [
-  { label: "Văn học Việt Nam", slug: "van-hoc-viet-nam" },
-  { label: "Văn học nước ngoài", slug: "van-hoc-nuoc-ngoai" },
-  { label: "Kỹ năng sống", slug: "ky-nang-song" },
-  { label: "Tài chính", slug: "tai-chinh" },
-  { label: "Lịch sử", slug: "lich-su" },
-  { label: "Tâm lý học", slug: "tam-ly-hoc" },
-  { label: "Thiếu nhi", slug: "thieu-nhi" },
-];
 
 export const dealBanners: DealBanner[] = [
   {
@@ -401,7 +391,30 @@ export function ApiDealSection({ title, icon, books, empty, showDrop = false, sh
   );
 }
 
-export function ApiFeaturedBooks({ title, books, empty }: { title: string; books: BookCardDto[]; empty: string | null }) {
+export function ApiFeaturedCategoryShelves({
+  title,
+  books,
+  categories,
+  empty,
+}: {
+  title: string;
+  books: BookCardDto[];
+  categories: Required<Pick<FilterOption, "id" | "name" | "slug">>[];
+  empty: string | null;
+}) {
+  const grouped = new Map<string, BookCardDto[]>();
+  books.forEach((book) => {
+    const current = grouped.get(book.category_slug) ?? [];
+    current.push(book);
+    grouped.set(book.category_slug, current);
+  });
+  const shelves = categories
+    .map((category) => ({
+      ...category,
+      books: grouped.get(category.slug) ?? [],
+    }))
+    .filter((category) => category.books.length > 0);
+
   return (
     <section style={{ border: border2, boxShadow: shadow8, background: C.white }}>
       <div className="flex items-center justify-between gap-4 px-4 py-3" style={{ borderBottom: border2, background: C.primary }}>
@@ -412,13 +425,27 @@ export function ApiFeaturedBooks({ title, books, empty }: { title: string; books
         <Link to="/search" className="text-[12px] font-bold uppercase" style={{ color: C.primaryFixed, fontFamily: FONT }}>Xem tất cả</Link>
       </div>
       <div className="flex flex-col md:flex-row">
-        <div className="shrink-0 p-5 md:w-[172px]" style={{ borderRight: border2, background: C.boneWhite }}>
-          <p className="text-[12px] font-bold uppercase leading-relaxed" style={{ color: C.primary, fontFamily: FONT }}>
-            Sách nổi bật được quản trị chọn và lấy từ API khám phá.
+        <div className="w-full p-5 md:w-[172px] md:shrink-0" style={{ borderRight: border2, background: C.boneWhite }}>
+          <p className="max-w-[260px] text-[12px] font-bold uppercase leading-relaxed md:max-w-none" style={{ color: C.primary, fontFamily: FONT, overflowWrap: "break-word" }}>
+            Sách nổi bật được quản trị chọn, nhóm theo danh mục từ API.
           </p>
         </div>
-        <div className="min-w-0 flex-1 p-6">
-          {books.length > 0 ? <ApiBookCarousel books={books} /> : <EmptyState message={empty ?? "Chưa có sách nổi bật để hiển thị."} />}
+        <div className="flex min-w-0 flex-1 flex-col gap-8 p-6">
+          {shelves.length > 0 ? (
+            shelves.map((category) => (
+              <div key={category.slug} className="min-w-0">
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                  <h3 className="text-[13px] font-extrabold uppercase" style={{ color: C.onSurface, fontFamily: FONT }}>{category.name}</h3>
+                  <Link to={`/search?category=${encodeURIComponent(category.slug)}`} className="text-[11px] font-bold uppercase" style={{ color: C.primary, fontFamily: FONT }}>
+                    Xem danh mục
+                  </Link>
+                </div>
+                <ApiBookCarousel books={category.books} />
+              </div>
+            ))
+          ) : (
+            <EmptyState message={empty ?? "Chưa có sách nổi bật để hiển thị."} />
+          )}
         </div>
       </div>
     </section>

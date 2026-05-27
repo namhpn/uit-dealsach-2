@@ -25,7 +25,7 @@ Use the repo-local `ci4` skills for CodeIgniter work, `ui-ux-pro-max` plus the f
 
 Use `diagnostic-protocol` for debugging, bug fixing, database/API/UI behavior changes, and production-affecting work: reproduce or verify the current system, trace the full flow, identify the exact break point, apply the smallest viable fix, and confirm the result with evidence.
 
-Use the repo-local `rtk` skill when the `rtk` command is available. Prefer `rtk <command>` for routine shell commands to reduce token-heavy output, and use `rtk proxy <command>` when raw output is needed for exact diagnostics.
+MUST Use the repo-local `rtk` skill. Prefer `rtk <command>` for routine shell commands to reduce token-heavy output, and use `rtk proxy <command>` when raw output is needed for exact diagnostics.
 
 ## Codex Ticket Workflow
 

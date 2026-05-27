@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router";
-import { ExternalLink, Info } from "lucide-react";
+import { ChevronLeft, ChevronRight, ExternalLink, Heart, Info } from "lucide-react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { apiErrorMessage, BookDetailResponse, fetchBookDetail, formatDate, formatVnd, OfferDto } from "../api";
+import { apiErrorMessage, BookCardDto, BookDetailResponse, fetchBookDetail, fetchDiscovery, formatDate, formatVnd, OfferDto } from "../api";
 import {
+  ApiDealBookCard,
   C,
   CoverImage,
   EmptyState,
@@ -17,18 +18,342 @@ import {
   shadow8,
 } from "../shared";
 
+function CoverCarousel({ title, category, image }: { title: string; category: string; image: string | null }) {
+  return (
+    <div className="relative flex select-none flex-col gap-3">
+      <div className="relative overflow-hidden" style={{ border: border2 }}>
+        <div style={{ height: 380 }}>
+          <CoverImage title={title} src={image} />
+        </div>
+        <div className="absolute left-4 top-4 px-3 py-1 text-[11px] font-bold uppercase" style={{ background: C.primary, color: C.white, fontFamily: FONT, border: border2, boxShadow: shadow4 }}>
+          {category}
+        </div>
+      </div>
+      <div className="flex items-center justify-between px-1">
+        <button disabled className="flex h-8 w-8 items-center justify-center opacity-50" style={{ border: border2, background: C.white, boxShadow: shadow4 }} aria-label="Trước">
+          <ChevronLeft size={16} />
+        </button>
+        <div className="flex gap-2">
+          <span style={{ width: 20, height: 8, background: C.primary, border: border2 }} />
+        </div>
+        <button disabled className="flex h-8 w-8 items-center justify-center opacity-50" style={{ border: border2, background: C.white, boxShadow: shadow4 }} aria-label="Tiếp">
+          <ChevronRight size={16} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function HeroSection({ data }: { data: BookDetailResponse }) {
+  return (
+    <section style={{ background: C.surfaceLow, border: border4, boxShadow: shadow8 }}>
+      <div className="flex flex-col gap-10 p-8 md:p-12 lg:flex-row lg:gap-14">
+        <div className="w-full shrink-0 lg:w-72">
+          <CoverCarousel title={data.book.title} category={data.book.category} image={data.book.cover_image} />
+        </div>
+
+        <div className="flex min-w-0 flex-1 flex-col gap-5">
+          <Link to="/search" className="text-[11px] font-bold uppercase" style={{ color: C.outline, fontFamily: FONT }}>
+            Trang chủ / {data.book.category} / {data.book.title}
+          </Link>
+          <h1 style={{ fontFamily: FONT, fontSize: "clamp(28px, 4vw, 48px)", fontWeight: 800, lineHeight: 1.05, color: C.black }}>
+            {data.book.title}
+          </h1>
+          <div className="flex flex-wrap gap-x-6 gap-y-1">
+            <span className="text-[13px]" style={{ fontFamily: FONT, color: C.onSurfaceVariant }}>
+              Tác giả: <strong style={{ color: C.onSurface }}>{data.book.author}</strong>
+            </span>
+            <span className="text-[13px]" style={{ fontFamily: FONT, color: C.onSurfaceVariant }}>
+              NXB: <strong style={{ color: C.onSurface }}>{data.book.publisher}</strong>
+            </span>
+          </div>
+
+          {data.book.description && (
+            <blockquote className="py-1 pl-5" style={{ borderLeft: `5px solid ${C.primary}` }}>
+              <p className="text-[14px] italic leading-relaxed" style={{ fontFamily: FONT, color: C.onSurfaceVariant }}>
+                {data.book.description}
+              </p>
+            </blockquote>
+          )}
+
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex flex-col gap-1.5 p-4" style={{ background: C.primaryFixed, border: border4, boxShadow: shadow8 }}>
+              <p className="text-[10px] font-bold uppercase" style={{ fontFamily: FONT, color: C.primary }}>
+                Giá tốt nhất hiện tại
+              </p>
+              {data.summary.lowest_eligible_price !== null ? (
+                <span style={{ fontFamily: FONT, fontSize: "clamp(28px,4vw,42px)", fontWeight: 800, color: C.primary, lineHeight: 1 }}>
+                  {formatVnd(data.summary.lowest_eligible_price)}
+                </span>
+              ) : (
+                <span className="text-[18px] font-extrabold" style={{ fontFamily: FONT, color: C.primary }}>
+                  {data.summary.status.label}
+                </span>
+              )}
+              <PriceDisclaimer compact />
+            </div>
+
+            <button
+              disabled
+              className="flex flex-col items-center justify-center gap-1.5 px-5 py-4 text-[11px] font-bold uppercase"
+              title="Tính năng danh sách yêu thích cần đăng nhập."
+              style={{ border: border2, background: C.white, color: C.onSurface, fontFamily: FONT, boxShadow: shadow4, minWidth: 120, cursor: "not-allowed" }}
+            >
+              <Heart size={20} />
+              Cần đăng nhập
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function OfferGroup({ title, description, offers, disclosure }: { title: string; description: string; offers: OfferDto[]; disclosure?: string }) {
+  const purchasable = offers.filter((offer) => offer.buy_action);
+
+  return (
+    <section>
+      <div className="mb-6 pb-4" style={{ borderBottom: `4px solid ${C.black}` }}>
+        <h2 className="text-[22px] font-extrabold uppercase" style={{ fontFamily: FONT, color: C.onSurface }}>
+          {title}
+        </h2>
+        <p className="mt-1 text-[13px]" style={{ fontFamily: FONT, color: C.onSurfaceVariant }}>
+          {description}
+        </p>
+        {disclosure && purchasable.length > 0 && (
+          <p className="mt-2 text-[12px] leading-relaxed" style={{ fontFamily: FONT, color: C.onSurfaceVariant }}>
+            {disclosure}
+          </p>
+        )}
+      </div>
+      {offers.length > 0 ? (
+        <div className="flex flex-col gap-2">
+          {offers.map((offer, index) => <OfferRow key={offer.id} offer={offer} isCheapest={index === 0 && Boolean(offer.buy_action)} />)}
+        </div>
+      ) : (
+        <EmptyState message="Chưa có ưu đãi trong nhóm này." />
+      )}
+    </section>
+  );
+}
+
+function OfferRow({ offer, isCheapest }: { offer: OfferDto; isCheapest: boolean }) {
+  const inactive = !offer.buy_action;
+  const price = offer.latest_price ?? offer.last_available_price;
+
+  return (
+    <div
+      className="flex flex-col gap-4 px-4 py-3 sm:flex-row sm:items-center"
+      style={{
+        background: isCheapest ? C.primaryFixed : inactive ? C.surfaceVariant : C.white,
+        border: inactive ? `2px dashed ${C.outlineVariant}` : border2,
+        borderLeft: isCheapest ? `8px solid ${C.primary}` : inactive ? `2px dashed ${C.outlineVariant}` : border2,
+        boxShadow: isCheapest ? shadow4 : "none",
+        opacity: inactive ? 0.72 : 1,
+      }}
+    >
+      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+        <span className="text-[15px] font-extrabold" style={{ fontFamily: FONT, color: inactive ? C.outline : C.onSurface }}>
+          {offer.retailer.name}
+        </span>
+        {isCheapest && (
+          <span className="shrink-0 px-2 py-0.5 text-[10px] font-bold uppercase" style={{ background: C.primary, color: C.white, fontFamily: FONT, border: border2 }}>
+            Rẻ nhất
+          </span>
+        )}
+        <span className="shrink-0 px-2 py-0.5 text-[10px] font-bold uppercase" style={{ background: inactive ? C.surfaceHigh : C.boneWhite, color: inactive ? C.outline : C.onSurface, fontFamily: FONT, border: `1px solid ${inactive ? C.outlineVariant : C.black}` }}>
+          {offer.status_label}
+        </span>
+        <span className="w-full text-[12px]" style={{ fontFamily: FONT, color: C.onSurfaceVariant }}>
+          {offer.merchant.name} / {offer.title}
+        </span>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-4 sm:shrink-0">
+        <div className="text-left sm:text-right">
+          {price !== null ? (
+            <p className="text-[20px] font-extrabold leading-none" style={{ fontFamily: FONT, color: isCheapest ? C.primary : inactive ? C.outline : C.onSurface }}>
+              {formatVnd(price)}
+            </p>
+          ) : (
+            <p className="text-[12px] italic" style={{ fontFamily: FONT, color: C.outline }}>Không có giá</p>
+          )}
+        </div>
+        {offer.buy_action ? (
+          <a
+            href={offer.buy_action.url}
+            className="flex items-center gap-2 px-4 py-2.5 text-[11px] font-bold uppercase"
+            style={{ background: isCheapest ? C.primary : C.boneWhite, color: isCheapest ? C.white : C.onSurface, fontFamily: FONT, border: border2, boxShadow: shadow4 }}
+          >
+            <ExternalLink size={12} />
+            {offer.buy_action.label}
+          </a>
+        ) : (
+          <span className="px-4 py-2.5 text-[11px] font-bold uppercase" style={{ background: C.surfaceHigh, color: C.outline, fontFamily: FONT, border: `1px solid ${C.outlineVariant}` }}>
+            Không có nút mua
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function MarketPriceList({ data }: { data: BookDetailResponse }) {
+  return (
+    <div className="flex flex-col gap-10">
+      <OfferGroup
+        title="Bảng giá thị trường"
+        description={`So sánh ${data.offers.purchasable.length} ưu đãi có thể đến nơi bán.`}
+        offers={data.offers.purchasable}
+        disclosure={data.summary.affiliate_disclosure}
+      />
+      <OfferGroup title="Tạm hết hàng" description="Các ưu đãi này chỉ hiển thị để tham khảo và không có nút mua." offers={data.offers.unavailable} />
+      <OfferGroup title="Giá tham khảo cũ" description="Giá cũ không dùng cho giá tốt nhất hiện tại." offers={data.offers.stale_reference} />
+      <OfferGroup title="Chưa có liên kết mua hợp lệ" description="DealSach không chuyển hướng khi thiếu liên kết nhà bán hợp lệ." offers={data.offers.missing_valid_seller_link} />
+    </div>
+  );
+}
+
+function TechnicalDetails({ data }: { data: BookDetailResponse }) {
+  const chartData = data.price_history.map((point) => ({
+    date: formatDate(point.date),
+    price: point.lowest_price,
+  }));
+
+  const details = [
+    { label: "Tác giả", value: data.book.author },
+    { label: "Nhà xuất bản", value: data.book.publisher },
+    { label: "Danh mục", value: data.book.category },
+    { label: "ISBN", value: data.book.isbn ?? "Chưa cập nhật" },
+    { label: "Số ưu đãi", value: `${data.summary.offer_count} ưu đãi` },
+    { label: "Tình trạng", value: data.summary.status.label },
+  ];
+
+  return (
+    <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+      <div style={{ border: border2, boxShadow: shadow8 }}>
+        <div className="px-5 py-3" style={{ background: C.onSurface, borderBottom: border2 }}>
+          <h3 className="text-[13px] font-extrabold uppercase" style={{ fontFamily: FONT, color: C.white }}>
+            Chi tiết sách
+          </h3>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2" style={{ background: C.boneWhite }}>
+          {details.map(({ label, value }, index) => (
+            <div key={label} className="px-5 py-3" style={{ borderBottom: `1px solid ${C.outlineVariant}`, borderRight: index % 2 === 0 ? `1px solid ${C.outlineVariant}` : "none" }}>
+              <p className="mb-0.5 text-[10px] font-bold uppercase" style={{ fontFamily: FONT, color: C.outline }}>{label}</p>
+              <p className="text-[14px] font-bold" style={{ fontFamily: FONT, color: C.onSurface }}>{value}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ border: border2, boxShadow: shadow8 }}>
+        <div className="px-5 py-3" style={{ background: C.onSurface, borderBottom: border2 }}>
+          <h3 className="text-[13px] font-extrabold uppercase" style={{ fontFamily: FONT, color: C.white }}>
+            Lịch sử giá
+          </h3>
+        </div>
+        <div className="flex flex-col gap-4 p-5" style={{ background: C.white }}>
+          {chartData.length > 0 ? (
+            <div style={{ height: 180 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="priceGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={C.primary} stopOpacity={0.25} />
+                      <stop offset="95%" stopColor={C.primary} stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke={C.outlineVariant} />
+                  <XAxis dataKey="date" tick={{ fontFamily: FONT, fontSize: 10, fill: C.outline }} />
+                  <YAxis tick={{ fontFamily: FONT, fontSize: 10, fill: C.outline }} tickFormatter={(value) => `${Math.round(Number(value) / 1000)}k`} />
+                  <Tooltip contentStyle={{ fontFamily: FONT, fontSize: 12, border: border2, background: C.white, borderRadius: 0 }} formatter={(value) => [formatVnd(Number(value)), "Giá"]} />
+                  <Area type="monotone" dataKey="price" stroke={C.primary} strokeWidth={2} fill="url(#priceGrad)" dot={{ fill: C.primary, stroke: C.black, strokeWidth: 2, r: 4 }} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <EmptyState message="Chưa có lịch sử giá đủ điều kiện để hiển thị." />
+          )}
+          <div className="pt-3" style={{ borderTop: border2 }}>
+            <p className="mb-1 text-[12px] font-bold uppercase" style={{ fontFamily: FONT, color: C.outline }}>
+              Nhắc giá
+            </p>
+            <p className="text-[12px] leading-relaxed" style={{ fontFamily: FONT, color: C.onSurfaceVariant }}>
+              Tính năng nhắc giá cần tài khoản đã xác thực. Giao diện này chỉ hiển thị lời nhắc đăng nhập trong phạm vi hiện tại.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function RelatedBooks({ books }: { books: BookCardDto[] }) {
+  if (books.length === 0) return null;
+
+  return (
+    <section>
+      <div className="mb-6 pb-4" style={{ borderBottom: `4px solid ${C.black}` }}>
+        <h2 className="text-[22px] font-extrabold uppercase" style={{ fontFamily: FONT, color: C.onSurface }}>
+          Sách liên quan
+        </h2>
+      </div>
+      <div className="flex flex-wrap gap-5">
+        {books.map((book) => <ApiDealBookCard key={book.id} book={book} compact />)}
+      </div>
+    </section>
+  );
+}
+
+function DisclaimerBlock({ data }: { data: BookDetailResponse }) {
+  return (
+    <div className="flex gap-5 p-6 md:p-8" style={{ background: C.primaryFixed, border: border4, boxShadow: shadow8 }}>
+      <div className="mt-1 shrink-0">
+        <Info size={28} style={{ color: C.primary }} strokeWidth={2.5} />
+      </div>
+      <div className="flex flex-col gap-2">
+        <p className="text-[12px] font-extrabold uppercase" style={{ fontFamily: FONT, color: C.primary }}>
+          Lưu ý về giá & liên kết
+        </p>
+        <p className="text-[14px] leading-relaxed" style={{ fontFamily: FONT, color: C.onSurface }}>
+          DealSach không bán sách trực tiếp. Khi nhấn nút mua, bạn sẽ được chuyển đến trang của nhà bán bên ngoài nếu liên kết hợp lệ.
+        </p>
+        <p className="text-[13px] leading-relaxed" style={{ fontFamily: FONT, color: C.onSurfaceVariant }}>
+          {data.summary.affiliate_disclosure}
+        </p>
+        <PriceDisclaimer />
+      </div>
+    </div>
+  );
+}
+
 export default function ProductDetailPage() {
   const { id } = useParams();
   const [data, setData] = useState<BookDetailResponse | null>(null);
+  const [related, setRelated] = useState<BookCardDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let alive = true;
-    if (!id) return;
-    fetchBookDetail(id)
-      .then((response) => {
-        if (alive) setData(response);
+    if (!id) return undefined;
+
+    Promise.all([fetchBookDetail(id), fetchDiscovery()])
+      .then(([detail, discovery]) => {
+        if (!alive) return;
+        setData(detail);
+        const candidates = [
+          ...discovery.featured_books.items,
+          ...discovery.recent_price_drops.items,
+          ...discovery.popular_clicked_deals.items,
+        ];
+        const unique = new Map<number, BookCardDto>();
+        candidates.forEach((book) => {
+          if (book.id !== detail.book.id) unique.set(book.id, book);
+        });
+        setRelated(Array.from(unique.values()).slice(0, 4));
       })
       .catch((err) => {
         if (alive) setError(apiErrorMessage(err));
@@ -42,6 +367,11 @@ export default function ProductDetailPage() {
     };
   }, [id]);
 
+  const hasAnyOffers = useMemo(() => {
+    if (!data) return false;
+    return Object.values(data.offers).some((group) => group.length > 0);
+  }, [data]);
+
   if (loading) {
     return <main className="mx-auto max-w-[1200px] px-4 py-10 sm:px-8"><LoadingState label="Đang tải chi tiết sách..." /></main>;
   }
@@ -50,117 +380,13 @@ export default function ProductDetailPage() {
     return <main className="mx-auto max-w-[1200px] px-4 py-10 sm:px-8"><ErrorState message={error ?? "Không tìm thấy sách công khai phù hợp."} /></main>;
   }
 
-  const chartData = data.price_history.map((point) => ({
-    date: formatDate(point.date),
-    price: point.lowest_price,
-  }));
-
   return (
-    <main className="mx-auto flex max-w-[1200px] flex-col gap-10 px-4 py-10 sm:px-8">
-      <section className="grid gap-8 p-5 lg:grid-cols-[300px_1fr]" style={{ background: C.surfaceLow, border: border4, boxShadow: shadow8 }}>
-        <div className="overflow-hidden" style={{ aspectRatio: "2/3", border: border2 }}>
-          <CoverImage title={data.book.title} src={data.book.cover_image} />
-        </div>
-        <div className="flex min-w-0 flex-col gap-5">
-          <Link to="/search" className="text-[12px] font-bold uppercase" style={{ color: C.primary, fontFamily: FONT }}>Tìm kiếm / {data.book.category}</Link>
-          <h1 className="text-[32px] font-extrabold leading-tight md:text-[46px]" style={{ fontFamily: FONT }}>{data.book.title}</h1>
-          <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm" style={{ color: C.onSurfaceVariant, fontFamily: FONT }}>
-            <span>Tác giả: <strong style={{ color: C.onSurface }}>{data.book.author}</strong></span>
-            <span>NXB: <strong style={{ color: C.onSurface }}>{data.book.publisher}</strong></span>
-            <span>ISBN: <strong style={{ color: C.onSurface }}>{data.book.isbn ?? "Chưa cập nhật"}</strong></span>
-          </div>
-          {data.book.description && <p className="max-w-3xl text-[15px] leading-relaxed" style={{ color: C.onSurfaceVariant, fontFamily: FONT }}>{data.book.description}</p>}
-          <div className="flex flex-wrap gap-4">
-            <div className="p-4" style={{ background: C.primaryFixed, border: border2, boxShadow: shadow4 }}>
-              <p className="text-[10px] font-extrabold uppercase tracking-widest" style={{ color: C.primary, fontFamily: FONT }}>Giá tham khảo thấp nhất</p>
-              {data.summary.lowest_eligible_price !== null ? (
-                <strong className="mt-2 block text-[32px] leading-none" style={{ color: C.primary, fontFamily: FONT }}>{formatVnd(data.summary.lowest_eligible_price)}</strong>
-              ) : (
-                <strong className="mt-2 block text-[18px]" style={{ color: C.primary, fontFamily: FONT }}>{data.summary.status.label}</strong>
-              )}
-            </div>
-            <div className="p-4" style={{ background: C.white, border: border2 }}>
-              <p className="text-[10px] font-extrabold uppercase tracking-widest" style={{ color: C.outline, fontFamily: FONT }}>Số ưu đãi theo dõi</p>
-              <strong className="mt-2 block text-[28px] leading-none" style={{ fontFamily: FONT }}>{data.summary.offer_count}</strong>
-            </div>
-          </div>
-          <PriceDisclaimer />
-        </div>
-      </section>
-
-      <OfferGroup title="Có thể đến nơi bán" offers={data.offers.purchasable} disclosure={data.summary.affiliate_disclosure} />
-      <OfferGroup title="Tạm hết hàng" offers={data.offers.unavailable} />
-      <OfferGroup title="Giá tham khảo cũ" offers={data.offers.stale_reference} />
-      <OfferGroup title="Chưa có liên kết mua hợp lệ" offers={data.offers.missing_valid_seller_link} />
-
-      <section className="p-5" style={{ background: C.white, border: border2, boxShadow: shadow8 }}>
-        <h2 className="mb-4 text-[18px] font-extrabold uppercase" style={{ fontFamily: FONT }}>Lịch sử giá tham khảo</h2>
-        {chartData.length > 0 ? (
-          <div style={{ height: 260 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="priceHistory" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={C.primary} stopOpacity={0.25} />
-                    <stop offset="95%" stopColor={C.primary} stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke={C.outlineVariant} />
-                <XAxis dataKey="date" tick={{ fontFamily: FONT, fontSize: 11, fill: C.outline }} />
-                <YAxis tick={{ fontFamily: FONT, fontSize: 11, fill: C.outline }} tickFormatter={(value) => `${Math.round(Number(value) / 1000)}k`} />
-                <Tooltip contentStyle={{ fontFamily: FONT, fontSize: 12, border: border2, background: C.white, borderRadius: 0 }} formatter={(value) => [formatVnd(Number(value)), "Giá"]} />
-                <Area type="monotone" dataKey="price" stroke={C.primary} strokeWidth={2} fill="url(#priceHistory)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        ) : <EmptyState message="Chưa có lịch sử giá đủ điều kiện để hiển thị." />}
-      </section>
-
-      <section className="flex gap-4 p-5" style={{ background: C.primaryFixed, border: border4, boxShadow: shadow8 }}>
-        <Info size={24} style={{ color: C.primary }} />
-        <div className="text-sm leading-relaxed" style={{ fontFamily: FONT }}>
-          <strong>DealSach không bán sách trực tiếp.</strong>
-          <p>{data.summary.affiliate_disclosure}</p>
-          <PriceDisclaimer />
-        </div>
-      </section>
+    <main className="mx-auto flex max-w-[1200px] flex-col gap-12 px-4 py-10 sm:px-8">
+      <HeroSection data={data} />
+      {hasAnyOffers ? <MarketPriceList data={data} /> : <EmptyState message="Sách này chưa có ưu đãi công khai để so sánh." />}
+      <TechnicalDetails data={data} />
+      <RelatedBooks books={related} />
+      <DisclaimerBlock data={data} />
     </main>
-  );
-}
-
-function OfferGroup({ title, offers, disclosure }: { title: string; offers: OfferDto[]; disclosure?: string }) {
-  return (
-    <section className="flex flex-col gap-3">
-      <h2 className="text-[18px] font-extrabold uppercase" style={{ fontFamily: FONT }}>{title}</h2>
-      {disclosure && <p className="text-[12px] leading-relaxed" style={{ color: C.onSurfaceVariant, fontFamily: FONT }}>{disclosure}</p>}
-      {offers.length === 0 ? <EmptyState message="Chưa có ưu đãi trong nhóm này." /> : (
-        <div className="flex flex-col gap-3">
-          {offers.map((offer) => <OfferRow key={offer.id} offer={offer} />)}
-        </div>
-      )}
-    </section>
-  );
-}
-
-function OfferRow({ offer }: { offer: OfferDto }) {
-  const price = offer.latest_price ?? offer.last_available_price;
-  return (
-    <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center" style={{ background: offer.buy_action ? C.white : C.surfaceVariant, border: border2 }}>
-      <div className="min-w-0 flex-1">
-        <h3 className="font-extrabold" style={{ fontFamily: FONT }}>{offer.title}</h3>
-        <p className="text-sm" style={{ color: C.onSurfaceVariant, fontFamily: FONT }}>{offer.retailer.name} / {offer.merchant.name}</p>
-        <span className="mt-2 inline-block px-2 py-1 text-[11px] font-bold" style={{ background: C.boneWhite, border: `1px solid ${C.black}`, fontFamily: FONT }}>{offer.status_label}</span>
-      </div>
-      <div className="flex flex-wrap items-center gap-3 sm:justify-end">
-        <strong className="text-[20px]" style={{ color: offer.latest_price ? C.secondary : C.outline, fontFamily: FONT }}>{price ? formatVnd(price) : "Không có giá"}</strong>
-        {offer.buy_action ? (
-          <a href={offer.buy_action.url} className="inline-flex items-center gap-2 px-4 py-3 text-[12px] font-extrabold uppercase" style={{ background: C.primary, color: C.white, border: border2, boxShadow: shadow4, fontFamily: FONT }}>
-            <ExternalLink size={14} /> {offer.buy_action.label}
-          </a>
-        ) : (
-          <span className="px-4 py-3 text-[12px] font-extrabold uppercase" style={{ background: C.surfaceHigh, color: C.outline, border: `1px solid ${C.outlineVariant}`, fontFamily: FONT }}>Không có nút mua</span>
-        )}
-      </div>
-    </div>
   );
 }

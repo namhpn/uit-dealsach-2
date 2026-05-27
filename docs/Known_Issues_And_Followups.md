@@ -6,7 +6,7 @@ Codex must record issues here instead of fixing them when they are outside the c
 
 | ID | Date | Source Ticket | Area | Issue / Follow-up | Severity | Suggested Ticket |
 |---|---:|---|---|---|---|---|
-| KI-0008 | 2026-05-26 | T0004 | Docker runtime | Fresh disposable `app_writable` named volumes can create `backend/writable/*` directories owned by `root`, causing the running PHP-FPM stack to return HTTP 500 until ownership is corrected. Tests and Spark commands still pass because they run in one-off containers. | Medium | Normalize writable-volume ownership for long-running Docker app containers. |
+| KI-0008 | 2026-05-26 | T0004, observed again in T0005 | Docker runtime | Fresh disposable `app_writable` named volumes can create `backend/writable/*` directories owned by `root`, causing the running PHP-FPM stack to return HTTP 500 until ownership is corrected. Tests and Spark commands still pass because they run in one-off containers. T0005 browser/API verification required `docker compose -p dealsach_t0005 exec app sh -lc 'chown -R www-data:www-data backend/writable'` before public API and Buy redirects served correctly. | Medium | Normalize writable-volume ownership for long-running Docker app containers. |
 
 ## Closed Items
 

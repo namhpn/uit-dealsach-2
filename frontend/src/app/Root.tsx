@@ -54,8 +54,8 @@ function Header() {
           {/* Category chips */}
           <div className="flex items-center gap-2.5" style={{ overflowX: "auto", overflowY: "visible", flexWrap: "nowrap", paddingBottom: 4, scrollbarWidth: "none" }}>
             {navCategories.map(cat => (
-              <CategoryChip key={cat} label={cat} active={activeCat === cat} onClick={() => {
-                const next = activeCat === cat ? null : cat;
+              <CategoryChip key={cat.slug} label={cat.label} active={activeCat === cat.slug} onClick={() => {
+                const next = activeCat === cat.slug ? null : cat.slug;
                 setActiveCat(next);
                 if (next) navigate(`/search?category=${encodeURIComponent(next)}`);
               }} />
@@ -131,7 +131,7 @@ function Footer() {
         </div>
         <div className="pt-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3" style={{ borderTop: "1px solid rgba(255,255,255,0.15)" }}>
           <p className="text-[11px] leading-relaxed max-w-2xl" style={{ color: "#80bea6", fontFamily: FONT }}>
-            <strong style={{ color: C.white }}>Lưu ý:</strong> DealSach chỉ tổng hợp và so sánh giá sách từ các nhà bán lẻ bên ngoài. Chúng tôi không xử lý thanh toán, giao hàng, đổi trả hoặc hỗ trợ đơn hàng.
+            <strong style={{ color: C.white }}>Lưu ý:</strong> DealSach chỉ tổng hợp và so sánh giá tham khảo từ các nhà bán bên ngoài. Người đọc luôn kiểm tra lại thông tin tại nơi bán trước khi mua.
           </p>
           <p className="text-[11px] whitespace-nowrap font-bold uppercase tracking-wide" style={{ color: "#80bea6", fontFamily: FONT }}>© 2026 DealSach</p>
         </div>

@@ -4,9 +4,9 @@ Last updated: 2026-05-26
 
 ## Current Branch
 
-`feature/t0004-public-catalog-affiliate-buy-flow`
+`feature/t0005-restore-public-frontend-design`
 
-Baseline source for T0004: `main` at `8aacdbb` (`Add ticket T0004`), after T0003 was merged.
+Baseline source for T0005: `main`, after T0004 was merged locally.
 
 ## Completed Tickets
 
@@ -17,6 +17,7 @@ Baseline source for T0004: `main` at `8aacdbb` (`Add ticket T0004`), after T0003
 | T0002 | 2026-05-26 | Added core DealSach domain schema, CI4 models, deterministic Vietnamese demo seed data, backend tests, frontend Vite audit fix, and frontend generated-output ignore coverage. |
 | T0003 | 2026-05-26 | Added public catalog JSON read APIs, centralized current offer eligibility, book detail offer grouping, book-level price history, search/filter/sort/pagination, discovery sections, and backend API tests without changing frontend UI or database schema. |
 | T0004 | 2026-05-26 | Added public Buy-flow event persistence, `/go/offers/{offerId}` redirect handling, Affiliate Redirect-backed popular clicked deals, and API-backed homepage/search/detail React pages. |
+| T0005 | 2026-05-26 | Restored the public homepage and book detail Neubrutalist visual structure from `frontend-original/` while preserving API-backed discovery, search, detail, offer grouping, and Buy-flow behavior. |
 
 ## Current Folder Structure
 
@@ -59,6 +60,17 @@ backend/app/Models/RedirectFailureModel.php
 backend/tests/feature/BuyFlowFeatureTest.php
 frontend/src/app/api.ts
 frontend/src/app/pages/SearchPage.tsx
+```
+
+T0005 changed only public frontend presentation files and required process docs:
+
+```text
+frontend/src/app/Root.tsx
+frontend/src/app/pages/HomePage.tsx
+frontend/src/app/pages/ProductDetailPage.tsx
+frontend/src/app/shared.tsx
+docs/Repo_Current_State.md
+docs/Known_Issues_And_Followups.md
 ```
 
 ## Installed Dependencies
@@ -105,6 +117,9 @@ docker compose run --rm app sh -lc 'cd backend && php spark routes'
 | Backend | `docker compose -p dealsach_t0004 run --rm app sh -lc 'cd backend && php spark routes'` | Passed | Public catalog API routes and `GET /go/offers/{offerId}` registered. |
 | Backend | `docker compose -p dealsach_t0004 run --rm app sh -lc 'cd backend && php vendor/bin/phpunit'` | Passed | 27 tests, 149 assertions. |
 | Frontend | `docker compose run --rm frontend npm run build` | Passed | Existing Vite chunk-size warning remains. Host-local `npm run build` failed before code compilation because the host `frontend/node_modules` is missing Rollup's optional native package; Dockerized build is the repo-standard result. |
+| Frontend | `docker compose run --rm frontend npm run build` | Passed for T0005 | Existing Vite chunk-size warning remains. |
+| Manual UI | Chrome headless screenshots at `/`, `/book/3`, and `/search?q=Tony&availability=available_now` | Passed for T0005 | Verified desktop 1366px homepage/detail and 360px mobile search render without unintended horizontal scrolling in captured states. |
+| API/Buy flow | `curl -s -o /dev/null -w '%{http_code} %{redirect_url}\n' http://localhost/go/offers/5` | Passed for T0005 | Returned `302 https://tiki.vn/nha-gia-kim-demo` after KI-0008 writable ownership workaround. |
 
 ## Public API State
 
@@ -153,24 +168,24 @@ Scenario coverage:
 
 ## Manual Verification Performed
 
-1. Reviewed required docs and T0004 scope.
-2. Created branch `feature/t0004-public-catalog-affiliate-buy-flow` from `main`.
-3. Confirmed changes are limited to allowed backend Buy-flow/API, frontend public UI, tests, and required process docs.
-4. Ran PHP syntax checks for new and changed backend files.
-5. Ran local backend PHPUnit.
-6. Started a clean disposable database with `docker compose -p dealsach_t0004 up -d --build db`.
-7. Ran migrations against disposable MariaDB.
-8. Ran `DealSachDemoSeeder` against disposable MariaDB.
-9. Ran `php spark routes` in Docker and confirmed public catalog API routes plus `GET /go/offers/{offerId}`.
-10. Ran Docker backend PHPUnit.
-11. Ran Docker frontend build.
-12. Started the disposable full stack and Dockerized Vite dev server.
-13. Captured homepage at 1366px: API-backed hero, featured books, and discovery sections rendered.
-14. Captured search page at 360px with `q=Tony&availability=available_now`: filters and mobile header rendered; category chips remain horizontally scrollable.
-15. Captured book detail at 1366px: API-backed metadata, grouped offers, Buy action, price disclaimer, affiliate disclosure, and price history rendered.
-16. Verified `GET /go/offers/5` returns HTTP 302 with `Location: https://tiki.vn/nha-gia-kim-demo`.
-17. Verified `GET /go/offers/6` returns HTTP 409 Vietnamese failure page.
-18. Verified `GET /api/public/discovery` returns CORS-enabled JSON and popular clicked deal metadata from persisted Affiliate Redirect records.
+T0005:
+
+1. Reviewed required docs, T0005 ticket, and original reference files in `frontend-original/src/app/pages/HomePage.tsx`, `frontend-original/src/app/pages/ProductDetailPage.tsx`, and `frontend-original/src/app/shared.tsx`.
+2. Created branch `feature/t0005-restore-public-frontend-design` from `main`.
+3. Confirmed changed application files stay limited to public frontend UI files allowed by T0005.
+4. Confirmed active runtime mock catalog arrays are removed from `frontend/src/app` with `rg -n "priceDropBooks|popularDeals|featuredCategories|const product =|const retailers =" frontend/src/app`.
+5. Confirmed forbidden marketplace wording is absent from `frontend/src/app` with `rg -n "giỏ|checkout|thanh toán|giao hàng|đơn hàng|shipping|payment|voucher|coupon|review|rating|đánh giá|bình luận" frontend/src/app`.
+6. Ran `docker compose run --rm frontend npm run build`; build passed with the existing Vite chunk-size warning.
+7. Started disposable stack with `docker compose -p dealsach_t0005 up -d --build`.
+8. Ran `docker compose -p dealsach_t0005 run --rm app sh -lc 'cd backend && php spark migrate && php spark db:seed DealSachDemoSeeder'`; migrations and seed passed.
+9. Started Dockerized Vite dev server with `docker compose -p dealsach_t0005 run --rm --service-ports frontend npm run dev -- --host 0.0.0.0`.
+10. Hit KI-0008 on the long-running app container, then applied disposable workaround `docker compose -p dealsach_t0005 exec app sh -lc 'chown -R www-data:www-data backend/writable'`.
+11. Verified `GET /api/public/discovery` returned HTTP 200 JSON with featured books, recent price drops, and popular clicked deal metadata.
+12. Verified `GET /api/public/books/3` returned API-backed detail data with purchasable and missing-link offer groups plus price history.
+13. Verified `GET /go/offers/5` returned `302 https://tiki.vn/nha-gia-kim-demo`.
+14. Captured homepage at 1366px: original-style banner carousel, prominent search, API-backed featured books, recent price-drop rail, and Neubrutalist cards rendered.
+15. Captured book detail at 1366px: original-style hero, disabled wishlist affordance, best-price block, market-price row, affiliate disclosure, and grouped offer structure rendered.
+16. Captured search at 360px and 1600px height: mobile header, horizontally scrollable category chips, filters, result card, pagination, and required disclaimer rendered without unintended horizontal scrolling in the captured state.
 
 ## Known Issues
 
@@ -182,8 +197,8 @@ Closed in T0004:
 
 Open after T0004:
 
-* KI-0008 — fresh disposable long-running Docker app containers can need writable-volume ownership normalization before serving HTTP traffic.
+* KI-0008 — fresh disposable long-running Docker app containers can need writable-volume ownership normalization before serving HTTP traffic. T0005 verification hit this issue and used `docker compose -p dealsach_t0005 exec app sh -lc 'chown -R www-data:www-data backend/writable'` as a disposable-stack workaround.
 
 ## Next Recommended Ticket
 
-T0005 — Normalize long-running Docker writable-volume ownership, or continue with the next small public feature ticket after merging T0004.
+T0006 — Normalize long-running Docker writable-volume ownership, or continue with the next small public feature ticket after merging T0005.

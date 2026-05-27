@@ -227,6 +227,79 @@ Use this section for tickets that add or change authenticated wishlist APIs.
 
    Expected result: status changes from `wishlisted: true` to `wishlisted: false`, and the list includes book-card metadata plus `added_at` before removal.
 
+## Price Alert API Verification
+
+Use this section for tickets that add or change authenticated price alert APIs.
+
+1. Confirm routes are registered:
+
+   ```bash
+   docker compose run --rm app sh -lc 'cd backend && php spark routes | grep -E "api/user/alerts|api/user/alert-preferences"'
+   ```
+
+   Expected result: list, detail, create, update, pause, reactivate, renew, restart-tracking, disable, and alert-preference routes are present.
+
+2. Confirm guest access is rejected:
+
+   ```bash
+   curl -i http://localhost/api/user/alerts
+   curl -i http://localhost/api/user/alert-preferences
+   ```
+
+   Expected result: HTTP 401 with Vietnamese JSON containing `status`, `message`, `data`, and `errors`.
+
+3. Authenticate using the Auth API verification flow above, then create a target-price alert:
+
+   ```bash
+   curl -i -b /tmp/dealsach-auth-cookies.txt \
+     -H 'Content-Type: application/json' \
+     -d '{"book_id":1,"alert_type":"target_price","target_price":90000}' \
+     http://localhost/api/user/alerts
+   ```
+
+   Expected result: Vietnamese success envelope with `alert_type: "target_price"`, `status: "Active"`, `target_price: 90000`, `notification_count: 0`, and an expiry timestamp.
+
+4. Create the same target-price alert again and verify no duplicate row exists:
+
+   ```bash
+   curl -i -b /tmp/dealsach-auth-cookies.txt \
+     -H 'Content-Type: application/json' \
+     -d '{"book_id":1,"alert_type":"target_price","target_price":90000}' \
+     http://localhost/api/user/alerts
+   docker compose exec db sh -lc 'mariadb -u"$MARIADB_USER" -p"$MARIADB_PASSWORD" "$MARIADB_DATABASE" -N -e "SELECT COUNT(*) FROM price_alerts WHERE user_id=1 AND book_id=1 AND alert_type='\''target_price'\'' AND target_price=90000"'
+   ```
+
+   Expected result: create returns the existing alert and the count remains `1`.
+
+5. Create and manage a new-lowest-price alert:
+
+   ```bash
+   curl -i -b /tmp/dealsach-auth-cookies.txt \
+     -H 'Content-Type: application/json' \
+     -d '{"book_id":1,"alert_type":"new_lowest_price"}' \
+     http://localhost/api/user/alerts
+   curl -s -b /tmp/dealsach-auth-cookies.txt http://localhost/api/user/alerts
+   curl -i -b /tmp/dealsach-auth-cookies.txt -X POST http://localhost/api/user/alerts/<ALERT_ID>/pause
+   curl -i -b /tmp/dealsach-auth-cookies.txt -X POST http://localhost/api/user/alerts/<ALERT_ID>/reactivate
+   curl -i -b /tmp/dealsach-auth-cookies.txt -X POST http://localhost/api/user/alerts/<ALERT_ID>/restart-tracking
+   curl -i -b /tmp/dealsach-auth-cookies.txt -X POST http://localhost/api/user/alerts/<ALERT_ID>/disable
+   ```
+
+   Expected result: the alert remains owned by the authenticated user, status changes follow the requested action, restart tracking resets notification fields, and disable preserves history.
+
+6. Read and update alert email preferences:
+
+   ```bash
+   curl -s -b /tmp/dealsach-auth-cookies.txt http://localhost/api/user/alert-preferences
+   curl -i -b /tmp/dealsach-auth-cookies.txt \
+     -H 'Content-Type: application/json' \
+     -X PATCH \
+     -d '{"alert_emails_enabled":false}' \
+     http://localhost/api/user/alert-preferences
+   ```
+
+   Expected result: default preference is enabled for users without a preference row; updating the preference does not change individual alert statuses.
+
 ## Public Catalog API Checks
 
 Use this section for DealSach catalog read endpoints.

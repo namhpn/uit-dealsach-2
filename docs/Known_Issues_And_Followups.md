@@ -7,6 +7,7 @@ Codex must record issues here instead of fixing them when they are outside the c
 | ID | Date | Source Ticket | Area | Issue / Follow-up | Severity | Suggested Ticket |
 |---|---:|---|---|---|---|---|
 | KI-0009 | 2026-05-27 | T0006 | Frontend demo assets | Seeded books reference `/demo/covers/*` image paths, but those files are not present in the current frontend/backend static assets. The UI falls back to generated cover initials correctly, but real cover imagery would make manual homepage/detail verification closer to the intended visual design. | Low | Add committed demo cover assets or update seed paths to existing static assets. |
+| KI-0010 | 2026-05-27 | T0009 | Docker local configuration | This workspace has no `.env` or `backend/.env`, so default `docker compose` database variables are blank and MariaDB restarts with `Database is uninitialized and password option is not specified`. T0009 verification used explicit demo environment variables for disposable Docker checks instead of adding config files outside the ticket scope. | Medium | Add a committed safe local env template or document a standard env bootstrap command for Docker verification. |
 
 ## Closed Items
 

@@ -1,26 +1,7 @@
-# Next Ticket Creation Template
-
-Use this template after each Codex run, after reviewing:
-
-- Codex completion report
-- `docs/Repo_Current_State.md`
-- `docs/Known_Issues_And_Followups.md`
-- Current PR diff / local diff
-- `docs/Tickets.md`
-
-The reviewer/planner fills this out before creating the next ticket.
-
----
-
 # 1. Review Input
 
 ## Previous Ticket
 Use Github tool to review repository at docs/implementation_logs/
-- Merge status:
-  - [ ] Not merged
-  - [ ] Merged
-  - [ ] Rejected
-  - [ ] Superseded
 
 ## Codex Completion Report Summary
 

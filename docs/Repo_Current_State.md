@@ -4,7 +4,7 @@ Last updated: 2026-05-27
 
 ## Current Branch
 
-`feature/t0011-alert-notification-engine`
+`feature/t0012-admin-foundation`
 
 Baseline source for T0007: local `main` after T0006 merge.
 
@@ -24,6 +24,7 @@ Baseline source for T0007: local `main` after T0006 merge.
 | T0009 | 2026-05-27 | Added price alert persistence, alert event history, account-level alert email preferences, authenticated alert/preference JSON APIs, and backend tests for alert creation, duplicate rules, owner scoping, lifecycle actions, expiry normalization, preferences, and public API stability. |
 | T0010 | 2026-05-27 | Added frontend price-alert API helpers, authenticated `/alerts` management page, book-detail alert creation controls, alert lifecycle actions, and account-level alert email preference controls. |
 | T0011 | 2026-05-27 | Added deterministic alert evaluation, mock alert emails, email deal-link click tracking, disable-alert links, alert notification persistence, focused backend tests, and authenticated `/account` settings integration. |
+| T0012 | 2026-05-27 | Added restricted Admin APIs, Admin audit persistence, deterministic seeded first Admin setup, user deactivation/reactivation safety behavior, Admin alert disabling, focused backend tests, and build-safe Admin frontend pages. |
 
 ## Current Folder Structure
 
@@ -136,6 +137,30 @@ docs/Repo_Current_State.md
 docs/Known_Issues_And_Followups.md
 ```
 
+T0012 changed:
+
+```text
+backend/app/Config/Routes.php
+backend/app/Controllers/AdminController.php
+backend/app/Database/Migrations/2026-05-27-000005_CreateAdminAuditLogsTable.php
+backend/app/Database/Seeds/DealSachDemoSeeder.php
+backend/app/Libraries/AdminAuditService.php
+backend/app/Libraries/AdminService.php
+backend/app/Models/AdminAuditLogModel.php
+backend/tests/feature/AdminFeatureTest.php
+frontend/src/app/api.ts
+frontend/src/app/Root.tsx
+frontend/src/app/routes.tsx
+frontend/src/app/pages/AdminPage.tsx
+frontend/src/app/pages/AdminUsersPage.tsx
+frontend/src/app/pages/AdminAlertsPage.tsx
+frontend/src/app/pages/AdminAuditPage.tsx
+docs/Manual_Verification_Guide.md
+docs/implementation_logs/T0012.md
+docs/Repo_Current_State.md
+docs/Known_Issues_And_Followups.md
+```
+
 T0008 changed:
 
 ```text
@@ -209,6 +234,7 @@ docs/Repo_Current_State.md
 * T0009 added no frontend, backend, Composer, or npm dependency changes.
 * T0010 added no frontend, backend, Composer, or npm dependency changes.
 * T0011 added no frontend, backend, Composer, or npm dependency changes.
+* T0012 added no frontend, backend, Composer, or npm dependency changes.
 
 ## Available Scripts / Commands
 
@@ -233,6 +259,7 @@ docker compose run --rm app sh -lc 'cd backend && php spark routes | grep -E "ap
 docker compose run --rm app sh -lc 'cd backend && php spark routes | grep -E "api/user/alerts|api/user/alert-preferences"'
 docker compose run --rm app sh -lc 'cd backend && php spark alerts:evaluate'
 docker compose run --rm app sh -lc 'cd backend && php spark routes | grep -E "email/deals|alerts/disable"'
+docker compose run --rm app sh -lc 'cd backend && php spark routes | grep -E "api/admin"'
 ```
 
 ## Build/Test Status
@@ -262,6 +289,12 @@ docker compose run --rm app sh -lc 'cd backend && php spark routes | grep -E "em
 | API/Auth | HTTP auth flow through `http://localhost` | Passed for T0007 | Requested code for `tester@example.com`, confirmed mock outbox code, verified session cookie, read authenticated `/api/auth/me`, logged out with expired cookie, and confirmed guest `/api/auth/me`. |
 | Frontend | `docker compose -p dealsach_t0010 run --rm frontend npm run build` | Passed for T0010 | Vite build completed; existing chunk-size warning remains. |
 | Backend | `docker compose -p dealsach_t0010 run --rm app sh -lc 'cd backend && php vendor/bin/phpunit'` | Passed for T0010 | Docker PHP 8.2 test runtime: 56 tests, 520 assertions. |
+| Backend | `find backend/app/Controllers backend/app/Libraries backend/app/Models backend/app/Database/Migrations backend/tests/database backend/tests/feature -name '*.php' -print0 \| xargs -0 -n1 php -l` | Passed for T0012 | No syntax errors in changed backend app and test files. |
+| Backend | `docker compose -p dealsach_t0012 run --rm --build app sh -lc 'cd backend && php vendor/bin/phpunit --filter Admin'` | Passed for T0012 | 4 tests, 26 assertions. |
+| Backend | `docker compose -p dealsach_t0012 run --rm --build app sh -lc 'cd backend && php vendor/bin/phpunit'` | Passed for T0012 | 64 tests, 612 assertions. |
+| Frontend | `docker compose -p dealsach_t0012 run --rm frontend npm run build` | Passed for T0012 | Existing Vite chunk-size warning remains. |
+| Backend/Docker | `docker compose -p dealsach_t0012 run --rm --build app sh -lc 'cd backend && php spark migrate && php spark db:seed DealSachDemoSeeder'` | Passed for T0012 | `admin_audit_logs` migration ran and `DealSachDemoSeeder` completed. |
+| Backend/Docker | Admin route and seed DB checks | Passed for T0012 | `api/admin/*` routes registered; `admin@dealsach.test` seeded as active Admin; `admin_audit_logs` table exists. Full stack `up` was blocked by host port `8080` conflict for phpMyAdmin; tracked as KI-0011. |
 | API/Public stability | `GET /api/public/books`; `GET /go/offers/5` | Passed for T0007 | Public books returned HTTP 200; Buy redirect returned `302 https://tiki.vn/nha-gia-kim-demo`. |
 | Backend | `cd backend && php vendor/bin/phpunit` | Passed for T0008 | Host PHP 8.4 / SQLite runtime: 45 tests, 331 assertions. |
 | Backend | `docker compose -p dealsach_t0008 run --rm app sh -lc 'cd backend && php spark migrate && php spark db:seed DealSachDemoSeeder'` | Passed for T0008 | Clean disposable MariaDB project created `wishlist_items` after account-access tables and seeded demo data. |
@@ -322,6 +355,20 @@ GET /api/user/alert-preferences
 PATCH /api/user/alert-preferences
 ```
 
+Registered Admin routes after T0012:
+
+```text
+GET /api/admin/me
+GET /api/admin/users
+GET /api/admin/users/{userId}
+POST /api/admin/users/{userId}/deactivate
+POST /api/admin/users/{userId}/reactivate
+GET /api/admin/alerts
+GET /api/admin/alerts/{alertId}
+POST /api/admin/alerts/{alertId}/disable
+GET /api/admin/audit
+```
+
 Catalog read behavior lives in `App\Libraries\PublicCatalogService` and is reused by list, detail, discovery, filters, and Buy-flow eligibility checks. It centralizes current eligibility, 48-hour freshness, valid affiliate destination checks, public no-price status priority, offer grouping, price range filtering, observation-time price history, recent price-drop calculation, and popular-clicked deal ranking.
 
 T0004 adds `App\Libraries\BuyFlowService` for Buy Attempt, Affiliate Redirect, and Redirect Failure event writes. `GET /go/offers/{offerId}` records a Buy Attempt for known offers, validates current eligible-offer and approved-domain destination rules, records Affiliate Redirect only on successful external redirects, and records Redirect Failure for known invalid or ineligible offers.
@@ -333,6 +380,8 @@ T0007 adds `App\Libraries\EmailVerificationService` and `App\Libraries\AuthServi
 T0008 adds `App\Libraries\WishlistService` and `App\Controllers\WishlistController`. Wishlist endpoints require an active session from `AuthService`, store one `wishlist_items` row per user/book pair, treat duplicate adds and missing removes as no-op successes, reject archived or nonexistent books on add, and keep existing archived-book wishlist entries visible with an archived marker.
 
 T0009 adds `App\Libraries\PriceAlertService`, `App\Libraries\AlertPreferenceService`, `App\Controllers\PriceAlertController`, and `App\Controllers\AlertPreferenceController`. Alert endpoints require an active session from `AuthService`, support target-price and new-lowest alert creation, enforce non-terminal duplicate rules, normalize past-due non-terminal alerts to Expired on service reads/actions, record alert events for creation and state-changing actions, and do not evaluate alerts or send alert emails. Alert preferences default to enabled when no row exists and update account-level email suppression without changing individual alert statuses.
+
+T0012 adds `App\Controllers\AdminController`, `App\Libraries\AdminService`, and `App\Libraries\AdminAuditService`. Admin endpoints require an active authenticated user with `role=admin`, reject guests with 401, reject registered non-admin users with 403, audit Admin mutations, block self/last-active-Admin deactivation, invalidate sessions for deactivated users, disable their Active alerts, and preserve historical records.
 
 ## Mock Data State
 
@@ -463,11 +512,11 @@ Closed in T0006:
 
 * KI-0008 — fresh disposable long-running Docker app containers now normalize `backend/writable` ownership during startup without a manual `chown`.
 
-Open after T0010:
+Open after T0012:
 
-* KI-0010 — this workspace has no `.env` or `backend/.env`, so default `docker compose` database variables are blank. T0009 Docker DB checks used explicit demo environment variables instead of adding config files outside ticket scope.
 * KI-0009 remains open — demo book cover paths still rely on fallback rendering because the referenced `/demo/covers/*` image files are not present.
+* KI-0011 remains open — full-stack `docker compose up` verification can be blocked when host port `8080` is already allocated for phpMyAdmin.
 
 ## Next Recommended Ticket
 
-Run an interactive browser/manual verification pass for the authenticated alert UI if visual evidence is required, or continue with the next planned DealSach account/admin ticket while keeping KI-0009 and KI-0010 separate.
+Continue with the next scoped ticket from `docs/Tickets.md`, keeping KI-0009 and KI-0011 separate unless a future ticket explicitly targets demo assets or local Docker port configurability.

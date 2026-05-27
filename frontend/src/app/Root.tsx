@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router";
-import { Search, Heart, User, BookOpen, Menu, X, LogOut, Bell } from "lucide-react";
+import { Search, Heart, User, BookOpen, Menu, X, LogOut, Bell, ShieldCheck } from "lucide-react";
 import { apiErrorMessage, fetchFilters, FiltersResponse } from "./api";
 import { AuthProvider, useAuth } from "./auth";
 import { C, FONT, border2, border3, shadow4, CategoryChip } from "./shared";
@@ -127,6 +127,17 @@ function Header() {
               <User size={18} />
             </button>
           )}
+          {auth.user?.role === "admin" && (
+            <button
+              aria-label="Quản trị"
+              title="Quản trị"
+              className="w-12 h-12 flex items-center justify-center"
+              style={{ color: C.primary, border: border2, background: C.primaryFixed }}
+              onClick={() => navigate("/admin")}
+            >
+              <ShieldCheck size={18} />
+            </button>
+          )}
         </div>
 
         {/* Mobile toggle */}
@@ -154,6 +165,11 @@ function Header() {
               <button className="flex-1 text-xs font-bold uppercase py-3 tracking-wide"
                 onClick={auth.openAuthDialog}
                 style={{ color: C.onSurface, fontFamily: FONT, borderRight: `1px solid ${C.black}` }}>Tài khoản</button>
+            )}
+            {auth.user?.role === "admin" && (
+              <button className="flex-1 text-xs font-bold uppercase py-3 tracking-wide"
+                onClick={() => navigate("/admin")}
+                style={{ color: C.primary, fontFamily: FONT }}>Admin</button>
             )}
           </div>
         </div>

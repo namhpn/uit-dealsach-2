@@ -7,6 +7,7 @@ Codex must record issues here instead of fixing them when they are outside the c
 | ID | Date | Source Ticket | Area | Issue / Follow-up | Severity | Suggested Ticket |
 |---|---:|---|---|---|---|---|
 | KI-0009 | 2026-05-27 | T0006 | Frontend demo assets | Seeded books reference `/demo/covers/*` image paths, but those files are not present in the current frontend/backend static assets. The UI falls back to generated cover initials correctly, but real cover imagery would make manual homepage/detail verification closer to the intended visual design. | Low | Add committed demo cover assets or update seed paths to existing static assets. |
+| KI-0011 | 2026-05-27 | T0012 | Docker local ports | `docker compose -p dealsach_t0012 up -d --build` could not start the full stack because host port `8080` was already allocated for phpMyAdmin. Backend test, migration, seed, route, and frontend build checks passed, but direct HTTP stack verification was blocked by the local port conflict. | Low | Make the phpMyAdmin host port configurable or document an alternate Compose override for manual verification. |
 
 ## Closed Items
 

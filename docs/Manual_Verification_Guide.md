@@ -227,6 +227,38 @@ Use this section for tickets that add or change authenticated wishlist APIs.
 
    Expected result: status changes from `wishlisted: true` to `wishlisted: false`, and the list includes book-card metadata plus `added_at` before removal.
 
+## Admin API Verification
+
+Use this section for tickets that add or change restricted Admin APIs.
+
+1. Confirm Admin routes are registered:
+
+   ```bash
+   docker compose run --rm app sh -lc 'cd backend && php spark routes | grep -E "api/admin"'
+   ```
+
+   Expected result: Admin session, users, alerts, and audit routes are present.
+
+2. Run focused Admin tests:
+
+   ```bash
+   docker compose -p dealsach_t0012 run --rm app sh -lc 'cd backend && php vendor/bin/phpunit --filter Admin'
+   ```
+
+   Expected result: Admin authorization, user state transition, alert disable, and audit tests pass.
+
+3. Run migration and seed in a disposable project:
+
+   ```bash
+   docker compose -p dealsach_t0012 run --rm app sh -lc 'cd backend && php spark migrate && php spark db:seed DealSachDemoSeeder'
+   ```
+
+   Expected result: `admin_audit_logs` exists, and seed data includes active Admin `admin@dealsach.test`.
+
+4. Verify guest and registered users cannot access Admin APIs, then verify an Admin can list users, deactivate/reactivate users, disable alerts, and view audit records.
+
+   Expected result: guests receive HTTP 401, registered non-admin users receive HTTP 403, Admin mutations preserve history and create audit records.
+
 ## Frontend Alert Management Verification
 
 Use this section for tickets that add or change the authenticated React price-alert UI.

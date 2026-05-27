@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Libraries\AdminAuditService;
+use App\Libraries\AdminCatalogService;
 use App\Libraries\AdminService;
 use App\Libraries\AuthService;
 use CodeIgniter\HTTP\ResponseInterface;
@@ -12,12 +13,14 @@ class AdminController extends BaseController
     private AuthService $auth;
     private AdminService $admin;
     private AdminAuditService $audit;
+    private AdminCatalogService $catalog;
 
     public function __construct()
     {
         $this->auth = new AuthService();
         $this->admin = new AdminService();
         $this->audit = new AdminAuditService();
+        $this->catalog = new AdminCatalogService();
     }
 
     public function me(): ResponseInterface
@@ -123,6 +126,141 @@ class AdminController extends BaseController
         return $this->jsonEnvelope(200, 'Nhật ký kiểm toán Admin.', ['items' => $this->audit->list()], null);
     }
 
+    public function categories(): ResponseInterface
+    {
+        return $this->catalogRead('listCategories');
+    }
+
+    public function createCategory(): ResponseInterface
+    {
+        return $this->catalogMutation('createCategory');
+    }
+
+    public function updateCategory($categoryId = null): ResponseInterface
+    {
+        return $this->catalogMutationById($categoryId, 'category_id', 'updateCategory');
+    }
+
+    public function archiveCategory($categoryId = null): ResponseInterface
+    {
+        return $this->catalogStatus($categoryId, 'category_id', 'setCategoryStatus', 'archived');
+    }
+
+    public function restoreCategory($categoryId = null): ResponseInterface
+    {
+        return $this->catalogStatus($categoryId, 'category_id', 'setCategoryStatus', 'active');
+    }
+
+    public function books(): ResponseInterface
+    {
+        return $this->catalogRead('listBooks');
+    }
+
+    public function book($bookId = null): ResponseInterface
+    {
+        return $this->catalogShow($bookId, 'book_id', 'bookDetail', 'Không tìm thấy sách.');
+    }
+
+    public function createBook(): ResponseInterface
+    {
+        return $this->catalogMutation('createBook');
+    }
+
+    public function updateBook($bookId = null): ResponseInterface
+    {
+        return $this->catalogMutationById($bookId, 'book_id', 'updateBook');
+    }
+
+    public function archiveBook($bookId = null): ResponseInterface
+    {
+        return $this->catalogActorId($bookId, 'book_id', 'archiveBook');
+    }
+
+    public function restoreBook($bookId = null): ResponseInterface
+    {
+        return $this->catalogActorId($bookId, 'book_id', 'restoreBook');
+    }
+
+    public function retailers(): ResponseInterface
+    {
+        return $this->catalogRead('listRetailers');
+    }
+
+    public function createRetailer(): ResponseInterface
+    {
+        return $this->catalogMutation('createRetailer');
+    }
+
+    public function updateRetailer($retailerId = null): ResponseInterface
+    {
+        return $this->catalogMutationById($retailerId, 'retailer_id', 'updateRetailer');
+    }
+
+    public function archiveRetailer($retailerId = null): ResponseInterface
+    {
+        return $this->catalogStatus($retailerId, 'retailer_id', 'setRetailerStatus', 'archived');
+    }
+
+    public function restoreRetailer($retailerId = null): ResponseInterface
+    {
+        return $this->catalogStatus($retailerId, 'retailer_id', 'setRetailerStatus', 'active');
+    }
+
+    public function merchants(): ResponseInterface
+    {
+        return $this->catalogRead('listMerchants');
+    }
+
+    public function createMerchant(): ResponseInterface
+    {
+        return $this->catalogMutation('createMerchant');
+    }
+
+    public function updateMerchant($merchantId = null): ResponseInterface
+    {
+        return $this->catalogMutationById($merchantId, 'merchant_id', 'updateMerchant');
+    }
+
+    public function archiveMerchant($merchantId = null): ResponseInterface
+    {
+        return $this->catalogStatus($merchantId, 'merchant_id', 'setMerchantStatus', 'archived');
+    }
+
+    public function restoreMerchant($merchantId = null): ResponseInterface
+    {
+        return $this->catalogStatus($merchantId, 'merchant_id', 'setMerchantStatus', 'active');
+    }
+
+    public function offers(): ResponseInterface
+    {
+        return $this->catalogRead('listOffers');
+    }
+
+    public function offer($offerId = null): ResponseInterface
+    {
+        return $this->catalogShow($offerId, 'offer_id', 'offerDetail', 'Không tìm thấy ưu đãi.');
+    }
+
+    public function createOffer(): ResponseInterface
+    {
+        return $this->catalogMutation('createOffer');
+    }
+
+    public function updateOffer($offerId = null): ResponseInterface
+    {
+        return $this->catalogMutationById($offerId, 'offer_id', 'updateOffer');
+    }
+
+    public function offerObservations($offerId = null): ResponseInterface
+    {
+        return $this->catalogShow($offerId, 'offer_id', 'offerObservations', 'Không tìm thấy ưu đãi.');
+    }
+
+    public function addOfferObservation($offerId = null): ResponseInterface
+    {
+        return $this->catalogActorId($offerId, 'offer_id', 'addObservation', $this->body());
+    }
+
     private function userAction(mixed $userId, string $method): ResponseInterface
     {
         $current = $this->requireAdmin();
@@ -135,6 +273,78 @@ class AdminController extends BaseController
         }
 
         return $this->result($this->admin->{$method}($current['user'], $id));
+    }
+
+    private function catalogRead(string $method): ResponseInterface
+    {
+        $current = $this->requireAdmin();
+        if ($current instanceof ResponseInterface) {
+            return $current;
+        }
+
+        return $this->jsonEnvelope(200, 'Dữ liệu quản trị catalog.', $this->catalog->{$method}($this->request->getGet()), null);
+    }
+
+    private function catalogShow(mixed $idValue, string $field, string $method, string $notFound): ResponseInterface
+    {
+        $current = $this->requireAdmin();
+        if ($current instanceof ResponseInterface) {
+            return $current;
+        }
+        $id = $this->positiveId($idValue, $field);
+        if ($id instanceof ResponseInterface) {
+            return $id;
+        }
+        $data = $this->catalog->{$method}($id);
+        if ($data === null) {
+            return $this->jsonEnvelope(404, $notFound, null, [$field => 'Bản ghi không tồn tại.']);
+        }
+
+        return $this->jsonEnvelope(200, 'Chi tiết quản trị catalog.', $data, null);
+    }
+
+    private function catalogMutation(string $method): ResponseInterface
+    {
+        $current = $this->requireAdmin();
+        if ($current instanceof ResponseInterface) {
+            return $current;
+        }
+
+        return $this->result($this->catalog->{$method}($current['user'], $this->body()));
+    }
+
+    private function catalogMutationById(mixed $idValue, string $field, string $method): ResponseInterface
+    {
+        return $this->catalogActorId($idValue, $field, $method, $this->body());
+    }
+
+    private function catalogStatus(mixed $idValue, string $field, string $method, string $status): ResponseInterface
+    {
+        return $this->catalogActorId($idValue, $field, $method, $status);
+    }
+
+    private function catalogActorId(mixed $idValue, string $field, string $method, mixed $extra = null): ResponseInterface
+    {
+        $current = $this->requireAdmin();
+        if ($current instanceof ResponseInterface) {
+            return $current;
+        }
+        $id = $this->positiveId($idValue, $field);
+        if ($id instanceof ResponseInterface) {
+            return $id;
+        }
+        $result = $extra === null
+            ? $this->catalog->{$method}($current['user'], $id)
+            : $this->catalog->{$method}($current['user'], $id, $extra);
+
+        return $this->result($result);
+    }
+
+    private function body(): array
+    {
+        $body = $this->request->getJSON(true);
+
+        return is_array($body) ? $body : $this->request->getPost();
     }
 
     private function requireAdmin(): array|ResponseInterface

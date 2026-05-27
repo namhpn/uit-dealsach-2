@@ -259,6 +259,38 @@ Use this section for tickets that add or change restricted Admin APIs.
 
    Expected result: guests receive HTTP 401, registered non-admin users receive HTTP 403, Admin mutations preserve history and create audit records.
 
+## Admin Catalog Verification
+
+Use this section for tickets that add or change Admin catalog APIs or pages.
+
+1. Confirm Admin catalog routes are registered:
+
+   ```bash
+   docker compose -p dealsach_t0013 run --rm app sh -lc 'cd backend && php spark routes | grep -E "api/admin/(categories|books|retailers|merchants|offers)"'
+   ```
+
+   Expected result: list, create, update, archive/restore, offer detail, and offer observation routes are present.
+
+2. Run focused Admin catalog tests:
+
+   ```bash
+   docker compose -p dealsach_t0013 run --rm --build app sh -lc 'cd backend && php vendor/bin/phpunit --filter AdminCatalog'
+   ```
+
+   Expected result: Admin authorization, catalog lifecycle, audit masking, offer validation, eligibility review, and observation-time capture checks pass.
+
+3. Build the Admin catalog frontend:
+
+   ```bash
+   docker compose -p dealsach_t0013 run --rm frontend npm run build
+   ```
+
+   Expected result: the React/Vite build succeeds and Admin catalog routes compile.
+
+4. As a seeded Admin, open `/admin`, `/admin/books`, `/admin/categories`, `/admin/retailers`, `/admin/merchants`, `/admin/offers`, and one `/admin/offers/<id>` detail route.
+
+   Expected result: pages render inside the existing Admin shell, show Vietnamese labels, and remain usable at 768px minimum width.
+
 ## Frontend Alert Management Verification
 
 Use this section for tickets that add or change the authenticated React price-alert UI.

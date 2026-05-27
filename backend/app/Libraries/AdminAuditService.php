@@ -29,8 +29,8 @@ class AdminAuditService
             'entity_type' => $entityType,
             'entity_id' => (string) $entityId,
             'summary' => $summary,
-            'before_json' => $before === null ? null : json_encode($this->mask($before), JSON_UNESCAPED_UNICODE),
-            'after_json' => $after === null ? null : json_encode($this->mask($after), JSON_UNESCAPED_UNICODE),
+            'before_json' => $before === null ? null : json_encode($this->mask($before), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            'after_json' => $after === null ? null : json_encode($this->mask($after), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
             'created_at' => $this->now->format('Y-m-d H:i:s'),
         ]);
     }
@@ -59,9 +59,23 @@ class AdminAuditService
         foreach ($values as $key => $value) {
             if (in_array((string) $key, $sensitive, true) || str_contains((string) $key, 'token')) {
                 $values[$key] = '[masked]';
+            } elseif ((string) $key === 'affiliate_destination_url' && is_string($value)) {
+                $values[$key] = $this->summarizeUrl($value);
             }
         }
 
         return $values;
+    }
+
+    private function summarizeUrl(string $url): string
+    {
+        $parts = parse_url($url);
+        if (! is_array($parts) || empty($parts['host'])) {
+            return '[masked-url]';
+        }
+
+        $path = (string) ($parts['path'] ?? '');
+
+        return strtolower((string) $parts['host']) . ($path === '' ? '' : $path);
     }
 }

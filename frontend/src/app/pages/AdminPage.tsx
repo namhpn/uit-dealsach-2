@@ -1,6 +1,6 @@
 import { Link } from "react-router";
 import type { ReactNode } from "react";
-import { Bell, ScrollText, ShieldCheck, Users } from "lucide-react";
+import { Bell, BookOpen, Building2, FolderTree, ScrollText, ShieldCheck, Store, Tags, Users } from "lucide-react";
 import { useAuth } from "../auth";
 import { C, EmptyState, FONT, NbButton, border2, shadow4, shadow8 } from "../shared";
 
@@ -41,9 +41,14 @@ export default function AdminPage() {
             <ShieldCheck size={28} />
             <h1 className="text-[30px] font-extrabold uppercase">Bảng quản trị DealSach</h1>
           </div>
-          <p className="mt-2 text-[13px]" style={{ color: C.primaryFixed }}>Quản lý người dùng, hoạt động cảnh báo và nhật ký kiểm toán.</p>
+          <p className="mt-2 text-[13px]" style={{ color: C.primaryFixed }}>Quản lý catalog, người dùng, hoạt động cảnh báo và nhật ký kiểm toán.</p>
         </section>
-        <nav className="grid grid-cols-3 gap-4">
+        <nav className="grid grid-cols-4 gap-4">
+          <AdminLink to="/admin/books" icon={<BookOpen size={22} />} title="Sách" desc="Tạo, cập nhật, lưu trữ và đánh dấu nổi bật." />
+          <AdminLink to="/admin/categories" icon={<FolderTree size={22} />} title="Danh mục" desc="Quản lý danh mục Active và lưu trữ." />
+          <AdminLink to="/admin/retailers" icon={<Building2 size={22} />} title="Nền tảng" desc="Tên miền được duyệt và trạng thái nền tảng." />
+          <AdminLink to="/admin/merchants" icon={<Store size={22} />} title="Nhà bán" desc="Liên kết nhà bán với nền tảng bán lẻ." />
+          <AdminLink to="/admin/offers" icon={<Tags size={22} />} title="Ưu đãi" desc="Rà soát liên kết mua, trạng thái và quan sát giá." />
           <AdminLink to="/admin/users" icon={<Users size={22} />} title="Người dùng" desc="Trạng thái tài khoản, phiên đăng nhập và cảnh báo." />
           <AdminLink to="/admin/alerts" icon={<Bell size={22} />} title="Cảnh báo" desc="Theo dõi hoạt động và tắt cảnh báo có vấn đề." />
           <AdminLink to="/admin/audit" icon={<ScrollText size={22} />} title="Kiểm toán" desc="Xem lịch sử thao tác Admin đã ghi nhận." />

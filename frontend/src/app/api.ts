@@ -158,6 +158,94 @@ export interface AdminAuditLogDto {
   created_at: string;
 }
 
+export interface AdminCategoryDto {
+  id: number;
+  name: string;
+  slug: string;
+  status: "active" | "archived";
+  book_count?: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminBookDto {
+  id: number;
+  title: string;
+  author: string;
+  publisher: string;
+  isbn: string | null;
+  description: string | null;
+  cover_image: string | null;
+  primary_category_id: number;
+  category: { id: number; name: string; slug: string; status: string };
+  is_featured: boolean;
+  status: "active" | "archived";
+  offer_count?: number;
+  active_alert_count?: number;
+  wishlist_count?: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminRetailerDto {
+  id: number;
+  name: string;
+  slug: string;
+  approved_domains: string[];
+  status: "active" | "archived";
+  merchant_count?: number;
+  offer_count?: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminMerchantDto {
+  id: number;
+  retailer_platform_id: number;
+  name: string;
+  slug: string;
+  status: "active" | "archived";
+  retailer: { id: number; name: string; slug: string; status: string };
+  offer_count?: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminObservationDto {
+  id: number;
+  offer_id: number;
+  observation_cycle_id: number;
+  cycle_date: string;
+  observed_at: string;
+  availability_status: "available" | "unavailable";
+  listed_item_price: number | null;
+  book_status_at_observation: string;
+  offer_status_at_observation: string;
+  retailer_status_at_observation: string;
+  merchant_status_at_observation: string;
+  merchant_retailer_consistent_at_observation: boolean;
+  destination_status_at_observation: string;
+}
+
+export interface AdminOfferDto {
+  id: number;
+  book_id: number;
+  book_title: string;
+  retailer_platform_id: number;
+  retailer_name: string;
+  merchant_id: number;
+  merchant_name: string;
+  external_offer_title: string;
+  affiliate_destination_url: string | null;
+  destination_status: "valid" | "missing" | "invalid";
+  status: "pending_review" | "active" | "unavailable" | "inactive" | "removed_invalid";
+  latest_observation: { observed_at: string; availability_status: string; listed_item_price: number | null } | null;
+  eligibility_review: { purchasable: boolean; reasons: string[] };
+  observations?: AdminObservationDto[];
+  created_at: string;
+  updated_at: string;
+}
+
 export interface DiscoverySection {
   title: string;
   items: BookCardDto[];
@@ -400,6 +488,106 @@ export async function disableAdminAlert(alertId: number): Promise<AdminAlertDto>
 
 export async function fetchAdminAuditLogs(): Promise<{ items: AdminAuditLogDto[] }> {
   return apiRequest("/api/admin/audit", { credentials: "include" });
+}
+
+export async function fetchAdminCategories(): Promise<{ items: AdminCategoryDto[] }> {
+  return apiRequest("/api/admin/categories", { credentials: "include" });
+}
+
+export async function createAdminCategory(payload: Partial<AdminCategoryDto>): Promise<AdminCategoryDto> {
+  return apiRequest("/api/admin/categories", { method: "POST", credentials: "include", body: JSON.stringify(payload) });
+}
+
+export async function updateAdminCategory(id: number, payload: Partial<AdminCategoryDto>): Promise<AdminCategoryDto> {
+  return apiRequest(`/api/admin/categories/${id}`, { method: "PATCH", credentials: "include", body: JSON.stringify(payload) });
+}
+
+export async function archiveAdminCategory(id: number): Promise<AdminCategoryDto> {
+  return apiRequest(`/api/admin/categories/${id}/archive`, { method: "POST", credentials: "include" });
+}
+
+export async function restoreAdminCategory(id: number): Promise<AdminCategoryDto> {
+  return apiRequest(`/api/admin/categories/${id}/restore`, { method: "POST", credentials: "include" });
+}
+
+export async function fetchAdminBooks(): Promise<{ items: AdminBookDto[] }> {
+  return apiRequest("/api/admin/books", { credentials: "include" });
+}
+
+export async function createAdminBook(payload: Partial<AdminBookDto>): Promise<AdminBookDto> {
+  return apiRequest("/api/admin/books", { method: "POST", credentials: "include", body: JSON.stringify(payload) });
+}
+
+export async function updateAdminBook(id: number, payload: Partial<AdminBookDto>): Promise<AdminBookDto> {
+  return apiRequest(`/api/admin/books/${id}`, { method: "PATCH", credentials: "include", body: JSON.stringify(payload) });
+}
+
+export async function archiveAdminBook(id: number): Promise<AdminBookDto> {
+  return apiRequest(`/api/admin/books/${id}/archive`, { method: "POST", credentials: "include" });
+}
+
+export async function restoreAdminBook(id: number): Promise<AdminBookDto> {
+  return apiRequest(`/api/admin/books/${id}/restore`, { method: "POST", credentials: "include" });
+}
+
+export async function fetchAdminRetailers(): Promise<{ items: AdminRetailerDto[] }> {
+  return apiRequest("/api/admin/retailers", { credentials: "include" });
+}
+
+export async function createAdminRetailer(payload: Partial<AdminRetailerDto>): Promise<AdminRetailerDto> {
+  return apiRequest("/api/admin/retailers", { method: "POST", credentials: "include", body: JSON.stringify(payload) });
+}
+
+export async function updateAdminRetailer(id: number, payload: Partial<AdminRetailerDto>): Promise<AdminRetailerDto> {
+  return apiRequest(`/api/admin/retailers/${id}`, { method: "PATCH", credentials: "include", body: JSON.stringify(payload) });
+}
+
+export async function archiveAdminRetailer(id: number): Promise<AdminRetailerDto> {
+  return apiRequest(`/api/admin/retailers/${id}/archive`, { method: "POST", credentials: "include" });
+}
+
+export async function restoreAdminRetailer(id: number): Promise<AdminRetailerDto> {
+  return apiRequest(`/api/admin/retailers/${id}/restore`, { method: "POST", credentials: "include" });
+}
+
+export async function fetchAdminMerchants(): Promise<{ items: AdminMerchantDto[] }> {
+  return apiRequest("/api/admin/merchants", { credentials: "include" });
+}
+
+export async function createAdminMerchant(payload: Partial<AdminMerchantDto>): Promise<AdminMerchantDto> {
+  return apiRequest("/api/admin/merchants", { method: "POST", credentials: "include", body: JSON.stringify(payload) });
+}
+
+export async function updateAdminMerchant(id: number, payload: Partial<AdminMerchantDto>): Promise<AdminMerchantDto> {
+  return apiRequest(`/api/admin/merchants/${id}`, { method: "PATCH", credentials: "include", body: JSON.stringify(payload) });
+}
+
+export async function archiveAdminMerchant(id: number): Promise<AdminMerchantDto> {
+  return apiRequest(`/api/admin/merchants/${id}/archive`, { method: "POST", credentials: "include" });
+}
+
+export async function restoreAdminMerchant(id: number): Promise<AdminMerchantDto> {
+  return apiRequest(`/api/admin/merchants/${id}/restore`, { method: "POST", credentials: "include" });
+}
+
+export async function fetchAdminOffers(): Promise<{ items: AdminOfferDto[] }> {
+  return apiRequest("/api/admin/offers", { credentials: "include" });
+}
+
+export async function fetchAdminOffer(id: number): Promise<AdminOfferDto> {
+  return apiRequest(`/api/admin/offers/${id}`, { credentials: "include" });
+}
+
+export async function createAdminOffer(payload: Partial<AdminOfferDto>): Promise<AdminOfferDto> {
+  return apiRequest("/api/admin/offers", { method: "POST", credentials: "include", body: JSON.stringify(payload) });
+}
+
+export async function updateAdminOffer(id: number, payload: Partial<AdminOfferDto>): Promise<AdminOfferDto> {
+  return apiRequest(`/api/admin/offers/${id}`, { method: "PATCH", credentials: "include", body: JSON.stringify(payload) });
+}
+
+export async function addAdminOfferObservation(id: number, payload: { cycle_date?: string; observed_at?: string; availability_status: string; listed_item_price?: number | null }): Promise<AdminOfferDto> {
+  return apiRequest(`/api/admin/offers/${id}/observations`, { method: "POST", credentials: "include", body: JSON.stringify(payload) });
 }
 
 function alertAction(alertId: number, action: "pause" | "reactivate" | "renew" | "restart-tracking" | "disable"): Promise<PriceAlertDto> {

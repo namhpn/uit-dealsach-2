@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Libraries\AdminAuditService;
 use App\Libraries\AdminCatalogService;
+use App\Libraries\AdminDashboardService;
 use App\Libraries\AdminService;
 use App\Libraries\AuthService;
 use CodeIgniter\HTTP\ResponseInterface;
@@ -14,6 +15,7 @@ class AdminController extends BaseController
     private AdminService $admin;
     private AdminAuditService $audit;
     private AdminCatalogService $catalog;
+    private AdminDashboardService $dashboard;
 
     public function __construct()
     {
@@ -21,6 +23,7 @@ class AdminController extends BaseController
         $this->admin = new AdminService();
         $this->audit = new AdminAuditService();
         $this->catalog = new AdminCatalogService();
+        $this->dashboard = new AdminDashboardService();
     }
 
     public function me(): ResponseInterface
@@ -124,6 +127,16 @@ class AdminController extends BaseController
         }
 
         return $this->jsonEnvelope(200, 'Nhật ký kiểm toán Admin.', ['items' => $this->audit->list()], null);
+    }
+
+    public function dashboard(): ResponseInterface
+    {
+        $current = $this->requireAdmin();
+        if ($current instanceof ResponseInterface) {
+            return $current;
+        }
+
+        return $this->jsonEnvelope(200, 'Báo cáo quản trị 7 ngày gần đây.', $this->dashboard->dashboard(), null);
     }
 
     public function categories(): ResponseInterface

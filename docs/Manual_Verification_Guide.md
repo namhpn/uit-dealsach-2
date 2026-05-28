@@ -291,6 +291,39 @@ Use this section for tickets that add or change Admin catalog APIs or pages.
 
    Expected result: pages render inside the existing Admin shell, show Vietnamese labels, and remain usable at 768px minimum width.
 
+## Admin Dashboard Verification
+
+Use this section for tickets that add or change Admin dashboard/report APIs or pages.
+
+1. Confirm Admin dashboard routes are registered:
+
+   ```bash
+   docker compose -p dealsach_t0014 run --rm app sh -lc 'cd backend && php spark routes | grep -E "api/admin/(dashboard|reports)"'
+   ```
+
+   Expected result: `GET /api/admin/dashboard` and `GET /api/admin/reports` are present.
+
+2. Run focused Admin dashboard tests:
+
+   ```bash
+   docker compose -p dealsach_t0014 run --rm --build app sh -lc 'cd backend && php vendor/bin/phpunit --filter AdminDashboard'
+   ```
+
+   Expected result: Admin authorization, default 7-day metrics, grouping, archived markers, price-change summary, and no-audit-on-read checks pass.
+
+3. Run the full backend suite and frontend build:
+
+   ```bash
+   docker compose -p dealsach_t0014 run --rm --build app sh -lc 'cd backend && php vendor/bin/phpunit'
+   docker compose -p dealsach_t0014 run --rm frontend npm run build
+   ```
+
+   Expected result: PHPUnit exits 0, and the React/Vite build succeeds with no new dependency installation.
+
+4. As an Admin, open `/admin`, `/admin/dashboard`, or `/admin/reports`.
+
+   Expected result: the dashboard shows Vietnamese summary cards, grouped report tables, proportional CSS bar rows, the fixed 7-day Vietnam-time window, and links to existing Admin pages. Guest users see the existing Admin login prompt; registered non-admin users see the no-permission state.
+
 ## Frontend Alert Management Verification
 
 Use this section for tickets that add or change the authenticated React price-alert UI.

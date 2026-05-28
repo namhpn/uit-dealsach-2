@@ -28,4 +28,5 @@
 | T0013 | Admin Catalog Management | Done | T0002, T0003, T0004, T0012 | Full-stack |
 | T0014 | Admin Dashboard Reports | Done | T0004, T0011, T0012, T0013 | Full-stack |
 | T0015 | Project README and Usage Guide | Done | T0014 | Documentation |
-| T0016 | Local Dev CORS and Known-Issue Cleanup | In Progress | T0015 | Backend / Frontend / Docker / Demo data |
+| T0016 | Local Dev CORS and Known-Issue Cleanup | Done | T0015 | Backend / Frontend / Docker / Demo data |
+| T0017 | Add Design Documentation and README Architecture | In Progress | T0016 | Documentation / Design / Architecture |

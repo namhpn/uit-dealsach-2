@@ -368,6 +368,21 @@ export interface PaginatedBooksResponse {
   empty_state: { message: string } | null;
 }
 
+export interface BookSearchSuggestionDto {
+  book_id: number;
+  title: string;
+  author: string;
+  category: string;
+  lowest_eligible_price: number | null;
+  status: { value: BookStatusValue; label: string };
+}
+
+export interface BookSearchSuggestionResponse {
+  query: string;
+  items: BookSearchSuggestionDto[];
+  limit: number;
+}
+
 export interface BookDetailResponse {
   book: {
     id: number;
@@ -446,6 +461,14 @@ export async function fetchBooks(params: URLSearchParams): Promise<PaginatedBook
 
 export async function fetchBookDetail(bookId: string): Promise<BookDetailResponse> {
   return apiGet<BookDetailResponse>(`/api/public/books/${bookId}`);
+}
+
+export async function fetchBookSuggestions(query: string, limit = 6): Promise<BookSearchSuggestionResponse> {
+  const params = new URLSearchParams();
+  params.set("q", query);
+  params.set("limit", String(limit));
+
+  return apiGet<BookSearchSuggestionResponse>(`/api/public/books/suggestions?${params.toString()}`);
 }
 
 export async function requestEmailCode(email: string): Promise<{ email: string; resent_after_seconds: number }> {

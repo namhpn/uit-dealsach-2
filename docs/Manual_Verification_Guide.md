@@ -214,6 +214,55 @@ Use this section for backend tickets that add or change email verification or se
 
    Expected result: a Vietnamese success envelope and an expired `dealsach_session` cookie.
 
+## Search Autocomplete Verification
+
+Use this section for tickets that add or change asynchronous public search suggestions.
+
+1. Confirm the suggestions route is registered:
+
+   ```bash
+   docker compose run --rm app sh -lc 'cd backend && php spark routes | grep -E "api/public/books/suggestions"'
+   ```
+
+   Expected result: `GET /api/public/books/suggestions` is listed.
+
+2. Run focused public catalog tests:
+
+   ```bash
+   docker compose run --rm --build app sh -lc 'cd backend && php vendor/bin/phpunit --filter PublicCatalogApiTest'
+   ```
+
+   Expected result: autocomplete tests pass for accented/unaccented queries, bounded result count, required suggestion fields, and archived-book exclusion.
+
+3. Start the frontend app, type a non-empty Vietnamese keyword into the public header search input, and watch the suggestion panel.
+
+   Expected result: loading, empty, and error states are shown in Vietnamese where applicable; selecting a suggestion opens the correct `/book/:id`; pressing Enter still navigates to `/search?...`.
+
+## SMTP Delivery Verification
+
+Use this section for tickets that add or change outbound email delivery behavior.
+
+1. Seed data and verify the seeded Admin account email:
+
+   ```bash
+   docker compose run --rm app sh -lc 'cd backend && php spark migrate && php spark db:seed DealSachDemoSeeder'
+   docker compose exec db sh -lc 'mariadb -u"$MARIADB_USER" -p"$MARIADB_PASSWORD" "$MARIADB_DATABASE" -N -e "SELECT normalized_email, role FROM users WHERE role='\''admin'\'' ORDER BY id"'
+   ```
+
+   Expected result: seeded Admin email is `24521102@gm.uit.edu.vn`.
+
+2. Trigger an auth email-code request and inspect `outbound_emails`:
+
+   ```bash
+   curl -i -c /tmp/dealsach-auth-cookies.txt \
+     -H 'Content-Type: application/json' \
+     -d '{"email":"24521102@gm.uit.edu.vn"}' \
+     http://localhost/api/auth/email-code/request
+   docker compose exec db sh -lc 'mariadb -u"$MARIADB_USER" -p"$MARIADB_PASSWORD" "$MARIADB_DATABASE" -N -e "SELECT normalized_recipient_email, email_type, status FROM outbound_emails ORDER BY id DESC LIMIT 5"'
+   ```
+
+   Expected result: response keeps the neutral Vietnamese envelope with no OTP value; `outbound_emails` persists records and marks status according to SMTP availability (`queued` local fallback, `sent`/`failed` when SMTP is configured and attempted).
+
 ## CORS Verification (Credentialed Frontend)
 
 Use this section for tickets that change API CORS behavior for frontend origins.
@@ -241,7 +290,7 @@ Use this section for tickets that change API CORS behavior for frontend origins.
 
    ```bash
    docker compose run --rm app sh -lc "curl -i -H 'Origin: http://localhost:5173' -H 'Content-Type: application/json' \
-     -d '{\"email\":\"admin@dealsach.test\"}' http://nginx/api/auth/email-code/request"
+     -d '{\"email\":\"24521102@gm.uit.edu.vn\"}' http://nginx/api/auth/email-code/request"
    ```
 
    Expected result: HTTP `200` Vietnamese JSON envelope plus `Access-Control-Allow-Origin` and `Access-Control-Allow-Credentials: true`.
@@ -322,7 +371,7 @@ Use this section for tickets that add or change restricted Admin APIs.
    docker compose -p dealsach_t0012 run --rm app sh -lc 'cd backend && php spark migrate && php spark db:seed DealSachDemoSeeder'
    ```
 
-   Expected result: `admin_audit_logs` exists, and seed data includes active Admin `admin@dealsach.test`.
+   Expected result: `admin_audit_logs` exists, and seed data includes active Admin `24521102@gm.uit.edu.vn`.
 
 4. Verify guest and registered users cannot access Admin APIs, then verify an Admin can list users, deactivate/reactivate users, disable alerts, and view audit records.
 

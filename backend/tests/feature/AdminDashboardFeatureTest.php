@@ -104,7 +104,7 @@ final class AdminDashboardFeatureTest extends CIUnitTestCase
         $this->seed(DealSachDemoSeeder::class);
         $adminId = (int) $this->db->table('users')
             ->select('id')
-            ->where('normalized_email', 'admin@dealsach.test')
+            ->where('normalized_email', '24521102@gm.uit.edu.vn')
             ->get()
             ->getFirstRow()
             ->id;

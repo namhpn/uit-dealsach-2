@@ -29,4 +29,5 @@
 | T0014 | Admin Dashboard Reports | Done | T0004, T0011, T0012, T0013 | Full-stack |
 | T0015 | Project README and Usage Guide | Done | T0014 | Documentation |
 | T0016 | Local Dev CORS and Known-Issue Cleanup | Done | T0015 | Backend / Frontend / Docker / Demo data |
-| T0017 | Add Design Documentation and README Architecture | In Progress | T0016 | Documentation / Design / Architecture |
+| T0017 | Add Design Documentation and README Architecture | Done | T0016 | Documentation / Design / Architecture |
+| T0018 | Add Search Autocomplete and Office 365 Email Delivery | In Progress | T0017 | Frontend / Backend Email |

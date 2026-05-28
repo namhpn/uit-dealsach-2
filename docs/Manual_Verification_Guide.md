@@ -28,6 +28,43 @@ git status --short
 
 Expected result: changes stay inside the ticket's allowed areas, plus required process docs.
 
+## Documentation Verification
+
+Use this section for documentation-only tickets such as README or usage-guide updates.
+
+1. Confirm the expected document exists and inspect the relevant top section:
+
+   ```bash
+   test -f README.md && sed -n '1,260p' README.md
+   ```
+
+   Expected result: the README includes project introduction, setup, usage examples, testing commands, API overview, known caveats, and links to deeper docs.
+
+2. Confirm key README sections are present:
+
+   ```bash
+   grep -E "Project|Setup|Installation|Usage|Testing|Admin|Dashboard|Known" README.md
+   ```
+
+   Expected result: section headings or content lines match the documented coverage.
+
+3. Check formatting-sensitive diff issues:
+
+   ```bash
+   git diff --check
+   ```
+
+   Expected result: no trailing whitespace or conflict marker issues.
+
+4. Inspect changed files:
+
+   ```bash
+   git diff --name-only
+   git status --short
+   ```
+
+   Expected result: tracked and newly created files are limited to the ticket's documentation and allowed bookkeeping files.
+
 ## Baseline Frontend Verification
 
 1. Run:

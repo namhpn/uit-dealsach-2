@@ -78,6 +78,42 @@ class PublicCatalogService
     }
 
     /**
+     * @return list<array<string, mixed>>
+     */
+    public function searchSuggestions(string $query, int $limit = 6): array
+    {
+        $normalizedQuery = trim($query);
+        if ($normalizedQuery === '') {
+            return [];
+        }
+
+        $boundedLimit = max(1, min($limit, 6));
+        $cards = array_values($this->bookCards());
+        $matches = array_values(array_filter($cards, fn (array $card): bool => $this->searchRank($card, $normalizedQuery) !== null));
+
+        usort($matches, function (array $a, array $b) use ($normalizedQuery): int {
+            $rank = ($this->searchRank($a, $normalizedQuery) ?? 99) <=> ($this->searchRank($b, $normalizedQuery) ?? 99);
+            if ($rank !== 0) {
+                return $rank;
+            }
+
+            return $this->compareCardsByTitleAndId($a, $b);
+        });
+
+        return array_map(static fn (array $card): array => [
+            'book_id' => (int) $card['id'],
+            'title' => (string) $card['title'],
+            'author' => (string) $card['author'],
+            'category' => (string) $card['category'],
+            'lowest_eligible_price' => $card['lowest_eligible_price'] === null ? null : (int) $card['lowest_eligible_price'],
+            'status' => [
+                'value' => (string) $card['status']['value'],
+                'label' => (string) $card['status']['label'],
+            ],
+        ], array_slice($matches, 0, $boundedLimit));
+    }
+
+    /**
      * @return array<string, mixed>|null
      */
     public function bookDetail(int $bookId): ?array

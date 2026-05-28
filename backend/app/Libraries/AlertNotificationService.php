@@ -8,10 +8,12 @@ use App\Models\EmailDealLinkModel;
 use App\Models\OutboundEmailModel;
 use App\Models\PriceAlertEventModel;
 use App\Models\PriceAlertModel;
+use CodeIgniter\Config\Services;
 use CodeIgniter\Database\BaseConnection;
 use CodeIgniter\Database\ConnectionInterface;
 use CodeIgniter\I18n\Time;
 use Config\Database;
+use Config\Email as EmailConfig;
 use DateTimeImmutable;
 use DateTimeZone;
 
@@ -272,8 +274,7 @@ class AlertNotificationService
             }
 
             $emailId = $this->writeEmail($alert, $price, $tiedOffers, $attempt);
-            $email = $this->emails->find($emailId);
-            if ($email !== null && $email->status === 'queued') {
+            if ($this->deliverOutboundEmail($alert, $emailId)) {
                 $summary['emailed']++;
 
                 return true;
@@ -300,7 +301,6 @@ class AlertNotificationService
         $subject = $alert->alert_type === self::TARGET_PRICE
             ? 'DealSach: Sách đã xuống dưới giá bạn đặt'
             : 'DealSach: Sách vừa có giá thấp mới';
-        $status = $this->shouldFailMockEmail($alert) ? 'failed' : 'queued';
 
         $this->db->transStart();
         $emailId = (int) $this->emails->insert([
@@ -319,7 +319,7 @@ class AlertNotificationService
                 'deal_link_path' => $dealLinkPath,
                 'disable_link_path' => $disablePath,
             ], JSON_UNESCAPED_UNICODE),
-            'status' => $status,
+            'status' => 'queued',
         ]);
         $this->dealLinks->insert([
             'price_alert_id' => (int) $alert->id,
@@ -336,6 +336,42 @@ class AlertNotificationService
         $this->db->transComplete();
 
         return $emailId;
+    }
+
+    private function deliverOutboundEmail(object $alert, int $emailId): bool
+    {
+        if ($this->shouldFailMockEmail($alert)) {
+            $this->emails->update($emailId, ['status' => 'failed']);
+
+            return false;
+        }
+
+        $config = config('Email');
+        if (! $config instanceof EmailConfig || ! $config->smtpConfigured()) {
+            return true;
+        }
+
+        $emailRow = $this->emails->find($emailId);
+        if ($emailRow === null) {
+            return false;
+        }
+
+        $mailer = Services::email();
+        $mailer->clear(true);
+        $mailer->setFrom($config->fromEmail !== '' ? $config->fromEmail : $config->SMTPUser, $config->fromName !== '' ? $config->fromName : 'DealSach');
+        $mailer->setTo((string) $emailRow->display_recipient_email);
+        $mailer->setSubject((string) $emailRow->subject);
+        $mailer->setMessage((string) $emailRow->body_text);
+
+        if ($mailer->send(false)) {
+            $this->emails->update($emailId, ['status' => 'sent']);
+
+            return true;
+        }
+
+        $this->emails->update($emailId, ['status' => 'failed']);
+
+        return false;
     }
 
     /**

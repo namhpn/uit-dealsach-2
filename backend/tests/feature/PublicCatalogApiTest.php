@@ -67,6 +67,39 @@ final class PublicCatalogApiTest extends CIUnitTestCase
         $this->assertSame('Nhà giả kim', $body['data']['items'][0]['title']);
     }
 
+    public function testSuggestionsSupportAccentNormalizationPartialMatchAndBoundedResults(): void
+    {
+        $accented = $this->json($this->get('/api/public/books/suggestions?q=Đắc'));
+        $unaccented = $this->json($this->get('/api/public/books/suggestions?q=dac%20nhan'));
+        $bounded = $this->json($this->get('/api/public/books/suggestions?q=a&limit=20'));
+
+        $this->assertSame('Đắc nhân tâm', $accented['data']['items'][0]['title']);
+        $this->assertSame('Đắc nhân tâm', $unaccented['data']['items'][0]['title']);
+        $this->assertLessThanOrEqual(6, count($bounded['data']['items']));
+        $this->assertSame(6, $bounded['data']['limit']);
+    }
+
+    public function testSuggestionsReturnRequiredFieldsAndExcludeArchivedBooks(): void
+    {
+        $this->db->table('books')
+            ->where('isbn', '9786041000012')
+            ->update(['status' => 'archived']);
+
+        $this->makeOnlyUnavailableBookVisible();
+        $suggestions = $this->json($this->get('/api/public/books/suggestions?q=dac%20nhan'));
+        $archived = $this->json($this->get('/api/public/books/suggestions?q=Viet%20Nam%20su%20luoc'));
+
+        $this->assertNotEmpty($suggestions['data']['items']);
+        $first = $suggestions['data']['items'][0];
+        $this->assertArrayHasKey('title', $first);
+        $this->assertArrayHasKey('author', $first);
+        $this->assertArrayHasKey('category', $first);
+        $this->assertArrayHasKey('lowest_eligible_price', $first);
+        $this->assertArrayHasKey('status', $first);
+        $this->assertSame('Tạm hết hàng', $first['status']['label']);
+        $this->assertSame([], $archived['data']['items']);
+    }
+
     public function testPaginationDefaultsToTwelveBooks(): void
     {
         $body = $this->json($this->get('/api/public/books'));

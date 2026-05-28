@@ -10,7 +10,7 @@ class EvaluateAlerts extends BaseCommand
 {
     protected $group = 'DealSach';
     protected $name = 'alerts:evaluate';
-    protected $description = 'Evaluate active price alerts and write mock alert emails.';
+    protected $description = 'Evaluate active price alerts and write outbound alert emails (SMTP when configured).';
 
     public function run(array $params): void
     {

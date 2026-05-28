@@ -4,7 +4,7 @@ Last updated: 2026-05-28
 
 ## Current Branch
 
-`docs/t0017-design-docs-architecture-readme`
+`feature/t0018-autocomplete-smtp-office365`
 
 Baseline source for T0007: local `main` after T0006 merge.
 
@@ -30,6 +30,7 @@ Baseline source for T0007: local `main` after T0006 merge.
 | T0015 | 2026-05-28 | Added the top-level project README and usage guide covering scope, setup, workflows, routes, testing, known caveats, and ticket-driven development guidance. |
 | T0016 | 2026-05-28 | Fixed local credentialed API CORS preflight/response handling, added env-driven allowed origins, implemented category display metadata schema/API/UI support, seeded deterministic dashboard alert/email/audit scenarios, and closed KI-0011/0012/0013 with full backend/frontend verification. |
 | T0017 | 2026-05-28 | Added ERD and markdown-only UML documentation, then refactored README with a concise System Architecture section and direct links to design docs. |
+| T0018 | 2026-05-28 | Added async public search autocomplete, conditional Office 365 SMTP delivery with safe fallback for outbound auth/alert emails, updated seeded Admin email, and refreshed verification docs/tests. |
 
 ## Current Folder Structure
 
@@ -263,6 +264,27 @@ docs/uml/component-deployment.md
 docs/Repo_Current_State.md
 ```
 
+T0018 changed:
+
+```text
+backend/app/Commands/EvaluateAlerts.php
+backend/app/Config/Email.php
+backend/app/Config/Routes.php
+backend/app/Controllers/PublicCatalogController.php
+backend/app/Database/Seeds/DealSachDemoSeeder.php
+backend/app/Libraries/AlertNotificationService.php
+backend/app/Libraries/EmailVerificationService.php
+backend/app/Libraries/PublicCatalogService.php
+backend/tests/feature/AdminDashboardFeatureTest.php
+backend/tests/feature/PublicCatalogApiTest.php
+frontend/src/app/Root.tsx
+frontend/src/app/api.ts
+docs/Manual_Verification_Guide.md
+docs/implementation_logs/T0018.md
+docs/Repo_Current_State.md
+docs/Known_Issues_And_Followups.md
+```
+
 T0008 changed:
 
 ```text
@@ -378,6 +400,11 @@ docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit --filte
 
 | Area | Command | Last Result | Notes |
 |---|---|---|---|
+| Backend | `docker compose -p dealsach_t0018 run --rm --build app sh -lc 'cd backend && php vendor/bin/phpunit --filter "Auth\|Alert\|PublicCatalog"'` | Passed for T0018 | 46 tests, 550 assertions. Includes autocomplete endpoint coverage and existing auth/alert regression checks. |
+| Backend | `docker compose -p dealsach_t0018 run --rm --build app sh -lc 'cd backend && php vendor/bin/phpunit'` | Passed for T0018 | 78 tests, 764 assertions. |
+| Frontend | `docker compose -p dealsach_t0018 run --rm frontend npm run build` | Passed for T0018 | Vite build passed; existing chunk-size warning remains and no new dependencies were installed. |
+| Backend/Docker DB | `docker compose -p dealsach_t0018 run --rm app sh -lc 'cd backend && php spark migrate && php spark db:seed DealSachDemoSeeder'` | Passed for T0018 | Seeder now creates active Admin `24521102@gm.uit.edu.vn`. |
+| Backend routes | `docker compose -p dealsach_t0018 run --rm app sh -lc 'cd backend && php spark routes \| grep -E "api/public/books/suggestions\|api/auth/email-code/request"'` | Passed for T0018 | Confirmed new autocomplete route and existing auth email-code request route are registered. |
 | Backend | PHP lint for T0004 migration, controllers, service, models, route file, and tests | Passed | No syntax errors. |
 | Backend | `cd backend && php vendor/bin/phpunit` | Passed | 27 tests, 149 assertions. |
 | Backend | `docker compose -p dealsach_t0004 run --rm app sh -lc 'cd backend && php spark migrate'` | Passed | Clean disposable MariaDB project; Buy-flow event tables created. |
@@ -725,6 +752,19 @@ T0017:
 6. Ran documentation verification commands from T0017 manual verification; all passed.
 7. Did not run backend PHPUnit or frontend build because T0017 is documentation-only and no runtime source files changed.
 
+T0018:
+
+1. Reviewed required docs and `docs/implementation_logs/T0018.md`.
+2. Added `GET /api/public/books/suggestions` in public routes and controller response wiring.
+3. Implemented bounded public autocomplete suggestion logic in `PublicCatalogService`, reusing existing accented/unaccented + partial search behavior and archived-book exclusion.
+4. Added frontend async autocomplete in the shared header search input: Vietnamese loading/empty/error states, bounded suggestion list, and book-detail navigation on suggestion click while preserving Enter-to-search behavior.
+5. Wired `Config\Email` to `SMTP_ADDRESS`, `SMTP_PORT`, `SMTP_USERNAME`, and `SMTP_PASSWORD` with conditional SMTP enablement.
+6. Updated auth and alert outbound email flows to keep `outbound_emails` persistence first, then attempt SMTP delivery only when configuration is complete, while preserving safe local fallback when SMTP is incomplete.
+7. Updated seeded Admin email to `24521102@gm.uit.edu.vn` and aligned seeded audit actor email values.
+8. Ran focused Dockerized backend tests (`Auth|Alert|PublicCatalog`), full backend PHPUnit, and frontend Dockerized build; all passed.
+9. Ran disposable migration/seed and verified seeded Admin email plus route registration for autocomplete and auth email-code request.
+10. Updated reusable verification guidance for autocomplete + SMTP in `docs/Manual_Verification_Guide.md`.
+
 ## Known Issues
 
 See `docs/Known_Issues_And_Followups.md`.
@@ -737,11 +777,12 @@ Closed in T0006:
 
 * KI-0008 — fresh disposable long-running Docker app containers now normalize `backend/writable` ownership during startup without a manual `chown`.
 
-Open after T0017:
+Open after T0018:
 
 * KI-0009 remains open — demo book cover paths still rely on fallback rendering because the referenced `/demo/covers/*` image files are not present.
 * KI-0011, KI-0012, and KI-0013 are closed by T0016.
+* KI-0014 added in T0018 — `frontend` uses fixed `container_name: ds_frontend`, which breaks concurrent disposable `docker compose -p ...` stacks.
 
 ## Next Recommended Ticket
 
-Prioritize a scoped KI-0009 ticket to add committed demo cover assets (or align seeded paths) so homepage/detail visual verification no longer depends on fallback initials.
+Prioritize a small infrastructure ticket to remove fixed `container_name` usage from Docker Compose (KI-0014), then follow with KI-0009 demo cover asset alignment.

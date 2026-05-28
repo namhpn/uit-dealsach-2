@@ -123,4 +123,38 @@ class Email extends BaseConfig
      * Enable notify message from server
      */
     public bool $DSN = false;
+
+    public function __construct()
+    {
+        parent::__construct();
+
+        $host = trim((string) env('SMTP_ADDRESS', ''));
+        $port = (int) env('SMTP_PORT', 0);
+        $username = trim((string) env('SMTP_USERNAME', ''));
+        $password = trim((string) env('SMTP_PASSWORD', ''));
+
+        if ($host === '' || $port <= 0 || $username === '' || $password === '') {
+            return;
+        }
+
+        $this->protocol = 'smtp';
+        $this->SMTPHost = $host;
+        $this->SMTPPort = $port;
+        $this->SMTPUser = $username;
+        $this->SMTPPass = $password;
+        $this->SMTPAuthMethod = 'login';
+        $this->SMTPCrypto = 'tls';
+        $this->mailType = 'text';
+        $this->fromEmail = $username;
+        $this->fromName = 'DealSach';
+    }
+
+    public function smtpConfigured(): bool
+    {
+        return $this->protocol === 'smtp'
+            && $this->SMTPHost !== ''
+            && $this->SMTPPort > 0
+            && $this->SMTPUser !== ''
+            && $this->SMTPPass !== '';
+    }
 }

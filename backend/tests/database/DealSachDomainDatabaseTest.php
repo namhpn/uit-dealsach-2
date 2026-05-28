@@ -68,6 +68,24 @@ final class DealSachDomainDatabaseTest extends CIUnitTestCase
         $this->assertSame(0, $offerMerchantRetailerMismatch);
     }
 
+    public function testCategoryDisplayMetadataColumnsAndSeedValuesExist(): void
+    {
+        foreach (['display_label', 'display_description', 'display_order'] as $field) {
+            $this->assertTrue($this->db->fieldExists($field, 'categories'), sprintf('Missing categories.%s', $field));
+        }
+
+        $row = $this->db->table('categories')
+            ->select('display_label, display_description, display_order')
+            ->where('slug', 'ky-nang-song')
+            ->get()
+            ->getFirstRow();
+
+        $this->assertNotNull($row);
+        $this->assertSame('Kỹ năng sống', $row->display_label);
+        $this->assertNotEmpty((string) $row->display_description);
+        $this->assertSame(10, (int) $row->display_order);
+    }
+
     public function testPriceObservationsStoreObservationTimeFacts(): void
     {
         $row = $this->db->table('price_observations')
@@ -106,6 +124,18 @@ final class DealSachDomainDatabaseTest extends CIUnitTestCase
         $this->assertGreaterThanOrEqual(2, $this->countTiedLowestBooksOnLatestCycle());
     }
 
+    public function testSeedIncludesDashboardAlertEmailClickAndAuditScenarios(): void
+    {
+        $this->assertGreaterThanOrEqual(2, $this->countWhere('price_alerts', ['status' => 'Active']));
+        $this->assertGreaterThanOrEqual(1, $this->countWhere('price_alerts', ['status' => 'Auto-paused']));
+        $this->assertGreaterThanOrEqual(1, $this->countWhere('price_alerts', ['status' => 'Expired']));
+        $this->assertGreaterThanOrEqual(1, $this->countWhere('outbound_emails', ['email_type' => 'price_alert_target_price', 'status' => 'sent']));
+        $this->assertGreaterThanOrEqual(1, $this->countWhere('outbound_emails', ['email_type' => 'price_alert_new_lowest', 'status' => 'failed']));
+        $this->assertGreaterThanOrEqual(1, $this->countTable('email_deal_links'));
+        $this->assertGreaterThanOrEqual(1, $this->countTable('email_deal_link_clicks'));
+        $this->assertGreaterThanOrEqual(1, $this->countTable('admin_audit_logs'));
+    }
+
     /**
      * @return list<string>
      */
@@ -128,6 +158,11 @@ final class DealSachDomainDatabaseTest extends CIUnitTestCase
     private function countTable(string $table): int
     {
         return (int) $this->db->table($table)->countAllResults();
+    }
+
+    private function countWhere(string $table, array $where): int
+    {
+        return (int) $this->db->table($table)->where($where)->countAllResults();
     }
 
     private function countBooksWithFourteenObservationDays(): int

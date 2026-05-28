@@ -1,5 +1,6 @@
 <?php
 
+use App\Database\Seeds\DealSachDemoSeeder;
 use App\Libraries\AuthService;
 use CodeIgniter\Test\CIUnitTestCase;
 use CodeIgniter\Test\DatabaseTestTrait;
@@ -96,6 +97,33 @@ final class AdminDashboardFeatureTest extends CIUnitTestCase
         $this->assertSame(90000, $priceRows[$activeBookId]['latest_price']);
         $this->assertSame(100000, $priceRows[$activeBookId]['previous_price']);
         $this->assertSame(-10000, $priceRows[$activeBookId]['change_amount']);
+    }
+
+    public function testSeededDemoProvidesNonEmptyDashboardAndReportsSections(): void
+    {
+        $this->seed(DealSachDemoSeeder::class);
+        $adminId = (int) $this->db->table('users')
+            ->select('id')
+            ->where('normalized_email', 'admin@dealsach.test')
+            ->get()
+            ->getFirstRow()
+            ->id;
+        $token = $this->sessionFor($adminId);
+
+        $dashboard = $this->withHeaders($this->cookie($token))->get('/api/admin/dashboard');
+        $dashboard->assertOK();
+        $dashboardData = $this->json($dashboard)['data'];
+        $this->assertNotEmpty($dashboardData['summary_cards']);
+        $this->assertNotEmpty($dashboardData['alerts']['status_counts']);
+        $this->assertNotEmpty($dashboardData['email_engagement']['by_book_and_alert_type']);
+        $this->assertNotEmpty($dashboardData['audit']['recent_entries']);
+
+        $reports = $this->withHeaders($this->cookie($token))->get('/api/admin/reports');
+        $reports->assertOK();
+        $reportData = $this->json($reports)['data'];
+        $this->assertSame($dashboardData['window']['days'], $reportData['window']['days']);
+        $this->assertGreaterThanOrEqual(1, $reportData['affiliate_redirects']['total']);
+        $this->assertGreaterThanOrEqual(1, $reportData['redirect_failures']['total']);
     }
 
     private function user(string $email, string $role, bool $alertEmailsEnabled = true): int

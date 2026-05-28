@@ -402,7 +402,6 @@ class AdminController extends BaseController
     {
         return $this->response
             ->setStatusCode($statusCode)
-            ->setHeader('Access-Control-Allow-Origin', '*')
             ->setJSON([
                 'status' => $statusCode >= 200 && $statusCode < 300 ? 'success' : 'error',
                 'message' => $message,

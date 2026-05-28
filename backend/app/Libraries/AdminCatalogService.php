@@ -59,16 +59,12 @@ class AdminCatalogService
         $this->applySearch($builder, $filters, ['name', 'slug']);
         $this->applyStatus($builder, $filters, self::LIFECYCLE);
 
-        return ['items' => array_map([$this, 'categoryRow'], $builder->orderBy('name')->get()->getResult())];
+        return ['items' => array_map([$this, 'categoryRow'], $builder->orderBy('display_order', 'ASC')->orderBy('name', 'ASC')->get()->getResult())];
     }
 
     public function createCategory(object $actor, array $body): array
     {
-        $data = [
-            'name' => trim((string) ($body['name'] ?? '')),
-            'slug' => $this->slug((string) ($body['slug'] ?? $body['name'] ?? '')),
-            'status' => $body['status'] ?? 'active',
-        ];
+        $data = $this->categoryPayload($body);
         $errors = $this->validateCategory($data);
         if ($errors !== []) {
             return $this->error(422, 'Dữ liệu danh mục chưa hợp lệ.', $errors);
@@ -90,11 +86,7 @@ class AdminCatalogService
         if ($category === null) {
             return $this->notFound('Không tìm thấy danh mục.', 'category');
         }
-        $data = [
-            'name' => array_key_exists('name', $body) ? trim((string) $body['name']) : (string) $category->name,
-            'slug' => array_key_exists('slug', $body) ? $this->slug((string) $body['slug']) : (string) $category->slug,
-            'status' => $body['status'] ?? $category->status,
-        ];
+        $data = $this->categoryPayload($body, $category);
         $errors = $this->validateCategory($data);
         if ($errors !== []) {
             return $this->error(422, 'Dữ liệu danh mục chưa hợp lệ.', $errors);
@@ -496,7 +488,17 @@ class AdminCatalogService
 
     private function categoryRow(object $row): array
     {
-        return $this->snapshot($row);
+        return [
+            'id' => (int) $row->id,
+            'name' => (string) $row->name,
+            'slug' => (string) $row->slug,
+            'display_label' => $row->display_label === null ? null : (string) $row->display_label,
+            'display_description' => $row->display_description === null ? null : (string) $row->display_description,
+            'display_order' => (int) $row->display_order,
+            'status' => (string) $row->status,
+            'created_at' => (string) $row->created_at,
+            'updated_at' => (string) $row->updated_at,
+        ];
     }
 
     private function bookRow(object $row): array
@@ -601,6 +603,20 @@ class AdminCatalogService
         ];
     }
 
+    private function categoryPayload(array $body, ?object $current = null): array
+    {
+        return [
+            'name' => array_key_exists('name', $body) ? trim((string) $body['name']) : trim((string) ($current->name ?? '')),
+            'slug' => array_key_exists('slug', $body)
+                ? $this->slug((string) $body['slug'])
+                : $this->slug((string) ($current->slug ?? $body['name'] ?? '')),
+            'display_label' => $this->normalizeOptionalText($body, 'display_label', $current->display_label ?? null),
+            'display_description' => $this->normalizeOptionalText($body, 'display_description', $current->display_description ?? null),
+            'display_order' => $this->normalizeDisplayOrder($body, $current->display_order ?? 0),
+            'status' => $body['status'] ?? $current->status ?? 'active',
+        ];
+    }
+
     private function retailerPayload(array $body, ?object $current = null): array
     {
         $domains = $body['approved_domains'] ?? ($current === null ? [] : $this->domainsFromJson((string) $current->approved_domains));
@@ -644,7 +660,18 @@ class AdminCatalogService
 
     private function validateCategory(array $data): array
     {
-        return $this->basicNameSlugStatus($data, 'Tên danh mục không được để trống.', 'Slug danh mục không được để trống.');
+        $errors = $this->basicNameSlugStatus($data, 'Tên danh mục không được để trống.', 'Slug danh mục không được để trống.');
+        if (($data['display_label'] ?? null) !== null && mb_strlen((string) $data['display_label'], 'UTF-8') > 150) {
+            $errors['display_label'] = 'Nhãn hiển thị tối đa 150 ký tự.';
+        }
+        if (($data['display_description'] ?? null) !== null && mb_strlen((string) $data['display_description'], 'UTF-8') > 1000) {
+            $errors['display_description'] = 'Mô tả hiển thị tối đa 1000 ký tự.';
+        }
+        if (! is_int($data['display_order'] ?? null) || (int) $data['display_order'] < 0) {
+            $errors['display_order'] = 'Thứ tự hiển thị phải là số nguyên từ 0 trở lên.';
+        }
+
+        return $errors;
     }
 
     private function validateBook(array $data): array
@@ -851,6 +878,41 @@ class AdminCatalogService
         $value = preg_replace('/[^a-z0-9]+/i', '-', $value) ?? '';
 
         return trim($value, '-');
+    }
+
+    private function normalizeOptionalText(array $body, string $field, mixed $fallback): ?string
+    {
+        if (! array_key_exists($field, $body)) {
+            $value = is_string($fallback) ? trim($fallback) : '';
+
+            return $value === '' ? null : $value;
+        }
+
+        if ($body[$field] === null) {
+            return null;
+        }
+
+        $value = trim((string) $body[$field]);
+
+        return $value === '' ? null : $value;
+    }
+
+    private function normalizeDisplayOrder(array $body, mixed $fallback): int
+    {
+        if (! array_key_exists('display_order', $body)) {
+            return (int) $fallback;
+        }
+
+        $raw = trim((string) $body['display_order']);
+        if ($raw === '') {
+            return 0;
+        }
+
+        if (! preg_match('/^-?\d+$/', $raw)) {
+            return -1;
+        }
+
+        return (int) $raw;
     }
 
     private function exists(string $table, string $column, string $value, ?int $exceptId = null): bool

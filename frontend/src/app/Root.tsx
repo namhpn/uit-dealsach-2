@@ -75,7 +75,7 @@ function Header() {
           {/* Category chips */}
           <div className="flex items-center gap-2.5" style={{ overflowX: "auto", overflowY: "visible", flexWrap: "nowrap", paddingBottom: 4, scrollbarWidth: "none" }} title={filterError ?? undefined}>
             {filters?.categories.map(cat => (
-              <CategoryChip key={cat.slug} label={cat.name} active={activeCategory === cat.slug} onClick={() => {
+              <CategoryChip key={cat.slug} label={cat.display_label ?? cat.name} active={activeCategory === cat.slug} onClick={() => {
                 navigate(`/search?category=${encodeURIComponent(cat.slug)}`);
               }} />
             ))}

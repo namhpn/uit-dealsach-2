@@ -95,7 +95,10 @@ class Filters extends BaseFilters
      *
      * @var array<string, list<string>>
      */
-    public array $methods = [];
+    public array $methods = [
+        // Method filters run as before-filters only.
+        'OPTIONS' => ['cors'],
+    ];
 
     /**
      * List of filter aliases that should run on any
@@ -106,5 +109,12 @@ class Filters extends BaseFilters
      *
      * @var array<string, array<string, list<string>>>
      */
-    public array $filters = [];
+    public array $filters = [
+        'cors' => [
+            'after' => [
+                'api',
+                'api/*',
+            ],
+        ],
+    ];
 }

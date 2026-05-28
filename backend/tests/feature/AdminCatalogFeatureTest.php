@@ -35,11 +35,31 @@ final class AdminCatalogFeatureTest extends CIUnitTestCase
         $create = $this->withHeaders($this->cookie($token))->post('/api/admin/categories', [
             'name' => 'Tài chính cá nhân',
             'slug' => 'tai-chinh-ca-nhan',
+            'display_label' => 'Tài chính',
+            'display_description' => 'Danh mục tài chính cho người đọc phổ thông.',
+            'display_order' => 25,
         ]);
         $create->assertStatus(201);
-        $categoryId = (int) $this->json($create)['data']['id'];
+        $createdCategory = $this->json($create)['data'];
+        $categoryId = (int) $createdCategory['id'];
+        $this->assertSame('Tài chính', $createdCategory['display_label']);
+        $this->assertSame(25, (int) $createdCategory['display_order']);
 
-        $this->withHeaders($this->cookie($token))->patch('/api/admin/categories/' . $categoryId, ['name' => 'Tài chính ứng dụng'])->assertOK();
+        $update = $this
+            ->withHeaders([
+                ...$this->cookie($token),
+                'Content-Type' => 'application/json',
+            ])
+            ->withBody(json_encode([
+                'name' => 'Tài chính ứng dụng',
+                'display_label' => 'Tài chính ứng dụng',
+                'display_order' => 15,
+            ], JSON_UNESCAPED_UNICODE))
+            ->call('patch', '/api/admin/categories/' . $categoryId);
+        $update->assertOK();
+        $updatedCategory = $this->json($update)['data'];
+        $this->assertSame('Tài chính ứng dụng', $updatedCategory['display_label']);
+        $this->assertSame(15, (int) $updatedCategory['display_order']);
         $this->assertSame(2, $this->db->table('admin_audit_logs')->where('entity_type', 'category')->countAllResults());
 
         $this->withHeaders($this->cookie($token))->post('/api/admin/categories/' . $categoryId . '/archive')->assertOK();
@@ -49,6 +69,10 @@ final class AdminCatalogFeatureTest extends CIUnitTestCase
         $this->withHeaders($this->cookie($token))->post('/api/admin/categories/' . $categoryId . '/restore')->assertOK();
         $filters = $this->json($this->get('/api/public/filters'));
         $this->assertContains('tai-chinh-ca-nhan', array_column($filters['data']['categories'], 'slug'));
+        $restored = array_values(array_filter($filters['data']['categories'], static fn (array $category): bool => $category['slug'] === 'tai-chinh-ca-nhan'));
+        $this->assertCount(1, $restored);
+        $this->assertSame('Tài chính ứng dụng', $restored[0]['display_label']);
+        $this->assertSame(15, (int) $restored[0]['display_order']);
     }
 
     public function testBookArchiveHidesPublicBookPausesActiveAlertsAndPreservesWishlist(): void
@@ -180,6 +204,9 @@ final class AdminCatalogFeatureTest extends CIUnitTestCase
         $this->db->table('categories')->insert([
             'name' => 'Kỹ năng sống',
             'slug' => 'ky-nang-song-' . random_int(1000, 9999),
+            'display_label' => null,
+            'display_description' => null,
+            'display_order' => 0,
             'status' => 'active',
             'created_at' => '2026-05-27 08:00:00',
             'updated_at' => '2026-05-27 08:00:00',

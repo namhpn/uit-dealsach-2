@@ -86,6 +86,6 @@ class PublicCatalogController extends BaseController
 
     private function apiResponse(): ResponseInterface
     {
-        return $this->response->setHeader('Access-Control-Allow-Origin', '*');
+        return $this->response;
     }
 }

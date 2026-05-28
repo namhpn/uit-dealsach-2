@@ -162,6 +162,9 @@ export interface AdminCategoryDto {
   id: number;
   name: string;
   slug: string;
+  display_label: string | null;
+  display_description: string | null;
+  display_order: number;
   status: "active" | "archived";
   book_count?: number;
   created_at: string;
@@ -327,12 +330,24 @@ export interface FilterOption {
   id?: number;
   name?: string;
   slug?: string;
+  display_label?: string | null;
+  display_description?: string | null;
+  display_order?: number;
   value?: string;
   label?: string;
 }
 
+export interface CategoryFilterDto {
+  id: number;
+  name: string;
+  slug: string;
+  display_label: string | null;
+  display_description: string | null;
+  display_order: number;
+}
+
 export interface FiltersResponse {
-  categories: Required<Pick<FilterOption, "id" | "name" | "slug">>[];
+  categories: CategoryFilterDto[];
   authors: string[];
   publishers: string[];
   retailers: Required<Pick<FilterOption, "id" | "name" | "slug">>[];

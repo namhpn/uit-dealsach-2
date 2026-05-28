@@ -74,6 +74,23 @@ class PublicCatalogController extends BaseController
         ]);
     }
 
+    public function suggestions(): ResponseInterface
+    {
+        $query = trim((string) $this->request->getGet('q'));
+        $limit = (int) ($this->request->getGet('limit') ?? 6);
+
+        return $this->apiResponse()->setJSON([
+            'status' => 'success',
+            'message' => 'Gợi ý tìm kiếm công khai.',
+            'data' => [
+                'query' => $query,
+                'items' => $this->catalog->searchSuggestions($query, $limit),
+                'limit' => max(1, min($limit, 6)),
+            ],
+            'errors' => null,
+        ]);
+    }
+
     private function notFound(): ResponseInterface
     {
         return $this->apiResponse()->setStatusCode(404)->setJSON([

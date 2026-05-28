@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router";
 import { Search, Heart, User, BookOpen, Menu, X, LogOut, Bell, ShieldCheck } from "lucide-react";
-import { apiErrorMessage, fetchFilters, FiltersResponse } from "./api";
+import { apiErrorMessage, BookSearchSuggestionDto, fetchBookSuggestions, fetchFilters, FiltersResponse, formatVnd } from "./api";
 import { AuthProvider, useAuth } from "./auth";
 import { C, FONT, border2, border3, shadow4, CategoryChip } from "./shared";
 
@@ -12,6 +12,10 @@ function Header() {
   const [searchQuery, setSearchQuery] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
+  const [suggestions, setSuggestions] = useState<BookSearchSuggestionDto[]>([]);
+  const [suggestionOpen, setSuggestionOpen] = useState(false);
+  const [suggestionLoading, setSuggestionLoading] = useState(false);
+  const [suggestionError, setSuggestionError] = useState<string | null>(null);
   const [filters, setFilters] = useState<FiltersResponse | null>(null);
   const [filterError, setFilterError] = useState<string | null>(null);
   const activeCategory = location.pathname === "/search" ? new URLSearchParams(location.search).get("category") : null;
@@ -31,6 +35,49 @@ function Header() {
     };
   }, []);
 
+  useEffect(() => {
+    if (location.pathname !== "/search") {
+      return;
+    }
+
+    setSearchQuery(new URLSearchParams(location.search).get("q") ?? "");
+  }, [location.pathname, location.search]);
+
+  useEffect(() => {
+    const keyword = searchQuery.trim();
+    if (keyword === "") {
+      setSuggestions([]);
+      setSuggestionLoading(false);
+      setSuggestionError(null);
+      return;
+    }
+
+    let alive = true;
+    setSuggestionLoading(true);
+    setSuggestionError(null);
+
+    const timer = window.setTimeout(() => {
+      fetchBookSuggestions(keyword, 6)
+        .then((response) => {
+          if (!alive) return;
+          setSuggestions(response.items);
+        })
+        .catch((err) => {
+          if (!alive) return;
+          setSuggestionError(apiErrorMessage(err));
+          setSuggestions([]);
+        })
+        .finally(() => {
+          if (alive) setSuggestionLoading(false);
+        });
+    }, 180);
+
+    return () => {
+      alive = false;
+      window.clearTimeout(timer);
+    };
+  }, [searchQuery]);
+
   return (
     <header className="sticky top-0 z-50" style={{ background: C.white, borderBottom: border2 }}>
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 pt-3 pb-3 flex flex-wrap md:flex-nowrap items-start gap-3 md:gap-4">
@@ -46,31 +93,84 @@ function Header() {
 
         {/* Search + chips column */}
         <div className="order-3 basis-full max-w-full md:order-2 md:basis-auto md:w-auto flex-1 flex flex-col gap-2 min-w-0">
-          <form className="flex min-w-0 items-stretch overflow-hidden"
-            style={{ border: searchFocused ? border3 : border2, boxShadow: searchFocused ? shadow4 : "none", transition: "box-shadow 100ms" }}
-            onSubmit={(e) => {
-              e.preventDefault();
-              const params = new URLSearchParams();
-              if (searchQuery.trim()) params.set("q", searchQuery.trim());
-              navigate(`/search${params.toString() ? `?${params}` : ""}`);
-            }}
-          >
-            <div className="flex items-center justify-center px-3 shrink-0" style={{ background: C.white, borderRight: border2 }}>
-              <Search size={16} style={{ color: C.primary }} />
-            </div>
-            <input type="text" value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onFocus={() => setSearchFocused(true)}
-              onBlur={() => setSearchFocused(false)}
-              placeholder="Tìm sách theo tên, tác giả, ISBN..."
-              className="flex-1 px-3 py-3 text-sm outline-none border-none min-w-0"
-              style={{ background: C.white, color: C.onSurface, fontFamily: FONT }}
-            />
-            <button type="submit" className="hidden px-3 sm:block sm:px-5 text-[12px] font-bold uppercase tracking-wide shrink-0"
-              style={{ background: C.primary, color: C.white, fontFamily: FONT, borderLeft: border2 }}>
-              <span>Tìm kiếm</span>
-            </button>
-          </form>
+          <div className="relative">
+            <form className="flex min-w-0 items-stretch overflow-hidden"
+              style={{ border: searchFocused ? border3 : border2, boxShadow: searchFocused ? shadow4 : "none", transition: "box-shadow 100ms" }}
+              onSubmit={(e) => {
+                e.preventDefault();
+                const params = new URLSearchParams();
+                if (searchQuery.trim()) params.set("q", searchQuery.trim());
+                setSuggestionOpen(false);
+                navigate(`/search${params.toString() ? `?${params}` : ""}`);
+              }}
+            >
+              <div className="flex items-center justify-center px-3 shrink-0" style={{ background: C.white, borderRight: border2 }}>
+                <Search size={16} style={{ color: C.primary }} />
+              </div>
+              <input type="text" value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setSuggestionOpen(true);
+                }}
+                onFocus={() => {
+                  setSearchFocused(true);
+                  setSuggestionOpen(true);
+                }}
+                onBlur={() => {
+                  setSearchFocused(false);
+                  window.setTimeout(() => setSuggestionOpen(false), 120);
+                }}
+                placeholder="Tìm sách theo tên, tác giả, ISBN..."
+                className="flex-1 px-3 py-3 text-sm outline-none border-none min-w-0"
+                style={{ background: C.white, color: C.onSurface, fontFamily: FONT }}
+              />
+              <button type="submit" className="hidden px-3 sm:block sm:px-5 text-[12px] font-bold uppercase tracking-wide shrink-0"
+                style={{ background: C.primary, color: C.white, fontFamily: FONT, borderLeft: border2 }}>
+                <span>Tìm kiếm</span>
+              </button>
+            </form>
+
+            {suggestionOpen && searchQuery.trim() !== "" && (
+              <div className="absolute left-0 right-0 top-full mt-2 overflow-hidden" style={{ background: C.white, border: border2, boxShadow: shadow4, zIndex: 40 }}>
+                {suggestionLoading && (
+                  <p className="px-3 py-3 text-[12px] font-bold" style={{ color: C.onSurfaceVariant, fontFamily: FONT }}>Đang tải gợi ý...</p>
+                )}
+                {!suggestionLoading && suggestionError && (
+                  <p className="px-3 py-3 text-[12px] font-bold" style={{ color: C.secondary, fontFamily: FONT }}>Không tải được gợi ý. Nhấn Enter để tìm kiếm.</p>
+                )}
+                {!suggestionLoading && !suggestionError && suggestions.length === 0 && (
+                  <p className="px-3 py-3 text-[12px] font-bold" style={{ color: C.onSurfaceVariant, fontFamily: FONT }}>Không tìm thấy gợi ý phù hợp.</p>
+                )}
+                {!suggestionLoading && !suggestionError && suggestions.length > 0 && (
+                  <ul>
+                    {suggestions.map((item) => (
+                      <li key={item.book_id} style={{ borderTop: `1px solid ${C.black}` }}>
+                        <button
+                          type="button"
+                          className="flex w-full items-start justify-between gap-3 px-3 py-2 text-left"
+                          onMouseDown={(event) => event.preventDefault()}
+                          onClick={() => {
+                            setSuggestionOpen(false);
+                            navigate(`/book/${item.book_id}`);
+                          }}
+                        >
+                          <span>
+                            <span className="block text-[12px] font-extrabold" style={{ color: C.onSurface, fontFamily: FONT }}>{item.title}</span>
+                            <span className="block text-[11px]" style={{ color: C.onSurfaceVariant, fontFamily: FONT }}>
+                              {item.author} • {item.category}
+                            </span>
+                          </span>
+                          <span className="mt-0.5 text-[11px] font-bold" style={{ color: item.lowest_eligible_price !== null ? C.secondary : C.onSurfaceVariant, fontFamily: FONT }}>
+                            {item.lowest_eligible_price !== null ? formatVnd(item.lowest_eligible_price) : item.status.label}
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+          </div>
 
           {/* Category chips */}
           <div className="flex items-center gap-2.5" style={{ overflowX: "auto", overflowY: "visible", flexWrap: "nowrap", paddingBottom: 4, scrollbarWidth: "none" }} title={filterError ?? undefined}>

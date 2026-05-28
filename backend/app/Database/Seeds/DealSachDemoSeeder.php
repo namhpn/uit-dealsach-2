@@ -68,7 +68,7 @@ class DealSachDemoSeeder extends Seeder
     private function seedUsers(string $now): array
     {
         $rows = [
-            ['key' => 'admin', 'normalized_email' => 'admin@dealsach.test', 'display_email' => 'admin@dealsach.test', 'role' => 'admin', 'status' => 'active', 'alert_email_enabled' => 1],
+            ['key' => 'admin', 'normalized_email' => '24521102@gm.uit.edu.vn', 'display_email' => '24521102@gm.uit.edu.vn', 'role' => 'admin', 'status' => 'active', 'alert_email_enabled' => 1],
             ['key' => 'active_reader', 'normalized_email' => 'active-reader@dealsach.test', 'display_email' => 'active-reader@dealsach.test', 'role' => 'registered', 'status' => 'active', 'alert_email_enabled' => 1],
             ['key' => 'suppressed_reader', 'normalized_email' => 'suppressed-reader@dealsach.test', 'display_email' => 'suppressed-reader@dealsach.test', 'role' => 'registered', 'status' => 'active', 'alert_email_enabled' => 0],
         ];
@@ -258,7 +258,7 @@ class DealSachDemoSeeder extends Seeder
         $this->db->table('admin_audit_logs')->insertBatch([
             [
                 'admin_user_id' => $userIds['admin'],
-                'actor_email' => 'admin@dealsach.test',
+                'actor_email' => '24521102@gm.uit.edu.vn',
                 'action_type' => 'book_updated',
                 'entity_type' => 'book',
                 'entity_id' => (string) $bookIds['clean-code'],
@@ -269,7 +269,7 @@ class DealSachDemoSeeder extends Seeder
             ],
             [
                 'admin_user_id' => $userIds['admin'],
-                'actor_email' => 'admin@dealsach.test',
+                'actor_email' => '24521102@gm.uit.edu.vn',
                 'action_type' => 'offer_updated',
                 'entity_type' => 'offer',
                 'entity_id' => (string) $offerIds['b3_tiki'],

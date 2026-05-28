@@ -14,6 +14,7 @@ $routes->group('', ['filter' => 'cors'], static function (RouteCollection $route
 
 $routes->group('api/public', static function (RouteCollection $routes): void {
     $routes->get('books', 'PublicCatalogController::books');
+    $routes->get('books/suggestions', 'PublicCatalogController::suggestions');
     $routes->get('books/(:num)', 'PublicCatalogController::book/$1');
     $routes->get('discovery', 'PublicCatalogController::discovery');
     $routes->get('filters', 'PublicCatalogController::filters');

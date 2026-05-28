@@ -5,8 +5,10 @@ namespace App\Libraries;
 use App\Models\EmailVerificationCodeModel;
 use App\Models\OutboundEmailModel;
 use App\Models\UserModel;
+use CodeIgniter\Config\Services;
 use CodeIgniter\Database\BaseConnection;
 use CodeIgniter\I18n\Time;
+use Config\Email as EmailConfig;
 use Config\Database;
 use DateTimeImmutable;
 use DateTimeZone;
@@ -76,6 +78,7 @@ class EmailVerificationService
         $code = (string) random_int(100000, 999999);
         $now = $this->now->format('Y-m-d H:i:s');
 
+        $emailId = 0;
         $this->db->transStart();
         $this->invalidateActiveCodes($normalized);
         $this->codes->insert([
@@ -87,7 +90,7 @@ class EmailVerificationService
             'requested_at' => $now,
             'expires_at' => $this->now->modify('+10 minutes')->format('Y-m-d H:i:s'),
         ]);
-        $this->emails->insert([
+        $emailId = (int) $this->emails->insert([
             'normalized_recipient_email' => $normalized,
             'display_recipient_email' => $display,
             'email_type' => 'email_verification_code',
@@ -106,6 +109,8 @@ class EmailVerificationService
                 'errors' => ['email' => 'Không thể tạo mã xác minh lúc này.'],
             ];
         }
+
+        $this->attemptSmtpDelivery($emailId);
 
         return [
             'ok' => true,
@@ -267,5 +272,37 @@ class EmailVerificationService
             'message' => $message,
             'errors' => ['code' => $message],
         ];
+    }
+
+    private function attemptSmtpDelivery(int $emailId): void
+    {
+        if ($emailId <= 0) {
+            return;
+        }
+
+        $config = config('Email');
+        if (! $config instanceof EmailConfig || ! $config->smtpConfigured()) {
+            return;
+        }
+
+        $emailRow = $this->emails->find($emailId);
+        if ($emailRow === null || ! in_array((string) $emailRow->status, ['queued', 'sent'], true)) {
+            return;
+        }
+
+        $mailer = Services::email();
+        $mailer->clear(true);
+        $mailer->setFrom($config->fromEmail !== '' ? $config->fromEmail : $config->SMTPUser, $config->fromName !== '' ? $config->fromName : 'DealSach');
+        $mailer->setTo((string) $emailRow->display_recipient_email);
+        $mailer->setSubject((string) $emailRow->subject);
+        $mailer->setMessage((string) $emailRow->body_text);
+
+        if ($mailer->send(false)) {
+            $this->emails->update($emailId, ['status' => 'sent']);
+
+            return;
+        }
+
+        $this->emails->update($emailId, ['status' => 'failed']);
     }
 }

@@ -7,6 +7,7 @@ Codex must record issues here instead of fixing them when they are outside the c
 | ID | Date | Source Ticket | Area | Issue / Follow-up | Severity | Suggested Ticket |
 |---|---:|---|---|---|---|---|
 | KI-0009 | 2026-05-27 | T0006 | Frontend demo assets | Seeded books reference `/demo/covers/*` image paths, but those files are not present in the current frontend/backend static assets. The UI falls back to generated cover initials correctly, but real cover imagery would make manual homepage/detail verification closer to the intended visual design. | Low | Add committed demo cover assets or update seed paths to existing static assets. |
+| KI-0014 | 2026-05-28 | T0018 | Docker/frontend runtime | `docker-compose.yml` pins `frontend` to `container_name: ds_frontend`, so running disposable project names like `docker compose -p dealsach_t0018 up -d --build` can fail when another stack already uses that container name. Ticket T0018 kept this out of scope and used `docker compose run ...` verification paths instead. | Medium | Remove fixed `container_name` values (or namespace them) so disposable `-p` stacks can run concurrently without name collisions. |
 
 ## Closed Items
 

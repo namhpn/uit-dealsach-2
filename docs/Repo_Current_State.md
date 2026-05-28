@@ -4,7 +4,7 @@ Last updated: 2026-05-28
 
 ## Current Branch
 
-`fix/t0016-local-dev-cors-known-issue-cleanup`
+`docs/t0017-design-docs-architecture-readme`
 
 Baseline source for T0007: local `main` after T0006 merge.
 
@@ -29,6 +29,7 @@ Baseline source for T0007: local `main` after T0006 merge.
 | T0014 | 2026-05-28 | Added Admin dashboard/report APIs and pages for 7-day operational metrics, grouped Affiliate Redirects, email engagement, redirect failures, alert/email counts, book-level price changes, audit summaries, and focused tests. |
 | T0015 | 2026-05-28 | Added the top-level project README and usage guide covering scope, setup, workflows, routes, testing, known caveats, and ticket-driven development guidance. |
 | T0016 | 2026-05-28 | Fixed local credentialed API CORS preflight/response handling, added env-driven allowed origins, implemented category display metadata schema/API/UI support, seeded deterministic dashboard alert/email/audit scenarios, and closed KI-0011/0012/0013 with full backend/frontend verification. |
+| T0017 | 2026-05-28 | Added ERD and markdown-only UML documentation, then refactored README with a concise System Architecture section and direct links to design docs. |
 
 ## Current Folder Structure
 
@@ -249,6 +250,19 @@ docs/Repo_Current_State.md
 docs/Known_Issues_And_Followups.md
 ```
 
+T0017 changed:
+
+```text
+README.md
+docs/design/ERD.md
+docs/uml/README.md
+docs/uml/use-cases.md
+docs/uml/activity-flows.md
+docs/uml/sequence-flows.md
+docs/uml/component-deployment.md
+docs/Repo_Current_State.md
+```
+
 T0008 changed:
 
 ```text
@@ -327,6 +341,7 @@ docs/Repo_Current_State.md
 * T0014 added no frontend, backend, Composer, or npm dependency changes.
 * T0015 added no frontend, backend, Composer, or npm dependency changes.
 * T0016 added no frontend, backend, Composer, or npm dependency changes.
+* T0017 added no frontend, backend, Composer, or npm dependency changes.
 
 ## Available Scripts / Commands
 
@@ -408,6 +423,10 @@ docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit --filte
 | Docs | `grep -E "Project\|Setup\|Installation\|Usage\|Testing\|Admin\|Dashboard\|Known" README.md` | Passed for T0015 | Key README coverage terms are present. |
 | Docs | `git diff --check` | Passed for T0015 | No whitespace or conflict-marker issues. |
 | Scope | `git diff --name-only`; `git status --short` | Passed for T0015 | Changed tracked and newly created files are limited to `README.md`, `docs/Manual_Verification_Guide.md`, `docs/Repo_Current_State.md`, and `docs/implementation_logs/T0015.md`. |
+| Docs | `test -f docs/design/ERD.md && sed -n '1,260p' docs/design/ERD.md` | Passed for T0017 | ERD file exists and includes Mermaid `erDiagram` content for current schema domains. |
+| Docs | `find docs/uml -maxdepth 1 -type f -name '*.md' -print -exec sed -n '1,180p' {} \\;` | Passed for T0017 | Markdown-only UML files cover use-case, activity-flow, sequence-flow, and component/deployment views. |
+| Docs | `sed -n '1,240p' README.md`; `grep -E "System Architecture|ERD|UML" README.md`; `grep -E "Testing and Verification|Known Local Caveats|Deeper Documentation" README.md || true` | Passed for T0017 | README now contains System Architecture + design links and no longer includes the removed detailed sections. |
+| Scope | `git diff --name-only`; `git diff --check` | Passed for T0017 | Diff is documentation-only and limited to T0017 allowed areas plus `docs/Repo_Current_State.md`. |
 | Backend | `docker compose run --rm --build app sh -lc 'cd backend && php vendor/bin/phpunit --filter "Auth\|AdminCatalog\|AdminDashboard\|Cors"'` | Passed for T0016 | 19 tests, 215 assertions. |
 | Backend | `docker compose run --rm --build app sh -lc 'cd backend && php vendor/bin/phpunit'` | Passed for T0016 | 76 tests, 747 assertions. |
 | Frontend | `docker compose run --rm frontend npm run build` | Passed for T0016 | Vite build passed; existing chunk-size warning remains. |
@@ -696,6 +715,16 @@ T0015:
 5. Ran README existence/content inspection, key-section grep, `git diff --check`, `git diff --name-only`, `git status --short`, and changed-file scope inspection.
 6. Did not run backend PHPUnit or frontend build because T0015 is documentation-only and no application files changed.
 
+T0017:
+
+1. Reviewed required docs and `docs/implementation_logs/T0017.md`.
+2. Created branch `docs/t0017-design-docs-architecture-readme` from local `main`.
+3. Added `docs/design/ERD.md` with Mermaid ERD coverage for catalog, buy-flow, account/session/email, wishlist, price-alert, notification/link tracking, and admin audit tables.
+4. Added markdown-only UML text specifications under `docs/uml/` for use-case, activity-flow, sequence-flow, and component/deployment views.
+5. Refactored `README.md` to add a direct System Architecture section, link to ERD/UML docs, and remove detailed sections that were intentionally trimmed by ticket scope.
+6. Ran documentation verification commands from T0017 manual verification; all passed.
+7. Did not run backend PHPUnit or frontend build because T0017 is documentation-only and no runtime source files changed.
+
 ## Known Issues
 
 See `docs/Known_Issues_And_Followups.md`.
@@ -708,7 +737,7 @@ Closed in T0006:
 
 * KI-0008 — fresh disposable long-running Docker app containers now normalize `backend/writable` ownership during startup without a manual `chown`.
 
-Open after T0016:
+Open after T0017:
 
 * KI-0009 remains open — demo book cover paths still rely on fallback rendering because the referenced `/demo/covers/*` image files are not present.
 * KI-0011, KI-0012, and KI-0013 are closed by T0016.

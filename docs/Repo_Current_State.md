@@ -4,7 +4,7 @@ Last updated: 2026-05-28
 
 ## Current Branch
 
-`feature/t0014-admin-dashboard-reports`
+`docs/t0015-project-readme-usage-guide`
 
 Baseline source for T0007: local `main` after T0006 merge.
 
@@ -27,6 +27,7 @@ Baseline source for T0007: local `main` after T0006 merge.
 | T0012 | 2026-05-27 | Added restricted Admin APIs, Admin audit persistence, deterministic seeded first Admin setup, user deactivation/reactivation safety behavior, Admin alert disabling, focused backend tests, and build-safe Admin frontend pages. |
 | T0013 | 2026-05-27 | Added Admin catalog APIs and pages for categories, books, retailer platforms, merchants, offers, and mock price observations, with audit logging, lifecycle effects, offer validation, eligibility review, and focused tests. |
 | T0014 | 2026-05-28 | Added Admin dashboard/report APIs and pages for 7-day operational metrics, grouped Affiliate Redirects, email engagement, redirect failures, alert/email counts, book-level price changes, audit summaries, and focused tests. |
+| T0015 | 2026-05-28 | Added the top-level project README and usage guide covering scope, setup, workflows, routes, testing, known caveats, and ticket-driven development guidance. |
 
 ## Current Folder Structure
 
@@ -204,6 +205,15 @@ docs/Repo_Current_State.md
 docs/Known_Issues_And_Followups.md
 ```
 
+T0015 changed:
+
+```text
+README.md
+docs/Manual_Verification_Guide.md
+docs/implementation_logs/T0015.md
+docs/Repo_Current_State.md
+```
+
 T0008 changed:
 
 ```text
@@ -280,6 +290,7 @@ docs/Repo_Current_State.md
 * T0012 added no frontend, backend, Composer, or npm dependency changes.
 * T0013 added no frontend, backend, Composer, or npm dependency changes.
 * T0014 added no frontend, backend, Composer, or npm dependency changes.
+* T0015 added no frontend, backend, Composer, or npm dependency changes.
 
 ## Available Scripts / Commands
 
@@ -356,6 +367,10 @@ docker compose run --rm app sh -lc 'cd backend && php spark routes | grep -E "ap
 | Frontend | `docker compose -p dealsach_t0014 run --rm frontend npm run build` | Passed for T0014 | Existing Vite chunk-size warning remains. |
 | Backend/Docker | `docker compose -p dealsach_t0014 run --rm --build app sh -lc 'cd backend && php spark migrate && php spark db:seed DealSachDemoSeeder'` | Passed for T0014 | Clean migration and seed completed. Dashboard-specific alert/email/audit demo scenarios remain a follow-up because seed edits were outside T0014 scope. |
 | Backend routes | `docker compose -p dealsach_t0014 run --rm app sh -lc 'cd backend && php spark routes \| grep -E "api/admin/(dashboard\|reports)"'` | Passed for T0014 | Confirmed `GET /api/admin/dashboard` and `GET /api/admin/reports`. |
+| Docs | `test -f README.md && sed -n '1,260p' README.md` | Passed for T0015 | README exists and includes project introduction, setup, usage examples, testing commands, API overview, caveats, and docs links. |
+| Docs | `grep -E "Project\|Setup\|Installation\|Usage\|Testing\|Admin\|Dashboard\|Known" README.md` | Passed for T0015 | Key README coverage terms are present. |
+| Docs | `git diff --check` | Passed for T0015 | No whitespace or conflict-marker issues. |
+| Scope | `git diff --name-only`; `git status --short` | Passed for T0015 | Changed tracked and newly created files are limited to `README.md`, `docs/Manual_Verification_Guide.md`, `docs/Repo_Current_State.md`, and `docs/implementation_logs/T0015.md`. |
 | API/Public stability | `GET /api/public/books`; `GET /go/offers/5` | Passed for T0007 | Public books returned HTTP 200; Buy redirect returned `302 https://tiki.vn/nha-gia-kim-demo`. |
 | Backend | `cd backend && php vendor/bin/phpunit` | Passed for T0008 | Host PHP 8.4 / SQLite runtime: 45 tests, 331 assertions. |
 | Backend | `docker compose -p dealsach_t0008 run --rm app sh -lc 'cd backend && php spark migrate && php spark db:seed DealSachDemoSeeder'` | Passed for T0008 | Clean disposable MariaDB project created `wishlist_items` after account-access tables and seeded demo data. |
@@ -630,6 +645,15 @@ T0014:
 9. Confirmed Admin dashboard/report routes with `php spark routes | grep -E "api/admin/(dashboard|reports)"`.
 10. Did not create browser automation, screenshots, Cypress, Playwright, or visual-regression artifacts per ticket non-goals.
 
+T0015:
+
+1. Reviewed required docs and `docs/implementation_logs/T0015.md`.
+2. Created branch `docs/t0015-project-readme-usage-guide` from local `main`.
+3. Added a top-level `README.md` covering DealSach scope, setup, Docker commands, public/auth/wishlist/alert/Admin usage examples, API routes, testing, project structure, known caveats, and development workflow.
+4. Added a reusable README/documentation verification section to `docs/Manual_Verification_Guide.md`.
+5. Ran README existence/content inspection, key-section grep, `git diff --check`, `git diff --name-only`, `git status --short`, and changed-file scope inspection.
+6. Did not run backend PHPUnit or frontend build because T0015 is documentation-only and no application files changed.
+
 ## Known Issues
 
 See `docs/Known_Issues_And_Followups.md`.
@@ -642,7 +666,7 @@ Closed in T0006:
 
 * KI-0008 — fresh disposable long-running Docker app containers now normalize `backend/writable` ownership during startup without a manual `chown`.
 
-Open after T0014:
+Open after T0015:
 
 * KI-0009 remains open — demo book cover paths still rely on fallback rendering because the referenced `/demo/covers/*` image files are not present.
 * KI-0011 remains open — full-stack `docker compose up` verification can be blocked when host port `8080` is already allocated for phpMyAdmin.
@@ -651,4 +675,4 @@ Open after T0014:
 
 ## Next Recommended Ticket
 
-Continue with a scoped dashboard demo-data ticket for KI-0013, or the next ticket from `docs/Tickets.md` if dashboard seed richness is not required immediately.
+Continue with a scoped dashboard demo-data ticket for KI-0013, or define the next documentation/application ticket if dashboard seed richness is not required immediately.

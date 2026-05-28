@@ -27,7 +27,7 @@ function Header() {
         <div className="flex-1 flex flex-col gap-2 min-w-0">
           <form className="flex items-stretch overflow-hidden"
             style={{ border: searchFocused ? border3 : border2, boxShadow: searchFocused ? shadow4 : "none", transition: "box-shadow 100ms" }}
-            onSubmit={(e) => e.preventDefault()}
+            onSubmit={(e) => { e.preventDefault(); navigate(`/search${searchQuery.trim() ? `?q=${encodeURIComponent(searchQuery.trim())}` : ""}`); }}
           >
             <div className="flex items-center justify-center px-3 shrink-0" style={{ background: C.white, borderRight: border2 }}>
               <Search size={16} style={{ color: C.primary }} />
@@ -49,7 +49,7 @@ function Header() {
           {/* Category chips */}
           <div className="flex items-center gap-2.5" style={{ overflowX: "clip", overflowY: "visible", flexWrap: "nowrap", paddingBottom: 4 }}>
             {navCategories.map(cat => (
-              <CategoryChip key={cat} label={cat} active={activeCat === cat} onClick={() => setActiveCat(activeCat === cat ? null : cat)} />
+              <CategoryChip key={cat} label={cat} active={activeCat === cat} onClick={() => { setActiveCat(activeCat === cat ? null : cat); navigate(`/search?q=${encodeURIComponent(cat)}`); }} />
             ))}
           </div>
         </div>
@@ -57,10 +57,11 @@ function Header() {
         {/* Icon buttons */}
         <div className="hidden md:flex items-center gap-2 shrink-0 self-start">
           {[
-            { icon: <Heart size={18} />, label: "Yêu thích" },
-            { icon: <User size={18} />, label: "Tài khoản" },
+            { icon: <Heart size={18} />, label: "Yêu thích", href: "/wishlist" },
+            { icon: <User size={18} />, label: "Tài khoản",  href: "/alerts" },
           ].map(item => (
             <button key={item.label} aria-label={item.label} title={item.label}
+              onClick={() => navigate(item.href)}
               className="w-12 h-12 flex items-center justify-center"
               style={{ color: C.onSurface, border: border2, background: C.white }}
               onMouseEnter={e => (e.currentTarget.style.background = C.boneWhite)}

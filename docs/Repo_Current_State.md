@@ -1,10 +1,10 @@
 # Repo Current State
 
-Last updated: 2026-05-27
+Last updated: 2026-05-28
 
 ## Current Branch
 
-`t0013-admin-catalog-management`
+`feature/t0014-admin-dashboard-reports`
 
 Baseline source for T0007: local `main` after T0006 merge.
 
@@ -26,6 +26,7 @@ Baseline source for T0007: local `main` after T0006 merge.
 | T0011 | 2026-05-27 | Added deterministic alert evaluation, mock alert emails, email deal-link click tracking, disable-alert links, alert notification persistence, focused backend tests, and authenticated `/account` settings integration. |
 | T0012 | 2026-05-27 | Added restricted Admin APIs, Admin audit persistence, deterministic seeded first Admin setup, user deactivation/reactivation safety behavior, Admin alert disabling, focused backend tests, and build-safe Admin frontend pages. |
 | T0013 | 2026-05-27 | Added Admin catalog APIs and pages for categories, books, retailer platforms, merchants, offers, and mock price observations, with audit logging, lifecycle effects, offer validation, eligibility review, and focused tests. |
+| T0014 | 2026-05-28 | Added Admin dashboard/report APIs and pages for 7-day operational metrics, grouped Affiliate Redirects, email engagement, redirect failures, alert/email counts, book-level price changes, audit summaries, and focused tests. |
 
 ## Current Folder Structure
 
@@ -185,6 +186,24 @@ docs/implementation_logs/T0013.md
 docs/Repo_Current_State.md
 ```
 
+T0014 changed:
+
+```text
+backend/app/Config/Routes.php
+backend/app/Controllers/AdminController.php
+backend/app/Libraries/AdminDashboardService.php
+backend/tests/feature/AdminDashboardFeatureTest.php
+frontend/src/app/api.ts
+frontend/src/app/routes.tsx
+frontend/src/app/pages/AdminPage.tsx
+frontend/src/app/pages/AdminDashboardPage.tsx
+frontend/src/app/pages/AdminReportsPage.tsx
+docs/Manual_Verification_Guide.md
+docs/implementation_logs/T0014.md
+docs/Repo_Current_State.md
+docs/Known_Issues_And_Followups.md
+```
+
 T0008 changed:
 
 ```text
@@ -260,6 +279,7 @@ docs/Repo_Current_State.md
 * T0011 added no frontend, backend, Composer, or npm dependency changes.
 * T0012 added no frontend, backend, Composer, or npm dependency changes.
 * T0013 added no frontend, backend, Composer, or npm dependency changes.
+* T0014 added no frontend, backend, Composer, or npm dependency changes.
 
 ## Available Scripts / Commands
 
@@ -285,6 +305,8 @@ docker compose run --rm app sh -lc 'cd backend && php spark routes | grep -E "ap
 docker compose run --rm app sh -lc 'cd backend && php spark alerts:evaluate'
 docker compose -p dealsach_t0013 run --rm --build app sh -lc 'cd backend && php vendor/bin/phpunit --filter AdminCatalog'
 docker compose -p dealsach_t0013 run --rm app sh -lc 'cd backend && php spark routes | grep -E "api/admin/(categories|books|retailers|merchants|offers)"'
+docker compose -p dealsach_t0014 run --rm --build app sh -lc 'cd backend && php vendor/bin/phpunit --filter AdminDashboard'
+docker compose -p dealsach_t0014 run --rm app sh -lc 'cd backend && php spark routes | grep -E "api/admin/(dashboard|reports)"'
 docker compose run --rm app sh -lc 'cd backend && php spark routes | grep -E "email/deals|alerts/disable"'
 docker compose run --rm app sh -lc 'cd backend && php spark routes | grep -E "api/admin"'
 ```
@@ -328,6 +350,12 @@ docker compose run --rm app sh -lc 'cd backend && php spark routes | grep -E "ap
 | Frontend | `docker compose -p dealsach_t0013 run --rm frontend npm run build` | Passed for T0013 | Existing Vite chunk-size warning remains. |
 | Backend/Docker | `docker compose -p dealsach_t0013 run --rm --build app sh -lc 'cd backend && php spark migrate && php spark db:seed DealSachDemoSeeder'` | Passed for T0013 | Clean migration and seed completed. |
 | Backend routes | `docker compose -p dealsach_t0013 run --rm app sh -lc 'cd backend && php spark routes \| grep -E "api/admin/(categories\|books\|retailers\|merchants\|offers)"'` | Passed for T0013 | Confirmed Admin catalog list, create, update, archive/restore, offer detail, and observation routes. |
+| Backend | `php -l backend/app/Libraries/AdminDashboardService.php`; `php -l backend/app/Controllers/AdminController.php`; `php -l backend/tests/feature/AdminDashboardFeatureTest.php` | Passed for T0014 | No syntax errors in changed backend service, controller, and focused test. |
+| Backend | `docker compose -p dealsach_t0014 run --rm --build app sh -lc 'cd backend && php vendor/bin/phpunit --filter AdminDashboard'` | Passed for T0014 | 2 tests, 30 assertions. |
+| Backend | `docker compose -p dealsach_t0014 run --rm --build app sh -lc 'cd backend && php vendor/bin/phpunit'` | Passed for T0014 | 71 tests, 683 assertions. |
+| Frontend | `docker compose -p dealsach_t0014 run --rm frontend npm run build` | Passed for T0014 | Existing Vite chunk-size warning remains. |
+| Backend/Docker | `docker compose -p dealsach_t0014 run --rm --build app sh -lc 'cd backend && php spark migrate && php spark db:seed DealSachDemoSeeder'` | Passed for T0014 | Clean migration and seed completed. Dashboard-specific alert/email/audit demo scenarios remain a follow-up because seed edits were outside T0014 scope. |
+| Backend routes | `docker compose -p dealsach_t0014 run --rm app sh -lc 'cd backend && php spark routes \| grep -E "api/admin/(dashboard\|reports)"'` | Passed for T0014 | Confirmed `GET /api/admin/dashboard` and `GET /api/admin/reports`. |
 | API/Public stability | `GET /api/public/books`; `GET /go/offers/5` | Passed for T0007 | Public books returned HTTP 200; Buy redirect returned `302 https://tiki.vn/nha-gia-kim-demo`. |
 | Backend | `cd backend && php vendor/bin/phpunit` | Passed for T0008 | Host PHP 8.4 / SQLite runtime: 45 tests, 331 assertions. |
 | Backend | `docker compose -p dealsach_t0008 run --rm app sh -lc 'cd backend && php spark migrate && php spark db:seed DealSachDemoSeeder'` | Passed for T0008 | Clean disposable MariaDB project created `wishlist_items` after account-access tables and seeded demo data. |
@@ -434,6 +462,13 @@ GET /api/admin/offers/{offerId}/observations
 POST /api/admin/offers/{offerId}/observations
 ```
 
+Registered Admin dashboard/report routes after T0014:
+
+```text
+GET /api/admin/dashboard
+GET /api/admin/reports
+```
+
 Catalog read behavior lives in `App\Libraries\PublicCatalogService` and is reused by list, detail, discovery, filters, and Buy-flow eligibility checks. It centralizes current eligibility, 48-hour freshness, valid affiliate destination checks, public no-price status priority, offer grouping, price range filtering, observation-time price history, recent price-drop calculation, and popular-clicked deal ranking.
 
 T0004 adds `App\Libraries\BuyFlowService` for Buy Attempt, Affiliate Redirect, and Redirect Failure event writes. `GET /go/offers/{offerId}` records a Buy Attempt for known offers, validates current eligible-offer and approved-domain destination rules, records Affiliate Redirect only on successful external redirects, and records Redirect Failure for known invalid or ineligible offers.
@@ -449,6 +484,8 @@ T0009 adds `App\Libraries\PriceAlertService`, `App\Libraries\AlertPreferenceServ
 T0012 adds `App\Controllers\AdminController`, `App\Libraries\AdminService`, and `App\Libraries\AdminAuditService`. Admin endpoints require an active authenticated user with `role=admin`, reject guests with 401, reject registered non-admin users with 403, audit Admin mutations, block self/last-active-Admin deactivation, invalidate sessions for deactivated users, disable their Active alerts, and preserve historical records.
 
 T0013 adds `App\Libraries\AdminCatalogService` through `AdminController`. Admin catalog mutations audit create, update, archive, restore, offer-status, and mock-observation writes; mask affiliate URLs to domain/path summaries; validate active categories for books; enforce merchant-retailer consistency; validate `https://` affiliate destinations against approved retailer domains; pause Active alerts when books are archived; and capture observation-time state for newly added mock observations.
+
+T0014 adds `App\Libraries\AdminDashboardService` through `AdminController`. Admin dashboard/report reads require Admin authorization, default to a fixed 7-day `Asia/Ho_Chi_Minh` window, do not accept custom date ranges, do not write audit records, and return summary cards plus grouped Affiliate Redirect, email engagement, redirect failure, alert, price-change, and audit-summary sections.
 
 ## Mock Data State
 
@@ -580,6 +617,19 @@ T0013:
 9. Confirmed Admin catalog routes with `php spark routes | grep -E "api/admin/(categories|books|retailers|merchants|offers)"`.
 10. Did not create browser automation, screenshots, Cypress, Playwright, or visual-regression artifacts. Interactive browser checks for the new Admin catalog pages remain recommended before merge if visual evidence is required.
 
+T0014:
+
+1. Reviewed required docs and `docs/implementation_logs/T0014.md`.
+2. Created branch `feature/t0014-admin-dashboard-reports` from local `main`.
+3. Added read-only Admin dashboard/report routes, `AdminDashboardService`, controller wiring, focused AdminDashboard feature tests, typed frontend API helpers, and `/admin`, `/admin/dashboard`, and `/admin/reports` React dashboard pages within T0014 allowed areas.
+4. Ran PHP syntax checks for the new dashboard service, Admin controller, and dashboard feature test; all reported no syntax errors.
+5. Ran Dockerized AdminDashboard PHPUnit subset: `2 tests, 30 assertions`.
+6. Ran Dockerized full backend PHPUnit: `71 tests, 683 assertions`.
+7. Ran Dockerized frontend build; Vite build passed with the existing chunk-size warning.
+8. Ran clean disposable migration and `DealSachDemoSeeder`; both completed.
+9. Confirmed Admin dashboard/report routes with `php spark routes | grep -E "api/admin/(dashboard|reports)"`.
+10. Did not create browser automation, screenshots, Cypress, Playwright, or visual-regression artifacts per ticket non-goals.
+
 ## Known Issues
 
 See `docs/Known_Issues_And_Followups.md`.
@@ -592,12 +642,13 @@ Closed in T0006:
 
 * KI-0008 — fresh disposable long-running Docker app containers now normalize `backend/writable` ownership during startup without a manual `chown`.
 
-Open after T0013:
+Open after T0014:
 
 * KI-0009 remains open — demo book cover paths still rely on fallback rendering because the referenced `/demo/covers/*` image files are not present.
 * KI-0011 remains open — full-stack `docker compose up` verification can be blocked when host port `8080` is already allocated for phpMyAdmin.
 * KI-0012 remains open — category display metadata needs concrete schema fields before Admin can manage more than name, slug, and status.
+* KI-0013 remains open — demo seed dashboard-specific alert/email/audit scenarios need a future ticket because seed edits were outside T0014 allowed areas.
 
 ## Next Recommended Ticket
 
-Continue with the next scoped ticket from `docs/Tickets.md`, keeping KI-0009 and KI-0011 separate unless a future ticket explicitly targets demo assets or local Docker port configurability.
+Continue with a scoped dashboard demo-data ticket for KI-0013, or the next ticket from `docs/Tickets.md` if dashboard seed richness is not required immediately.

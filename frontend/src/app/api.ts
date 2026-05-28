@@ -246,6 +246,70 @@ export interface AdminOfferDto {
   updated_at: string;
 }
 
+export interface AdminDashboardSummaryCardDto {
+  key: string;
+  label: string;
+  value: number;
+}
+
+export interface AdminDashboardDto {
+  window: {
+    label: string;
+    timezone: string;
+    days: number;
+    start: string;
+    end: string;
+  };
+  summary_cards: AdminDashboardSummaryCardDto[];
+  affiliate_redirects: {
+    total: number;
+    by_book: { book_id: number; book_title: string; archived: boolean; redirect_count: number }[];
+    by_retailer: { retailer_platform_id: number; retailer_name: string; archived: boolean; redirect_count: number }[];
+  };
+  email_engagement: {
+    total: number;
+    by_book_and_alert_type: { book_id: number; book_title: string; archived: boolean; alert_type: PriceAlertType; click_count: number }[];
+  };
+  redirect_failures: {
+    total: number;
+    by_reason: { failure_reason: string; failure_count: number }[];
+    by_offer: { offer_id: number; book_id: number; book_title: string; book_archived: boolean; offer_title: string; offer_status: string; failure_count: number }[];
+  };
+  alerts: {
+    status_counts: { status: PriceAlertStatus; count: number }[];
+    evaluable_count: number;
+    email_suppressed_active_count: number;
+    email_sent_count: number;
+    email_failed_count: number;
+  };
+  price_changes: {
+    items: {
+      book_id: number;
+      book_title: string;
+      archived: boolean;
+      latest_price: number | null;
+      previous_price: number | null;
+      change_amount: number | null;
+      latest_observed_at: string | null;
+      previous_observed_at: string | null;
+      status: "comparable" | "not_enough_data";
+    }[];
+  };
+  audit: {
+    mutation_count: number;
+    recent_entries: {
+      id: number;
+      admin_user_id: number | null;
+      actor_email: string;
+      action_type: string;
+      entity_type: string;
+      entity_id: string;
+      summary: string;
+      created_at: string;
+    }[];
+  };
+}
+
 export interface DiscoverySection {
   title: string;
   items: BookCardDto[];
@@ -488,6 +552,10 @@ export async function disableAdminAlert(alertId: number): Promise<AdminAlertDto>
 
 export async function fetchAdminAuditLogs(): Promise<{ items: AdminAuditLogDto[] }> {
   return apiRequest("/api/admin/audit", { credentials: "include" });
+}
+
+export async function fetchAdminDashboard(): Promise<AdminDashboardDto> {
+  return apiRequest("/api/admin/dashboard", { credentials: "include" });
 }
 
 export async function fetchAdminCategories(): Promise<{ items: AdminCategoryDto[] }> {

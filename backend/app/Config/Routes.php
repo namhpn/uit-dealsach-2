@@ -50,6 +50,8 @@ $routes->group('api/admin', static function (RouteCollection $routes): void {
     $routes->get('alerts/(:num)', 'AdminController::alert/$1');
     $routes->post('alerts/(:num)/disable', 'AdminController::disableAlert/$1');
     $routes->get('audit', 'AdminController::audit');
+    $routes->get('dashboard', 'AdminController::dashboard');
+    $routes->get('reports', 'AdminController::dashboard');
     $routes->get('categories', 'AdminController::categories');
     $routes->post('categories', 'AdminController::createCategory');
     $routes->patch('categories/(:num)', 'AdminController::updateCategory/$1');

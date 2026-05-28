@@ -11,6 +11,21 @@ use CodeIgniter\Config\BaseConfig;
  */
 class Cors extends BaseConfig
 {
+    public function __construct()
+    {
+        parent::__construct();
+
+        $origins = env('cors.allowedOrigins');
+        if (! is_string($origins)) {
+            return;
+        }
+
+        $parsed = array_values(array_unique(array_filter(array_map('trim', explode(',', $origins)))));
+        if ($parsed !== []) {
+            $this->default['allowedOrigins'] = $parsed;
+        }
+    }
+
     /**
      * The default CORS configuration.
      *
@@ -34,7 +49,9 @@ class Cors extends BaseConfig
          *   - ['http://localhost:8080']
          *   - ['https://www.example.com']
          */
-        'allowedOrigins' => [],
+        'allowedOrigins' => [
+            'http://localhost:5173',
+        ],
 
         /**
          * Origin regex patterns for the `Access-Control-Allow-Origin` header.
@@ -57,7 +74,7 @@ class Cors extends BaseConfig
          *
          * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Credentials
          */
-        'supportsCredentials' => false,
+        'supportsCredentials' => true,
 
         /**
          * Set headers to allow.
@@ -68,7 +85,12 @@ class Cors extends BaseConfig
          *
          * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Headers
          */
-        'allowedHeaders' => [],
+        'allowedHeaders' => [
+            'Accept',
+            'Content-Type',
+            'X-Requested-With',
+            'Authorization',
+        ],
 
         /**
          * Set headers to expose.
@@ -93,7 +115,13 @@ class Cors extends BaseConfig
          *
          * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Methods
          */
-        'allowedMethods' => [],
+        'allowedMethods' => [
+            'GET',
+            'POST',
+            'PATCH',
+            'DELETE',
+            'OPTIONS',
+        ],
 
         /**
          * Set how many seconds the results of a preflight request can be cached.

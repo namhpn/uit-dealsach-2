@@ -8,22 +8,22 @@ use DateTimeZone;
 
 class DealSachDemoSeeder extends Seeder
 {
-    private const BASE_NOW = '2026-05-26 09:00:00';
-
     public function run(): void
     {
         $this->clearTables();
 
-        $now = self::BASE_NOW;
+        $clock = $this->nowInVietnam()->setTime(9, 0, 0);
+        $now = $this->formatDateTime($clock);
         $categoryIds = $this->seedCategories($now);
         $bookIds = $this->seedBooks($categoryIds, $now);
         $retailerIds = $this->seedRetailerPlatforms($now);
         $merchantIds = $this->seedMerchants($retailerIds, $now);
         $offerIds = $this->seedOffers($bookIds, $retailerIds, $merchantIds, $now);
-        $cycleIds = $this->seedObservationCycles($now);
-        $this->seedPriceObservations($offerIds, $cycleIds, $now);
-        $this->seedBuyFlowEvents($offerIds, $now);
-        $this->seedSetupAdmin($now);
+        $cycleIds = $this->seedObservationCycles($clock, $now);
+        $this->seedPriceObservations($offerIds, $cycleIds, $clock, $now);
+        $this->seedBuyFlowEvents($offerIds, $clock, $now);
+        $userIds = $this->seedUsers($now);
+        $this->seedDashboardDemoScenarios($userIds, $bookIds, $offerIds, $clock);
     }
 
     private function clearTables(): void
@@ -62,16 +62,222 @@ class DealSachDemoSeeder extends Seeder
         $this->db->enableForeignKeyChecks();
     }
 
-    private function seedSetupAdmin(string $now): void
+    /**
+     * @return array<string, int>
+     */
+    private function seedUsers(string $now): array
     {
-        $this->db->table('users')->insert([
-            'normalized_email' => 'admin@dealsach.test',
-            'display_email' => 'admin@dealsach.test',
-            'role' => 'admin',
-            'status' => 'active',
-            'alert_email_enabled' => 1,
-            'created_at' => $now,
-            'updated_at' => $now,
+        $rows = [
+            ['key' => 'admin', 'normalized_email' => 'admin@dealsach.test', 'display_email' => 'admin@dealsach.test', 'role' => 'admin', 'status' => 'active', 'alert_email_enabled' => 1],
+            ['key' => 'active_reader', 'normalized_email' => 'active-reader@dealsach.test', 'display_email' => 'active-reader@dealsach.test', 'role' => 'registered', 'status' => 'active', 'alert_email_enabled' => 1],
+            ['key' => 'suppressed_reader', 'normalized_email' => 'suppressed-reader@dealsach.test', 'display_email' => 'suppressed-reader@dealsach.test', 'role' => 'registered', 'status' => 'active', 'alert_email_enabled' => 0],
+        ];
+        $map = [];
+        foreach ($rows as $row) {
+            $key = $row['key'];
+            unset($row['key']);
+            $row['created_at'] = $now;
+            $row['updated_at'] = $now;
+            $this->db->table('users')->insert($row);
+            $map[$key] = (int) $this->db->insertID();
+        }
+
+        return $map;
+    }
+
+    /**
+     * @param array<string, int> $userIds
+     * @param array<string, int> $bookIds
+     * @param array<string, int> $offerIds
+     */
+    private function seedDashboardDemoScenarios(array $userIds, array $bookIds, array $offerIds, DateTimeImmutable $clock): void
+    {
+        $alerts = [
+            [
+                'key' => 'active_target',
+                'user_id' => $userIds['active_reader'],
+                'book_id' => $bookIds['clean-code'],
+                'alert_type' => 'target_price',
+                'status' => 'Active',
+                'target_price' => 198000,
+                'baseline_price' => null,
+                'baseline_pending' => 0,
+                'comparison_price' => 207000,
+                'last_notified_price' => null,
+                'notification_count' => 1,
+                'expires_at' => $this->formatDateTime($clock->modify('+90 days')),
+                'created_at' => $this->formatDateTime($clock->modify('-2 days')),
+                'updated_at' => $this->formatDateTime($clock->modify('-1 day')),
+            ],
+            [
+                'key' => 'suppressed_target',
+                'user_id' => $userIds['suppressed_reader'],
+                'book_id' => $bookIds['nha-gia-kim'],
+                'alert_type' => 'target_price',
+                'status' => 'Active',
+                'target_price' => 140000,
+                'baseline_price' => null,
+                'baseline_pending' => 0,
+                'comparison_price' => 145000,
+                'last_notified_price' => null,
+                'notification_count' => 0,
+                'expires_at' => $this->formatDateTime($clock->modify('+90 days')),
+                'created_at' => $this->formatDateTime($clock->modify('-2 days +30 minutes')),
+                'updated_at' => $this->formatDateTime($clock->modify('-1 day')),
+            ],
+            [
+                'key' => 'auto_paused_lowest',
+                'user_id' => $userIds['active_reader'],
+                'book_id' => $bookIds['tuoi-tre-dang-gia-bao-nhieu'],
+                'alert_type' => 'new_lowest_price',
+                'status' => 'Auto-paused',
+                'target_price' => null,
+                'baseline_price' => 90000,
+                'baseline_pending' => 0,
+                'comparison_price' => null,
+                'last_notified_price' => 86000,
+                'notification_count' => 3,
+                'expires_at' => $this->formatDateTime($clock->modify('+90 days')),
+                'created_at' => $this->formatDateTime($clock->modify('-2 days +1 hour')),
+                'updated_at' => $this->formatDateTime($clock->modify('-1 day')),
+            ],
+            [
+                'key' => 'expired_target',
+                'user_id' => $userIds['active_reader'],
+                'book_id' => $bookIds['de-men-phieu-luu-ky'],
+                'alert_type' => 'target_price',
+                'status' => 'Expired',
+                'target_price' => 70000,
+                'baseline_price' => null,
+                'baseline_pending' => 0,
+                'comparison_price' => 76000,
+                'last_notified_price' => 70000,
+                'notification_count' => 1,
+                'expires_at' => $this->formatDateTime($clock->modify('-6 days')),
+                'created_at' => $this->formatDateTime($clock->modify('-8 days')),
+                'updated_at' => $this->formatDateTime($clock->modify('-5 days')),
+            ],
+        ];
+
+        $alertIds = [];
+        foreach ($alerts as $alert) {
+            $key = $alert['key'];
+            unset($alert['key']);
+            $this->db->table('price_alerts')->insert($alert);
+            $alertIds[$key] = (int) $this->db->insertID();
+        }
+
+        $this->db->table('price_alert_events')->insertBatch([
+            [
+                'price_alert_id' => $alertIds['active_target'],
+                'event_type' => 'notification_sent',
+                'previous_status' => 'Active',
+                'new_status' => 'Active',
+                'summary_json' => json_encode(['price' => 199000], JSON_UNESCAPED_UNICODE),
+                'created_at' => $this->formatDateTime($clock->modify('-1 day +1 hour')),
+            ],
+            [
+                'price_alert_id' => $alertIds['auto_paused_lowest'],
+                'event_type' => 'auto_paused',
+                'previous_status' => 'Active',
+                'new_status' => 'Auto-paused',
+                'summary_json' => json_encode(['notification_count' => 3], JSON_UNESCAPED_UNICODE),
+                'created_at' => $this->formatDateTime($clock->modify('-1 day +1 hour 15 minutes')),
+            ],
+            [
+                'price_alert_id' => $alertIds['expired_target'],
+                'event_type' => 'expired',
+                'previous_status' => 'Active',
+                'new_status' => 'Expired',
+                'summary_json' => json_encode(['expired_at' => $this->formatDateTime($clock->modify('-6 days'))], JSON_UNESCAPED_UNICODE),
+                'created_at' => $this->formatDateTime($clock->modify('-5 days')),
+            ],
+        ]);
+
+        $this->db->table('user_alert_preferences')->insert([
+            'user_id' => $userIds['suppressed_reader'],
+            'alert_emails_enabled' => 0,
+            'created_at' => $this->formatDateTime($clock->modify('-2 days +35 minutes')),
+            'updated_at' => $this->formatDateTime($clock->modify('-2 days +35 minutes')),
+        ]);
+
+        $this->db->table('outbound_emails')->insertBatch([
+            [
+                'normalized_recipient_email' => 'active-reader@dealsach.test',
+                'display_recipient_email' => 'active-reader@dealsach.test',
+                'email_type' => 'price_alert_target_price',
+                'subject' => 'DealSach: giá mục tiêu đã chạm',
+                'body_text' => 'Ưu đãi hiện tại đã đạt mức giá mục tiêu.',
+                'metadata_json' => json_encode(['alert_id' => $alertIds['active_target']], JSON_UNESCAPED_UNICODE),
+                'status' => 'sent',
+                'created_at' => $this->formatDateTime($clock->modify('-1 day +1 hour')),
+                'updated_at' => $this->formatDateTime($clock->modify('-1 day +1 hour')),
+            ],
+            [
+                'normalized_recipient_email' => 'active-reader@dealsach.test',
+                'display_recipient_email' => 'active-reader@dealsach.test',
+                'email_type' => 'price_alert_new_lowest',
+                'subject' => 'DealSach: phát hiện giá thấp mới',
+                'body_text' => 'Đã ghi nhận giá thấp mới cho sách bạn theo dõi.',
+                'metadata_json' => json_encode(['alert_id' => $alertIds['auto_paused_lowest']], JSON_UNESCAPED_UNICODE),
+                'status' => 'failed',
+                'created_at' => $this->formatDateTime($clock->modify('-1 day +1 hour 10 minutes')),
+                'updated_at' => $this->formatDateTime($clock->modify('-1 day +1 hour 10 minutes')),
+            ],
+        ]);
+        $sentEmailId = (int) $this->db->table('outbound_emails')
+            ->select('id')
+            ->where('email_type', 'price_alert_target_price')
+            ->orderBy('id', 'DESC')
+            ->get()
+            ->getFirstRow()
+            ->id;
+
+        $this->db->table('email_deal_links')->insert([
+            'price_alert_id' => $alertIds['active_target'],
+            'outbound_email_id' => $sentEmailId,
+            'book_id' => $bookIds['clean-code'],
+            'token_hash' => hash('sha256', 'seed-email-link-clean-code'),
+            'landing_path' => '/book/' . $bookIds['clean-code'],
+            'created_at' => $this->formatDateTime($clock->modify('-1 day +1 hour')),
+            'updated_at' => $this->formatDateTime($clock->modify('-1 day +1 hour')),
+        ]);
+        $emailLinkId = (int) $this->db->insertID();
+
+        $this->db->table('email_deal_link_clicks')->insert([
+            'email_deal_link_id' => $emailLinkId,
+            'price_alert_id' => $alertIds['active_target'],
+            'book_id' => $bookIds['clean-code'],
+            'clicked_at' => $this->formatDateTime($clock->modify('-1 day +1 hour 5 minutes')),
+            'ip_address' => '127.0.0.1',
+            'user_agent' => 'DealSach Seeder',
+            'created_at' => $this->formatDateTime($clock->modify('-1 day +1 hour 5 minutes')),
+            'updated_at' => $this->formatDateTime($clock->modify('-1 day +1 hour 5 minutes')),
+        ]);
+
+        $this->db->table('admin_audit_logs')->insertBatch([
+            [
+                'admin_user_id' => $userIds['admin'],
+                'actor_email' => 'admin@dealsach.test',
+                'action_type' => 'book_updated',
+                'entity_type' => 'book',
+                'entity_id' => (string) $bookIds['clean-code'],
+                'summary' => 'Cập nhật metadata hiển thị sách demo.',
+                'before_json' => null,
+                'after_json' => json_encode(['display_label' => 'Công nghệ'], JSON_UNESCAPED_UNICODE),
+                'created_at' => $this->formatDateTime($clock->modify('-1 day -15 minutes')),
+            ],
+            [
+                'admin_user_id' => $userIds['admin'],
+                'actor_email' => 'admin@dealsach.test',
+                'action_type' => 'offer_updated',
+                'entity_type' => 'offer',
+                'entity_id' => (string) $offerIds['b3_tiki'],
+                'summary' => 'Rà soát lại trạng thái ưu đãi dashboard demo.',
+                'before_json' => null,
+                'after_json' => json_encode(['status' => 'active'], JSON_UNESCAPED_UNICODE),
+                'created_at' => $this->formatDateTime($clock->modify('-1 day +2 hours 20 minutes')),
+            ],
         ]);
     }
 
@@ -81,12 +287,12 @@ class DealSachDemoSeeder extends Seeder
     private function seedCategories(string $now): array
     {
         $rows = [
-            ['name' => 'Kinh tế', 'slug' => 'kinh-te', 'status' => 'active'],
-            ['name' => 'Văn học Việt Nam', 'slug' => 'van-hoc-viet-nam', 'status' => 'active'],
-            ['name' => 'Kỹ năng sống', 'slug' => 'ky-nang-song', 'status' => 'active'],
-            ['name' => 'Thiếu nhi', 'slug' => 'thieu-nhi', 'status' => 'active'],
-            ['name' => 'Công nghệ', 'slug' => 'cong-nghe', 'status' => 'active'],
-            ['name' => 'Lịch sử', 'slug' => 'lich-su', 'status' => 'active'],
+            ['name' => 'Kinh tế', 'slug' => 'kinh-te', 'display_label' => 'Kinh tế & tài chính', 'display_description' => 'Sách về kinh tế, đầu tư và quản trị tài chính cá nhân.', 'display_order' => 20, 'status' => 'active'],
+            ['name' => 'Văn học Việt Nam', 'slug' => 'van-hoc-viet-nam', 'display_label' => 'Văn học Việt Nam', 'display_description' => 'Tác phẩm văn học Việt Nam được theo dõi giá tham khảo.', 'display_order' => 30, 'status' => 'active'],
+            ['name' => 'Kỹ năng sống', 'slug' => 'ky-nang-song', 'display_label' => 'Kỹ năng sống', 'display_description' => 'Sách phát triển bản thân và kỹ năng ứng dụng hằng ngày.', 'display_order' => 10, 'status' => 'active'],
+            ['name' => 'Thiếu nhi', 'slug' => 'thieu-nhi', 'display_label' => 'Sách thiếu nhi', 'display_description' => 'Sách dành cho thiếu nhi và gia đình.', 'display_order' => 40, 'status' => 'active'],
+            ['name' => 'Công nghệ', 'slug' => 'cong-nghe', 'display_label' => 'Công nghệ & lập trình', 'display_description' => 'Sách công nghệ, lập trình và kỹ thuật phần mềm.', 'display_order' => 50, 'status' => 'active'],
+            ['name' => 'Lịch sử', 'slug' => 'lich-su', 'display_label' => 'Lịch sử', 'display_description' => 'Sách lịch sử Việt Nam và thế giới.', 'display_order' => 60, 'status' => 'active'],
         ];
 
         return $this->insertAndMap('categories', $rows, 'slug', $now);
@@ -355,10 +561,9 @@ class DealSachDemoSeeder extends Seeder
     /**
      * @return array<string, int>
      */
-    private function seedObservationCycles(string $now): array
+    private function seedObservationCycles(DateTimeImmutable $clock, string $now): array
     {
-        $timezone = new DateTimeZone('Asia/Ho_Chi_Minh');
-        $start = new DateTimeImmutable('2026-05-13', $timezone);
+        $start = $clock->setTime(0, 0, 0)->modify('-13 days');
         $rows = [];
 
         for ($day = 0; $day < 14; $day++) {
@@ -377,7 +582,7 @@ class DealSachDemoSeeder extends Seeder
      * @param array<string, int> $offerIds
      * @param array<string, int> $cycleIds
      */
-    private function seedPriceObservations(array $offerIds, array $cycleIds, string $now): void
+    private function seedPriceObservations(array $offerIds, array $cycleIds, DateTimeImmutable $clock, string $now): void
     {
         $series = [
             'b1_tiki' => [132000, 132000, 129000, 129000, 125000, 125000, 122000, 119000, 119000, 116000, 112000, 112000, 109000, 109000],
@@ -420,8 +625,18 @@ class DealSachDemoSeeder extends Seeder
         }
 
         $staleRows = [
-            ['offer' => 'b7_tiki_stale', 'cycle' => '2026-05-20', 'observed' => '2026-05-20 09:00:00', 'price' => 126000],
-            ['offer' => 'b8_fahasa_stale', 'cycle' => '2026-05-21', 'observed' => '2026-05-21 09:00:00', 'price' => 98000],
+            [
+                'offer' => 'b7_tiki_stale',
+                'cycle' => $clock->modify('-8 days')->format('Y-m-d'),
+                'observed' => $clock->modify('-8 days')->setTime(9, 0, 0)->format('Y-m-d H:i:s'),
+                'price' => 126000,
+            ],
+            [
+                'offer' => 'b8_fahasa_stale',
+                'cycle' => $clock->modify('-7 days')->format('Y-m-d'),
+                'observed' => $clock->modify('-7 days')->setTime(9, 0, 0)->format('Y-m-d H:i:s'),
+                'price' => 98000,
+            ],
         ];
 
         foreach ($staleRows as $row) {
@@ -458,20 +673,20 @@ class DealSachDemoSeeder extends Seeder
     /**
      * @param array<string, int> $offerIds
      */
-    private function seedBuyFlowEvents(array $offerIds, string $now): void
+    private function seedBuyFlowEvents(array $offerIds, DateTimeImmutable $clock, string $now): void
     {
         $events = [
-            ['offer' => 'b1_fahasa', 'at' => '2026-05-25 10:15:00'],
-            ['offer' => 'b1_fahasa', 'at' => '2026-05-25 11:20:00'],
-            ['offer' => 'b1_tiki', 'at' => '2026-05-24 14:10:00'],
-            ['offer' => 'b2_lazada', 'at' => '2026-05-25 09:00:00'],
-            ['offer' => 'b2_lazada', 'at' => '2026-05-24 09:00:00'],
-            ['offer' => 'b3_tiki', 'at' => '2026-05-25 16:30:00'],
-            ['offer' => 'b3_tiki', 'at' => '2026-05-18 08:00:00'],
-            ['offer' => 'b5_tiki', 'at' => '2026-05-25 13:45:00'],
-            ['offer' => 'b8_shopee', 'at' => '2026-05-24 18:05:00'],
-            ['offer' => 'b11_tiki', 'at' => '2026-05-25 19:15:00'],
-            ['offer' => 'b12_shopee', 'at' => '2026-05-23 20:30:00'],
+            ['offer' => 'b1_fahasa', 'at' => $clock->modify('-1 day')->setTime(10, 15, 0)->format('Y-m-d H:i:s')],
+            ['offer' => 'b1_fahasa', 'at' => $clock->modify('-1 day')->setTime(11, 20, 0)->format('Y-m-d H:i:s')],
+            ['offer' => 'b1_tiki', 'at' => $clock->modify('-2 days')->setTime(14, 10, 0)->format('Y-m-d H:i:s')],
+            ['offer' => 'b2_lazada', 'at' => $clock->modify('-1 day')->setTime(9, 0, 0)->format('Y-m-d H:i:s')],
+            ['offer' => 'b2_lazada', 'at' => $clock->modify('-2 days')->setTime(9, 0, 0)->format('Y-m-d H:i:s')],
+            ['offer' => 'b3_tiki', 'at' => $clock->modify('-1 day')->setTime(16, 30, 0)->format('Y-m-d H:i:s')],
+            ['offer' => 'b3_tiki', 'at' => $clock->modify('-10 days')->setTime(8, 0, 0)->format('Y-m-d H:i:s')],
+            ['offer' => 'b5_tiki', 'at' => $clock->modify('-1 day')->setTime(13, 45, 0)->format('Y-m-d H:i:s')],
+            ['offer' => 'b8_shopee', 'at' => $clock->modify('-2 days')->setTime(18, 5, 0)->format('Y-m-d H:i:s')],
+            ['offer' => 'b11_tiki', 'at' => $clock->modify('-1 day')->setTime(19, 15, 0)->format('Y-m-d H:i:s')],
+            ['offer' => 'b12_shopee', 'at' => $clock->modify('-3 days')->setTime(20, 30, 0)->format('Y-m-d H:i:s')],
         ];
 
         foreach ($events as $event) {
@@ -488,11 +703,12 @@ class DealSachDemoSeeder extends Seeder
         }
 
         $invalidOffer = $this->offerSnapshot($offerIds['b3_shopee_invalid']);
-        $this->db->table('buy_attempts')->insert($this->eventPayload($invalidOffer, '2026-05-25 17:00:00', $now) + [
+        $invalidEventAt = $clock->modify('-1 day')->setTime(17, 0, 0)->format('Y-m-d H:i:s');
+        $this->db->table('buy_attempts')->insert($this->eventPayload($invalidOffer, $invalidEventAt, $now) + [
             'event_type' => 'buy_attempt',
             'attempt_status' => 'recorded',
         ]);
-        $this->db->table('redirect_failures')->insert($this->eventPayload($invalidOffer, '2026-05-25 17:00:00', $now) + [
+        $this->db->table('redirect_failures')->insert($this->eventPayload($invalidOffer, $invalidEventAt, $now) + [
             'event_type' => 'redirect_failure',
             'failure_reason' => 'destination_invalid',
         ]);
@@ -544,5 +760,15 @@ class DealSachDemoSeeder extends Seeder
         }
 
         return $map;
+    }
+
+    private function nowInVietnam(): DateTimeImmutable
+    {
+        return new DateTimeImmutable('now', new DateTimeZone('Asia/Ho_Chi_Minh'));
+    }
+
+    private function formatDateTime(DateTimeImmutable $time): string
+    {
+        return $time->format('Y-m-d H:i:s');
     }
 }

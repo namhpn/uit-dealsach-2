@@ -214,6 +214,38 @@ Use this section for backend tickets that add or change email verification or se
 
    Expected result: a Vietnamese success envelope and an expired `dealsach_session` cookie.
 
+## CORS Verification (Credentialed Frontend)
+
+Use this section for tickets that change API CORS behavior for frontend origins.
+
+1. Set allowed origins in environment without hardcoding per deployment:
+
+   ```ini
+   cors.allowedOrigins = http://localhost:5173,https://dealsach.eu.cc
+   ```
+
+   Expected result: CORS allowed origins are managed by environment config instead of source edits.
+
+2. Verify preflight response:
+
+   ```bash
+   docker compose run --rm app sh -lc "curl -i -X OPTIONS http://nginx/api/auth/email-code/request \
+     -H 'Origin: http://localhost:5173' \
+     -H 'Access-Control-Request-Method: POST' \
+     -H 'Access-Control-Request-Headers: content-type'"
+   ```
+
+   Expected result: HTTP `204` with `Access-Control-Allow-Origin` matching the request origin, allowed headers/methods, and `Access-Control-Allow-Credentials: true`.
+
+3. Verify credentialed auth request response headers:
+
+   ```bash
+   docker compose run --rm app sh -lc "curl -i -H 'Origin: http://localhost:5173' -H 'Content-Type: application/json' \
+     -d '{\"email\":\"admin@dealsach.test\"}' http://nginx/api/auth/email-code/request"
+   ```
+
+   Expected result: HTTP `200` Vietnamese JSON envelope plus `Access-Control-Allow-Origin` and `Access-Control-Allow-Credentials: true`.
+
 ## Wishlist API Verification
 
 Use this section for tickets that add or change authenticated wishlist APIs.

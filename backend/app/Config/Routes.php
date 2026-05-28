@@ -7,6 +7,10 @@ $routes->get('/', 'Home::index');
 $routes->get('go/offers/(:num)', 'BuyFlowController::offer/$1');
 $routes->get('email/deals/(:segment)', 'AlertEmailLinkController::deal/$1');
 $routes->get('alerts/disable/(:segment)', 'AlertEmailLinkController::disable/$1');
+$routes->group('', ['filter' => 'cors'], static function (RouteCollection $routes): void {
+    $routes->options('api', static fn (): string => '');
+    $routes->options('api/(:any)', static fn (): string => '');
+});
 
 $routes->group('api/public', static function (RouteCollection $routes): void {
     $routes->get('books', 'PublicCatalogController::books');

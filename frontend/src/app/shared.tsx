@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Flame, Heart, Star, TrendingDown } from "lucide-react";
 import { Link, useNavigate } from "react-router";
-import { addWishlistBook, apiErrorMessage, BookCardDto, coverFallback, fetchWishlistStatus, FilterOption, formatVnd, PRICE_DISCLAIMER, removeWishlistBook } from "./api";
+import { addWishlistBook, apiErrorMessage, BookCardDto, CategoryFilterDto, coverFallback, fetchWishlistStatus, formatVnd, PRICE_DISCLAIMER, removeWishlistBook } from "./api";
 import { useAuth } from "./auth";
 
 export interface DealBanner {
@@ -472,7 +472,7 @@ export function ApiFeaturedCategoryShelves({
 }: {
   title: string;
   books: BookCardDto[];
-  categories: Required<Pick<FilterOption, "id" | "name" | "slug">>[];
+  categories: CategoryFilterDto[];
   empty: string | null;
 }) {
   const grouped = new Map<string, BookCardDto[]>();
@@ -508,7 +508,7 @@ export function ApiFeaturedCategoryShelves({
             shelves.map((category) => (
               <div key={category.slug} className="min-w-0">
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                  <h3 className="text-[13px] font-extrabold uppercase" style={{ color: C.onSurface, fontFamily: FONT }}>{category.name}</h3>
+                  <h3 className="text-[13px] font-extrabold uppercase" style={{ color: C.onSurface, fontFamily: FONT }}>{category.display_label ?? category.name}</h3>
                   <Link to={`/search?category=${encodeURIComponent(category.slug)}`} className="text-[11px] font-bold uppercase" style={{ color: C.primary, fontFamily: FONT }}>
                     Xem danh mục
                   </Link>

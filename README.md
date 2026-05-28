@@ -108,6 +108,14 @@ cd /path/to/uit-dealsach-2
 
 The local repo state is expected to include repo-level `.env` and `backend/.env` files for the Dockerized demo environment. Do not commit secrets, production credentials, private tokens, or copied environment values into documentation or source files.
 
+Use `.env.example` as the baseline template for local setup and CI-like demo environments. In particular, manage cross-origin frontend domains via environment values instead of hardcoded source edits:
+
+```ini
+cors.allowedOrigins = http://localhost:5173,https://dealsach.eu.cc
+```
+
+When your frontend domain changes (for example from `localhost:5173` to `dealsach.eu.cc`), update `cors.allowedOrigins` in environment config only and restart containers. No backend code change is required.
+
 ### Install Backend Dependencies
 
 ```bash

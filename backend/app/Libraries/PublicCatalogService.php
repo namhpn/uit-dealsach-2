@@ -233,6 +233,9 @@ class PublicCatalogService
                 'id' => (int) $category->id,
                 'name' => $category->name,
                 'slug' => $category->slug,
+                'display_label' => $category->display_label === null ? null : (string) $category->display_label,
+                'display_description' => $category->display_description === null ? null : (string) $category->display_description,
+                'display_order' => (int) $category->display_order,
             ], $this->activeCategories())),
             'authors' => array_values($authors),
             'publishers' => array_values($publishers),
@@ -605,8 +608,9 @@ class PublicCatalogService
     private function activeCategories(): array
     {
         return $this->db->table('categories')
-            ->select('id, name, slug')
+            ->select('id, name, slug, display_label, display_description, display_order')
             ->where('status', self::ACTIVE)
+            ->orderBy('display_order', 'ASC')
             ->orderBy('name', 'ASC')
             ->get()
             ->getResult();

@@ -148,9 +148,10 @@ final class PublicCatalogApiTest extends CIUnitTestCase
     public function testPriceHistoryUsesObservationTimeEligibilityAndOmitsExactTimestamps(): void
     {
         $body = $this->json($this->get('/api/public/books/' . $this->bookIdByIsbn('9786041000003')));
+        $expectedFirstDate = (new DateTimeImmutable('now', new DateTimeZone('Asia/Ho_Chi_Minh')))->modify('-13 days')->format('Y-m-d');
 
         $this->assertNotEmpty($body['data']['price_history']);
-        $this->assertSame('2026-05-13', $body['data']['price_history'][0]['date']);
+        $this->assertSame($expectedFirstDate, $body['data']['price_history'][0]['date']);
         $this->assertArrayNotHasKey('observed_at', $body['data']['price_history'][0]);
         $this->assertFalse($this->containsTimestampKey($body));
     }
@@ -186,6 +187,13 @@ final class PublicCatalogApiTest extends CIUnitTestCase
         $this->assertContains('cong-nghe', $categorySlugs);
         $this->assertContains('kinh-te', $categorySlugs);
         $this->assertNotContains('tai-chinh', $categorySlugs);
+
+        $technology = array_values(array_filter($body['data']['categories'], static fn (array $category): bool => $category['slug'] === 'cong-nghe'));
+        $this->assertCount(1, $technology);
+        $this->assertArrayHasKey('display_label', $technology[0]);
+        $this->assertArrayHasKey('display_description', $technology[0]);
+        $this->assertArrayHasKey('display_order', $technology[0]);
+        $this->assertSame('Công nghệ & lập trình', $technology[0]['display_label']);
     }
 
     private function bookIdByIsbn(string $isbn): int

@@ -81,7 +81,7 @@ export default function SearchPage() {
           </div>
           <form onSubmit={submit} className="flex flex-col gap-3">
             <input name="q" defaultValue={params.get("q") ?? ""} placeholder="Tên sách, tác giả, ISBN" className="w-full px-3 py-2 text-sm outline-none" style={{ border: border2, fontFamily: FONT }} />
-            <Select label="Danh mục" value={params.get("category") ?? ""} onChange={(value) => update({ category: value })} options={filters?.categories.map((item) => ({ value: item.slug, label: item.name })) ?? []} />
+            <Select label="Danh mục" value={params.get("category") ?? ""} onChange={(value) => update({ category: value })} options={filters?.categories.map((item) => ({ value: item.slug, label: item.display_label ?? item.name })) ?? []} />
             <Select label="Tác giả" value={params.get("author") ?? ""} onChange={(value) => update({ author: value })} options={filters?.authors.map((item) => ({ value: item, label: item })) ?? []} />
             <Select label="Nhà xuất bản" value={params.get("publisher") ?? ""} onChange={(value) => update({ publisher: value })} options={filters?.publishers.map((item) => ({ value: item, label: item })) ?? []} />
             <Select label="Nơi bán" value={params.get("retailer") ?? ""} onChange={(value) => update({ retailer: value })} options={filters?.retailers.map((item) => ({ value: item.slug, label: item.name })) ?? []} />

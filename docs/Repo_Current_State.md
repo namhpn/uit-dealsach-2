@@ -4,7 +4,7 @@ Last updated: 2026-05-28
 
 ## Current Branch
 
-`docs/t0015-project-readme-usage-guide`
+`fix/t0016-local-dev-cors-known-issue-cleanup`
 
 Baseline source for T0007: local `main` after T0006 merge.
 
@@ -28,6 +28,7 @@ Baseline source for T0007: local `main` after T0006 merge.
 | T0013 | 2026-05-27 | Added Admin catalog APIs and pages for categories, books, retailer platforms, merchants, offers, and mock price observations, with audit logging, lifecycle effects, offer validation, eligibility review, and focused tests. |
 | T0014 | 2026-05-28 | Added Admin dashboard/report APIs and pages for 7-day operational metrics, grouped Affiliate Redirects, email engagement, redirect failures, alert/email counts, book-level price changes, audit summaries, and focused tests. |
 | T0015 | 2026-05-28 | Added the top-level project README and usage guide covering scope, setup, workflows, routes, testing, known caveats, and ticket-driven development guidance. |
+| T0016 | 2026-05-28 | Fixed local credentialed API CORS preflight/response handling, added env-driven allowed origins, implemented category display metadata schema/API/UI support, seeded deterministic dashboard alert/email/audit scenarios, and closed KI-0011/0012/0013 with full backend/frontend verification. |
 
 ## Current Folder Structure
 
@@ -214,6 +215,40 @@ docs/implementation_logs/T0015.md
 docs/Repo_Current_State.md
 ```
 
+T0016 changed:
+
+```text
+backend/app/Config/Cors.php
+backend/app/Config/Filters.php
+backend/app/Config/Routes.php
+backend/app/Controllers/AdminController.php
+backend/app/Controllers/AuthController.php
+backend/app/Controllers/PublicCatalogController.php
+backend/app/Database/Migrations/2026-05-26-000001_CreateCoreDomainTables.php
+backend/app/Database/Migrations/2026-05-28-000001_AddCategoryDisplayMetadataToCategories.php
+backend/app/Database/Seeds/DealSachDemoSeeder.php
+backend/app/Libraries/AdminCatalogService.php
+backend/app/Libraries/PublicCatalogService.php
+backend/app/Models/CategoryModel.php
+backend/tests/database/DealSachDomainDatabaseTest.php
+backend/tests/feature/AdminCatalogFeatureTest.php
+backend/tests/feature/AdminDashboardFeatureTest.php
+backend/tests/feature/CorsFeatureTest.php
+backend/tests/feature/PriceAlertFeatureTest.php
+backend/tests/feature/PublicCatalogApiTest.php
+frontend/src/app/Root.tsx
+frontend/src/app/api.ts
+frontend/src/app/pages/AdminCategoriesPage.tsx
+frontend/src/app/pages/SearchPage.tsx
+frontend/src/app/shared.tsx
+.env.example
+README.md
+docs/Manual_Verification_Guide.md
+docs/implementation_logs/T0016.md
+docs/Repo_Current_State.md
+docs/Known_Issues_And_Followups.md
+```
+
 T0008 changed:
 
 ```text
@@ -291,6 +326,7 @@ docs/Repo_Current_State.md
 * T0013 added no frontend, backend, Composer, or npm dependency changes.
 * T0014 added no frontend, backend, Composer, or npm dependency changes.
 * T0015 added no frontend, backend, Composer, or npm dependency changes.
+* T0016 added no frontend, backend, Composer, or npm dependency changes.
 
 ## Available Scripts / Commands
 
@@ -320,6 +356,7 @@ docker compose -p dealsach_t0014 run --rm --build app sh -lc 'cd backend && php 
 docker compose -p dealsach_t0014 run --rm app sh -lc 'cd backend && php spark routes | grep -E "api/admin/(dashboard|reports)"'
 docker compose run --rm app sh -lc 'cd backend && php spark routes | grep -E "email/deals|alerts/disable"'
 docker compose run --rm app sh -lc 'cd backend && php spark routes | grep -E "api/admin"'
+docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit --filter "Auth|AdminCatalog|AdminDashboard|Cors"'
 ```
 
 ## Build/Test Status
@@ -371,6 +408,11 @@ docker compose run --rm app sh -lc 'cd backend && php spark routes | grep -E "ap
 | Docs | `grep -E "Project\|Setup\|Installation\|Usage\|Testing\|Admin\|Dashboard\|Known" README.md` | Passed for T0015 | Key README coverage terms are present. |
 | Docs | `git diff --check` | Passed for T0015 | No whitespace or conflict-marker issues. |
 | Scope | `git diff --name-only`; `git status --short` | Passed for T0015 | Changed tracked and newly created files are limited to `README.md`, `docs/Manual_Verification_Guide.md`, `docs/Repo_Current_State.md`, and `docs/implementation_logs/T0015.md`. |
+| Backend | `docker compose run --rm --build app sh -lc 'cd backend && php vendor/bin/phpunit --filter "Auth\|AdminCatalog\|AdminDashboard\|Cors"'` | Passed for T0016 | 19 tests, 215 assertions. |
+| Backend | `docker compose run --rm --build app sh -lc 'cd backend && php vendor/bin/phpunit'` | Passed for T0016 | 76 tests, 747 assertions. |
+| Frontend | `docker compose run --rm frontend npm run build` | Passed for T0016 | Vite build passed; existing chunk-size warning remains. |
+| Manual API | CORS/auth/admin/filter/dashboard/reports curl workflow (via `docker compose run --rm app` to `http://nginx`) | Passed for T0016 | Preflight returned `204` with matching origin + credentials; auth request/verify and `/api/admin/me` included credentialed CORS headers; category metadata and seeded dashboard/report sections returned non-empty data. |
+| Docker runtime | `docker compose up -d --build` | Passed for T0016 | No recurring phpMyAdmin `8080` conflict in this environment; KI-0011 reclassified and closed. |
 | API/Public stability | `GET /api/public/books`; `GET /go/offers/5` | Passed for T0007 | Public books returned HTTP 200; Buy redirect returned `302 https://tiki.vn/nha-gia-kim-demo`. |
 | Backend | `cd backend && php vendor/bin/phpunit` | Passed for T0008 | Host PHP 8.4 / SQLite runtime: 45 tests, 331 assertions. |
 | Backend | `docker compose -p dealsach_t0008 run --rm app sh -lc 'cd backend && php spark migrate && php spark db:seed DealSachDemoSeeder'` | Passed for T0008 | Clean disposable MariaDB project created `wishlist_items` after account-access tables and seeded demo data. |
@@ -666,13 +708,11 @@ Closed in T0006:
 
 * KI-0008 — fresh disposable long-running Docker app containers now normalize `backend/writable` ownership during startup without a manual `chown`.
 
-Open after T0015:
+Open after T0016:
 
 * KI-0009 remains open — demo book cover paths still rely on fallback rendering because the referenced `/demo/covers/*` image files are not present.
-* KI-0011 remains open — full-stack `docker compose up` verification can be blocked when host port `8080` is already allocated for phpMyAdmin.
-* KI-0012 remains open — category display metadata needs concrete schema fields before Admin can manage more than name, slug, and status.
-* KI-0013 remains open — demo seed dashboard-specific alert/email/audit scenarios need a future ticket because seed edits were outside T0014 allowed areas.
+* KI-0011, KI-0012, and KI-0013 are closed by T0016.
 
 ## Next Recommended Ticket
 
-Continue with a scoped dashboard demo-data ticket for KI-0013, or define the next documentation/application ticket if dashboard seed richness is not required immediately.
+Prioritize a scoped KI-0009 ticket to add committed demo cover assets (or align seeded paths) so homepage/detail visual verification no longer depends on fallback initials.

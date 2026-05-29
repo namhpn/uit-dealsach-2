@@ -12,7 +12,7 @@ class DealSachDemoSeeder extends Seeder
     {
         $this->clearTables();
 
-        $clock = $this->nowInVietnam()->setTime(9, 0, 0);
+        $clock = $this->nowInVietnam()->modify('-1 hour');
         $now = $this->formatDateTime($clock);
         $categoryIds = $this->seedCategories($now);
         $bookIds = $this->seedBooks($categoryIds, $now);
@@ -584,9 +584,10 @@ class DealSachDemoSeeder extends Seeder
      */
     private function seedPriceObservations(array $offerIds, array $cycleIds, DateTimeImmutable $clock, string $now): void
     {
+        $observedTime = $clock->format('H:i:s');
         $series = [
             'b1_tiki' => [132000, 132000, 129000, 129000, 125000, 125000, 122000, 119000, 119000, 116000, 112000, 112000, 109000, 109000],
-            'b1_fahasa' => [128000, 128000, 126000, 126000, 124000, 121000, 121000, 119000, 117000, 115000, 113000, 111000, 109000, 109000],
+            'b1_fahasa' => [128000, 128000, 126000, 126000, 124000, 121000, 121000, 119000, 117000, 115000, 113000, 111000, 111000, 111000],
             'b2_shopee' => [96000, 96000, 94000, 94000, 92000, 91000, 90000, 90000, 88000, 87000, 86000, 86000, 85000, 85000],
             'b2_lazada' => [101000, 99000, 98000, 96000, 94000, 93000, 91000, 90000, 89000, 88000, 87000, 86000, 85000, 85000],
             'b3_tiki' => [154000, 154000, 151000, 151000, 149000, 148000, 146000, 145000, 143000, 142000, 141000, 140000, 139000, 139000],
@@ -615,7 +616,7 @@ class DealSachDemoSeeder extends Seeder
                 $this->insertObservation(
                     $offerIds[$offerKey],
                     $cycleId,
-                    array_keys($cycleIds)[$index] . ' 09:00:00',
+                    array_keys($cycleIds)[$index] . ' ' . $observedTime,
                     $price === null ? 'unavailable' : 'available',
                     $price,
                     $snapshot[$offerKey]['destination'] ?? 'valid',
@@ -628,13 +629,13 @@ class DealSachDemoSeeder extends Seeder
             [
                 'offer' => 'b7_tiki_stale',
                 'cycle' => $clock->modify('-8 days')->format('Y-m-d'),
-                'observed' => $clock->modify('-8 days')->setTime(9, 0, 0)->format('Y-m-d H:i:s'),
+                'observed' => $clock->modify('-8 days')->format('Y-m-d H:i:s'),
                 'price' => 126000,
             ],
             [
                 'offer' => 'b8_fahasa_stale',
                 'cycle' => $clock->modify('-7 days')->format('Y-m-d'),
-                'observed' => $clock->modify('-7 days')->setTime(9, 0, 0)->format('Y-m-d H:i:s'),
+                'observed' => $clock->modify('-7 days')->format('Y-m-d H:i:s'),
                 'price' => 98000,
             ],
         ];

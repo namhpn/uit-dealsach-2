@@ -134,7 +134,7 @@ export default function AccountPage() {
         </div>
 
         <div className="flex flex-col gap-3 p-5" style={{ background: C.white, border: border2, boxShadow: shadow8 }}>
-          <LogOut size={22} style={{ color: C.secondary }} />
+          <LogOut size={22} style={{ color: C.dealRed }} />
           <h2 className="text-[16px] font-extrabold uppercase" style={{ fontFamily: FONT }}>Phiên đăng nhập</h2>
           <p className="text-[13px] leading-relaxed" style={{ color: C.onSurfaceVariant, fontFamily: FONT }}>Đăng xuất khỏi trình duyệt hiện tại.</p>
           <button type="button" onClick={logout} className="mt-auto px-4 py-2.5 text-[12px] font-extrabold uppercase" style={{ background: C.boneWhite, color: C.onSurface, border: border2, fontFamily: FONT }}>
@@ -145,7 +145,7 @@ export default function AccountPage() {
 
       <section className="flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between" style={{ background: C.white, border: border2, boxShadow: shadow8 }}>
         <div className="flex min-w-0 gap-3">
-          {enabled ? <Mail size={22} style={{ color: C.primary }} /> : <Bell size={22} style={{ color: C.secondary }} />}
+          {enabled ? <Mail size={22} style={{ color: C.primary }} /> : <Bell size={22} style={{ color: C.dealRed }} />}
           <div>
             <h2 className="text-[15px] font-extrabold uppercase" style={{ fontFamily: FONT }}>Email cảnh báo giá</h2>
             <p className="mt-1 text-[13px] leading-relaxed" style={{ color: C.onSurfaceVariant, fontFamily: FONT }}>

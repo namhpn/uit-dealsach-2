@@ -100,7 +100,7 @@ export default function WishlistPage() {
               </div>
               <p className="line-clamp-1 text-[12px]" style={{ color: C.onSurfaceVariant, fontFamily: FONT }}>{book.author} / {book.publisher}</p>
               {book.lowest_eligible_price !== null ? (
-                <p className="text-[18px] font-extrabold" style={{ color: C.secondary, fontFamily: FONT }}>{formatVnd(book.lowest_eligible_price)}</p>
+                <p className="text-[18px] font-extrabold" style={{ color: C.dealRed, fontFamily: FONT }}>{formatVnd(book.lowest_eligible_price)}</p>
               ) : (
                 <span className="self-start px-2 py-1 text-[10px] font-bold" style={{ background: C.surfaceVariant, border: `1px solid ${C.black}`, color: C.onSurfaceVariant, fontFamily: FONT }}>{book.status.label}</span>
               )}

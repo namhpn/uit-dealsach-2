@@ -9,6 +9,10 @@ export interface DealBanner {
   headline: string;
   sub: string;
   cta: string;
+  cta_action: {
+    type: "search" | "anchor" | "route";
+    href: string;
+  };
   bg: string;
   textColor: string;
   imageUrl: string;
@@ -29,7 +33,8 @@ export const C = {
   onSurfaceVariant: "#404944",
   outline: "#707974",
   outlineVariant: "#bfc9c3",
-  secondary: "#ba1a1a",
+  secondary: "#496173",
+  dealRed: "#ba1a1a",
   white: "#ffffff",
   black: "#000000",
   earthGray: "#7C95A8",
@@ -52,6 +57,7 @@ export const dealBanners: DealBanner[] = [
     headline: "So sánh giá sách kỹ năng sống",
     sub: "Xem giá tham khảo từ nhiều nhà bán bên ngoài, rồi rời DealSach qua liên kết mua đã kiểm tra.",
     cta: "Tìm ưu đãi",
+    cta_action: { type: "search", href: "/search" },
     bg: C.primary,
     textColor: C.white,
     imageUrl: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=480&h=320&fit=crop&auto=format",
@@ -62,7 +68,8 @@ export const dealBanners: DealBanner[] = [
     headline: "Theo dõi sách giảm giá gần đây",
     sub: "DealSach xếp hạng theo mức giảm VND trong 7 ngày gần đây từ dữ liệu quan sát đủ điều kiện.",
     cta: "Xem giảm giá",
-    bg: C.secondary,
+    cta_action: { type: "anchor", href: "#recent-price-drops" },
+    bg: C.dealRed,
     textColor: C.white,
     imageUrl: "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=480&h=320&fit=crop&auto=format",
     badgeLabel: "GIẢM GIÁ",
@@ -72,8 +79,9 @@ export const dealBanners: DealBanner[] = [
     headline: "Chọn sách, đến nơi bán bên ngoài",
     sub: "DealSach chỉ giúp bạn so sánh giá tham khảo và mở liên kết nhà bán bên ngoài khi liên kết hợp lệ.",
     cta: "Cách hoạt động",
-    bg: C.earthGray,
-    textColor: C.black,
+    cta_action: { type: "anchor", href: "#how-it-works" },
+    bg: C.secondary,
+    textColor: C.white,
     imageUrl: "https://images.unsplash.com/photo-1576872381149-7847515ce5d8?w=480&h=320&fit=crop&auto=format",
     badgeLabel: "MINH BẠCH",
   },
@@ -82,6 +90,7 @@ export const dealBanners: DealBanner[] = [
     headline: "Ưu đãi được nhấn nhiều trong tuần",
     sub: "Các sách phổ biến được xếp theo lượt chuyển hướng Affiliate Redirect thành công gần đây.",
     cta: "Xem phổ biến",
+    cta_action: { type: "anchor", href: "#popular-clicked-deals" },
     bg: C.primaryContainer,
     textColor: C.white,
     imageUrl: "https://images.unsplash.com/photo-1553729459-efe14ef6055d?w=480&h=320&fit=crop&auto=format",
@@ -108,7 +117,7 @@ export function EmptyState({ message }: { message: string }) {
 
 export function ErrorState({ message }: { message: string }) {
   return (
-    <div className="p-6 text-sm leading-relaxed" style={{ border: border2, background: "#fff1f1", color: C.secondary, fontFamily: FONT }}>
+    <div className="p-6 text-sm leading-relaxed" style={{ border: border2, background: "#fff1f1", color: C.dealRed, fontFamily: FONT }}>
       <strong>Không thể tải dữ liệu.</strong>
       <p className="mt-1">{message}</p>
     </div>
@@ -218,9 +227,18 @@ export function CategoryChip({ label, active, onClick }: { label: string; active
 
 function BookPrice({ book, compact = false }: { book: BookCardDto; compact?: boolean }) {
   if (book.lowest_eligible_price !== null) {
+    const showReference = book.highest_eligible_price !== null && book.highest_eligible_price > book.lowest_eligible_price;
+
     return (
-      <span className="font-extrabold leading-none" style={{ fontSize: compact ? 18 : 22, color: C.secondary, fontFamily: FONT }}>
-        {formatVnd(book.lowest_eligible_price)}
+      <span className="flex flex-col gap-1">
+        {showReference && (
+          <span className="text-[11px] font-bold leading-none line-through" style={{ color: C.onSurfaceVariant, fontFamily: FONT }}>
+            {formatVnd(book.highest_eligible_price)}
+          </span>
+        )}
+        <span className="font-extrabold leading-none" style={{ fontSize: compact ? 18 : 22, color: C.dealRed, fontFamily: FONT }}>
+          {formatVnd(book.lowest_eligible_price)}
+        </span>
       </span>
     );
   }
@@ -232,7 +250,15 @@ function BookPrice({ book, compact = false }: { book: BookCardDto; compact?: boo
   );
 }
 
-export function ApiBookCard({ book }: { book: BookCardDto }) {
+export function ApiBookCard({
+  book,
+  showPriceDisclaimer = true,
+  showCommerceCta = false,
+}: {
+  book: BookCardDto;
+  showPriceDisclaimer?: boolean;
+  showCommerceCta?: boolean;
+}) {
   const [pressed, setPressed] = useState(false);
   const wishlist = useWishlistControl(book);
 
@@ -258,10 +284,10 @@ export function ApiBookCard({ book }: { book: BookCardDto }) {
           <Heart size={13} fill={wishlist.wishlisted ? C.primary : "none"} style={{ color: wishlist.wishlisted ? C.primary : C.black }} />
         </button>
         {wishlist.error && (
-          <span className="absolute bottom-2 left-2 right-2 px-2 py-1 text-[10px] font-bold" style={{ background: "#fff1f1", color: C.secondary, border: `1px solid ${C.black}`, fontFamily: FONT }}>
-            {wishlist.error}
-          </span>
-        )}
+            <span className="absolute bottom-2 left-2 right-2 px-2 py-1 text-[10px] font-bold" style={{ background: "#fff1f1", color: C.dealRed, border: `1px solid ${C.black}`, fontFamily: FONT }}>
+              {wishlist.error}
+            </span>
+          )}
       </div>
       <div className="flex flex-1 flex-col gap-1 p-3">
         <p className="text-[10px] font-bold uppercase leading-none" style={{ color: C.outline, fontFamily: FONT }}>{book.category}</p>
@@ -272,7 +298,12 @@ export function ApiBookCard({ book }: { book: BookCardDto }) {
           <span className="mt-1.5 self-start px-1.5 py-0.5 text-[10px] font-bold uppercase" style={{ background: C.boneWhite, color: C.onSurface, fontFamily: FONT, border: "1px solid #000" }}>
             {book.offer_count} ưu đãi
           </span>
-          <PriceDisclaimer compact />
+          {showCommerceCta && (
+            <span className="mt-2 self-start text-[11px] font-extrabold uppercase" style={{ color: C.primary, fontFamily: FONT }}>
+              Đến nơi bán →
+            </span>
+          )}
+          {showPriceDisclaimer && <PriceDisclaimer compact />}
         </div>
       </div>
     </Link>
@@ -287,7 +318,15 @@ export function ApiBookGrid({ books }: { books: BookCardDto[] }) {
   );
 }
 
-export function ApiBookCarousel({ books }: { books: BookCardDto[] }) {
+export function ApiBookCarousel({
+  books,
+  showPriceDisclaimer = true,
+  showCommerceCta = false,
+}: {
+  books: BookCardDto[];
+  showPriceDisclaimer?: boolean;
+  showCommerceCta?: boolean;
+}) {
   const trackRef = useRef<HTMLDivElement>(null);
   const scroll = useCallback((dir: -1 | 1) => {
     const el = trackRef.current;
@@ -303,7 +342,7 @@ export function ApiBookCarousel({ books }: { books: BookCardDto[] }) {
       <div ref={trackRef} className="flex overflow-x-auto" style={{ scrollbarWidth: "none", scrollSnapType: "x mandatory", gap: 20, paddingBottom: 12, paddingRight: 8 }}>
         {books.map((book) => (
           <div key={book.id} data-card className="shrink-0" style={{ scrollSnapAlign: "start", width: "calc((100% - 80px) / 4)", minWidth: 152, maxWidth: 210 }}>
-            <ApiBookCard book={book} />
+            <ApiBookCard book={book} showPriceDisclaimer={showPriceDisclaimer} showCommerceCta={showCommerceCta} />
           </div>
         ))}
       </div>
@@ -312,7 +351,19 @@ export function ApiBookCarousel({ books }: { books: BookCardDto[] }) {
   );
 }
 
-export function ApiDealBookCard({ book, showDrop = false, showDeal = false, compact = false }: { book: BookCardDto; showDrop?: boolean; showDeal?: boolean; compact?: boolean }) {
+export function ApiDealBookCard({
+  book,
+  showDrop = false,
+  showDeal = false,
+  compact = false,
+  ctaLabel = "Xem chi tiết",
+}: {
+  book: BookCardDto;
+  showDrop?: boolean;
+  showDeal?: boolean;
+  compact?: boolean;
+  ctaLabel?: string;
+}) {
   const navigate = useNavigate();
   const [pressed, setPressed] = useState(false);
   const wishlist = useWishlistControl(book);
@@ -332,12 +383,12 @@ export function ApiDealBookCard({ book, showDrop = false, showDeal = false, comp
       <div className="relative" style={{ height: coverH, borderBottom: border2, background: C.surfaceContainer, overflow: "hidden" }}>
         <CoverImage title={book.title} src={book.cover_image} />
         {showDrop && book.price_drop && (
-          <div className="absolute left-4 top-4 z-10 flex items-center gap-1 px-3 py-1" style={{ background: C.secondary, color: C.white, fontFamily: FONT, fontSize: 16, fontWeight: 800, lineHeight: 1.1, border: border2, boxShadow: shadow4, transform: dropRotate }}>
+          <div className="absolute left-4 top-4 z-10 flex items-center gap-1 px-3 py-1" style={{ background: C.dealRed, color: C.white, fontFamily: FONT, fontSize: 16, fontWeight: 800, lineHeight: 1.1, border: border2, boxShadow: shadow4, transform: dropRotate }}>
             <TrendingDown size={14} />-{formatVnd(book.price_drop.amount)}
           </div>
         )}
         {showDeal && book.popular_clicked_deal && (
-          <div className="absolute left-4 top-4 z-10 flex items-center gap-1 px-3 py-1" style={{ background: C.secondary, color: C.white, fontFamily: FONT, fontSize: 16, fontWeight: 800, lineHeight: 1.1, border: border2, boxShadow: shadow4, transform: dropRotate }}>
+          <div className="absolute left-4 top-4 z-10 flex items-center gap-1 px-3 py-1" style={{ background: C.dealRed, color: C.white, fontFamily: FONT, fontSize: 16, fontWeight: 800, lineHeight: 1.1, border: border2, boxShadow: shadow4, transform: dropRotate }}>
             <Flame size={14} />{book.popular_clicked_deal.redirect_count_7d.toLocaleString("vi-VN")}
           </div>
         )}
@@ -356,6 +407,7 @@ export function ApiDealBookCard({ book, showDrop = false, showDeal = false, comp
         <p className="text-[10px] font-bold uppercase leading-none" style={{ color: C.outline, fontFamily: FONT }}>{book.category}</p>
         <h3 className="mt-0.5 line-clamp-2 font-bold leading-snug" style={{ fontFamily: FONT, fontSize: compact ? 13 : 14, color: C.onSurface }}>{book.title}</h3>
         <p className="line-clamp-1" style={{ fontSize: compact ? 11 : 12, color: C.onSurfaceVariant, fontFamily: FONT }}>{book.author}</p>
+        {!compact && <p className="line-clamp-1 text-[11px]" style={{ color: C.outline, fontFamily: FONT }}>{book.publisher}</p>}
         <div className="mt-auto flex flex-col gap-1 pt-3">
           <BookPrice book={book} compact={compact} />
           <div className="mt-1.5 flex flex-wrap gap-1.5">
@@ -365,9 +417,9 @@ export function ApiDealBookCard({ book, showDrop = false, showDeal = false, comp
             )}
           </div>
         </div>
-        <button className={`w-full font-bold uppercase text-[12px] ${compact ? "mt-3 py-2" : "mt-4 py-3"}`} style={{ background: C.primary, color: C.white, fontFamily: FONT, border: border2 }}>
-          Xem chi tiết
-        </button>
+        <Link to={`/book/${book.id}`} className={`w-full text-center font-bold uppercase text-[12px] ${compact ? "mt-3 py-2" : "mt-4 py-3"}`} style={{ background: C.primary, color: C.white, fontFamily: FONT, border: border2 }}>
+          {ctaLabel}
+        </Link>
       </div>
     </div>
   );
@@ -428,7 +480,29 @@ function useWishlistControl(book: BookCardDto) {
   };
 }
 
-export function ApiDealSection({ title, icon, books, empty, showDrop = false, showDeal = false }: { title: string; icon: React.ReactNode; books: BookCardDto[]; empty: string | null; showDrop?: boolean; showDeal?: boolean }) {
+export function ApiDealSection({
+  title,
+  subtitle,
+  ctaLabel,
+  ctaHref,
+  windowLabel,
+  icon,
+  books,
+  empty,
+  showDrop = false,
+  showDeal = false,
+}: {
+  title: string;
+  subtitle: string;
+  ctaLabel: string;
+  ctaHref: string;
+  windowLabel?: string | null;
+  icon: React.ReactNode;
+  books: BookCardDto[];
+  empty: string | null;
+  showDrop?: boolean;
+  showDeal?: boolean;
+}) {
   const trackRef = useRef<HTMLDivElement>(null);
   const scroll = useCallback((dir: -1 | 1) => {
     const el = trackRef.current;
@@ -439,11 +513,19 @@ export function ApiDealSection({ title, icon, books, empty, showDrop = false, sh
   return (
     <section>
       <div className="flex items-center justify-between gap-4 px-0 py-5" style={{ borderBottom: `3px solid ${C.black}` }}>
-        <div className="flex items-center gap-3">
-          <span style={{ color: C.primary }}>{icon}</span>
-          <h2 className="font-extrabold uppercase" style={{ fontFamily: FONT, fontSize: "clamp(18px,2vw,26px)", color: C.onSurface }}>{title}</h2>
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-3">
+            <span style={{ color: C.primary }}>{icon}</span>
+            <h2 className="font-extrabold uppercase" style={{ fontFamily: FONT, fontSize: "clamp(18px,2vw,26px)", color: C.onSurface }}>{title}</h2>
+          </div>
+          <p className="text-[12px] leading-relaxed" style={{ color: C.onSurfaceVariant, fontFamily: FONT }}>
+            {subtitle}
+          </p>
+          {windowLabel && <p className="text-[10px] font-bold uppercase" style={{ color: C.outline, fontFamily: FONT }}>{windowLabel}</p>}
         </div>
-        <Link to="/search" className="hidden text-[12px] font-bold uppercase sm:inline-flex" style={{ color: C.primary, fontFamily: FONT }}>Xem thêm</Link>
+        <Link to={ctaHref} className="hidden text-[12px] font-bold uppercase sm:inline-flex" style={{ color: C.primary, fontFamily: FONT }}>
+          {ctaLabel}
+        </Link>
       </div>
       {books.length > 0 ? (
         <div className="relative group/deal">
@@ -451,7 +533,7 @@ export function ApiDealSection({ title, icon, books, empty, showDrop = false, sh
           <div ref={trackRef} className="flex overflow-x-auto" style={{ scrollbarWidth: "none", scrollSnapType: "x mandatory", gap: 24, padding: "28px 0 36px" }}>
             {books.map((book) => (
               <div key={book.id} style={{ scrollSnapAlign: "start", flexShrink: 0 }}>
-                <ApiDealBookCard book={book} showDrop={showDrop} showDeal={showDeal} />
+                <ApiDealBookCard book={book} showDrop={showDrop} showDeal={showDeal} ctaLabel="Đến nơi bán →" />
               </div>
             ))}
           </div>
@@ -466,11 +548,17 @@ export function ApiDealSection({ title, icon, books, empty, showDrop = false, sh
 
 export function ApiFeaturedCategoryShelves({
   title,
+  subtitle,
+  ctaLabel,
+  ctaHref,
   books,
   categories,
   empty,
 }: {
   title: string;
+  subtitle: string;
+  ctaLabel: string;
+  ctaHref: string;
   books: BookCardDto[];
   categories: CategoryFilterDto[];
   empty: string | null;
@@ -495,12 +583,14 @@ export function ApiFeaturedCategoryShelves({
           <Star size={17} style={{ color: C.white }} />
           <h2 className="text-[15px] font-extrabold uppercase" style={{ color: C.white, fontFamily: FONT }}>{title}</h2>
         </div>
-        <Link to="/search" className="text-[12px] font-bold uppercase" style={{ color: C.primaryFixed, fontFamily: FONT }}>Xem tất cả</Link>
+        <Link to={ctaHref} className="text-[12px] font-bold uppercase" style={{ color: C.primaryFixed, fontFamily: FONT }}>
+          {ctaLabel}
+        </Link>
       </div>
       <div className="flex flex-col md:flex-row">
         <div className="w-full p-5 md:w-[172px] md:shrink-0" style={{ borderRight: border2, background: C.boneWhite }}>
           <p className="max-w-[260px] text-[12px] font-bold uppercase leading-relaxed md:max-w-none" style={{ color: C.primary, fontFamily: FONT, overflowWrap: "break-word" }}>
-            Sách nổi bật được quản trị chọn, nhóm theo danh mục từ API.
+            {subtitle}
           </p>
         </div>
         <div className="flex min-w-0 flex-1 flex-col gap-8 p-6">
@@ -508,12 +598,19 @@ export function ApiFeaturedCategoryShelves({
             shelves.map((category) => (
               <div key={category.slug} className="min-w-0">
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                  <h3 className="text-[13px] font-extrabold uppercase" style={{ color: C.onSurface, fontFamily: FONT }}>{category.display_label ?? category.name}</h3>
+                  <div className="flex min-w-0 flex-col gap-1">
+                    <h3 className="text-[13px] font-extrabold uppercase" style={{ color: C.onSurface, fontFamily: FONT }}>{category.display_label ?? category.name}</h3>
+                    {category.display_description && (
+                      <p className="text-[11px] leading-relaxed" style={{ color: C.onSurfaceVariant, fontFamily: FONT }}>
+                        {category.display_description}
+                      </p>
+                    )}
+                  </div>
                   <Link to={`/search?category=${encodeURIComponent(category.slug)}`} className="text-[11px] font-bold uppercase" style={{ color: C.primary, fontFamily: FONT }}>
                     Xem danh mục
                   </Link>
                 </div>
-                <ApiBookCarousel books={category.books} />
+                <ApiBookCarousel books={category.books} showPriceDisclaimer={false} showCommerceCta />
               </div>
             ))
           ) : (

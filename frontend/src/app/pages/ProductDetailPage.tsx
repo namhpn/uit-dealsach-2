@@ -116,7 +116,7 @@ function HeroSection({
             </button>
           </div>
           {wishlistError && (
-            <p className="text-[12px] font-bold leading-relaxed" style={{ color: C.secondary, fontFamily: FONT }}>
+            <p className="text-[12px] font-bold leading-relaxed" style={{ color: C.dealRed, fontFamily: FONT }}>
               {wishlistError}
             </p>
           )}
@@ -247,7 +247,7 @@ function AlertCreationPanel({ data }: { data: BookDetailResponse }) {
       <div className="flex flex-col justify-between gap-4 p-5 md:p-6" style={{ background: C.boneWhite, borderTop: border2 }}>
         <div>
           <div className="mb-3 flex items-center gap-2">
-            <TrendingDown size={20} style={{ color: C.secondary }} />
+            <TrendingDown size={20} style={{ color: C.dealRed }} />
             <h3 className="text-[15px] font-extrabold uppercase" style={{ fontFamily: FONT }}>Giá thấp mới</h3>
           </div>
           <p className="text-[13px] leading-relaxed" style={{ color: C.onSurfaceVariant, fontFamily: FONT }}>
@@ -267,7 +267,7 @@ function AlertCreationPanel({ data }: { data: BookDetailResponse }) {
       </div>
       {(targetError || success) && (
         <div className="p-4 lg:col-span-2" style={{ borderTop: border2, background: targetError ? "#fff1f1" : C.primaryFixed }}>
-          <p role={targetError ? "alert" : "status"} className="text-[12px] font-bold leading-relaxed" style={{ color: targetError ? C.secondary : C.primary, fontFamily: FONT }}>
+          <p role={targetError ? "alert" : "status"} className="text-[12px] font-bold leading-relaxed" style={{ color: targetError ? C.dealRed : C.primary, fontFamily: FONT }}>
             {targetError ?? success}
           </p>
         </div>

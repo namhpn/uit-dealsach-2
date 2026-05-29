@@ -25,6 +25,7 @@ export interface BookCardDto {
   is_featured: boolean;
   offer_count: number;
   lowest_eligible_price: number | null;
+  highest_eligible_price: number | null;
   status: { value: BookStatusValue; label: string };
   price_disclaimer: string;
   price_drop?: {
@@ -315,6 +316,14 @@ export interface AdminDashboardDto {
 
 export interface DiscoverySection {
   title: string;
+  subtitle: string;
+  cta_label: string;
+  cta_href: string;
+  window?: {
+    label: string;
+    days: number;
+    timezone: string;
+  } | null;
   items: BookCardDto[];
   empty_state: string | null;
 }

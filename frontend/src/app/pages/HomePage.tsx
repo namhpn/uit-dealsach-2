@@ -6,17 +6,19 @@ import {
   ApiDealSection,
   ApiFeaturedCategoryShelves,
   C,
+  DealBanner,
   ErrorState,
   FONT,
   HowItWorks,
   LoadingState,
   NbButton,
+  PriceDisclaimer,
   border2,
   dealBanners,
   shadow8,
 } from "../shared";
 
-function DealBannerCarousel({ onSearchFocus }: { onSearchFocus: () => void }) {
+function DealBannerCarousel({ onCtaClick }: { onCtaClick: (banner: DealBanner) => void }) {
   const [current, setCurrent] = useState(0);
   const [paused, setPaused] = useState(false);
   const total = dealBanners.length;
@@ -52,7 +54,7 @@ function DealBannerCarousel({ onSearchFocus }: { onSearchFocus: () => void }) {
           <p style={{ maxWidth: "100%", whiteSpace: "normal", fontFamily: FONT, color: banner.textColor, opacity: 0.55, fontSize: 11, fontStyle: "italic", lineHeight: 1.4, overflowWrap: "break-word" }}>
             DealSach so sánh giá tham khảo và chuyển người dùng đến nhà bán bên ngoài, không bán sách trực tiếp.
           </p>
-          <NbButton variant={isLight ? "primary" : "secondary"} onClick={onSearchFocus} style={{ alignSelf: "flex-start", marginTop: 4 }}>
+          <NbButton variant={isLight ? "primary" : "secondary"} onClick={() => onCtaClick(banner)} style={{ alignSelf: "flex-start", marginTop: 4 }}>
             {banner.cta}
           </NbButton>
         </div>
@@ -105,24 +107,84 @@ export default function HomePage() {
     };
   }, []);
 
-  function openSearch() {
-    navigate("/search");
+  function handleBannerCta(banner: DealBanner) {
+    const action = banner.cta_action;
+
+    if (action.type === "search") {
+      navigate("/search");
+      return;
+    }
+
+    if (action.type === "route") {
+      navigate(action.href);
+      return;
+    }
+
+    if (action.type === "anchor") {
+      const targetId = action.href.replace(/^#/, "");
+      const target = document.getElementById(targetId);
+      if (target) {
+        target.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }
   }
 
   return (
     <main className="mx-auto flex max-w-[1200px] flex-col gap-12 pb-10 pt-10" style={{ width: "min(1200px, calc(100vw - 32px))", boxSizing: "border-box" }}>
-      <DealBannerCarousel onSearchFocus={openSearch} />
+      <DealBannerCarousel onCtaClick={handleBannerCta} />
 
       {loading && <LoadingState label="Đang tải trang khám phá..." />}
       {error && <ErrorState message={error} />}
       {data && filters && (
         <>
-          <ApiFeaturedCategoryShelves title={data.featured_books.title} books={data.featured_books.items} categories={filters.categories} empty={data.featured_books.empty_state} />
-          <ApiDealSection title={data.recent_price_drops.title} icon={<TrendingDown size={22} />} books={data.recent_price_drops.items} empty={data.recent_price_drops.empty_state} showDrop />
-          <ApiDealSection title={data.popular_clicked_deals.title} icon={<Flame size={22} />} books={data.popular_clicked_deals.items} empty={data.popular_clicked_deals.empty_state} showDeal />
+          <section id="featured-books">
+            <ApiFeaturedCategoryShelves
+              title={data.featured_books.title}
+              subtitle={data.featured_books.subtitle}
+              ctaLabel={data.featured_books.cta_label}
+              ctaHref={data.featured_books.cta_href}
+              books={data.featured_books.items}
+              categories={filters.categories}
+              empty={data.featured_books.empty_state}
+            />
+          </section>
+
+          <section id="recent-price-drops">
+            <ApiDealSection
+              title={data.recent_price_drops.title}
+              subtitle={data.recent_price_drops.subtitle}
+              ctaLabel={data.recent_price_drops.cta_label}
+              ctaHref={data.recent_price_drops.cta_href}
+              windowLabel={data.recent_price_drops.window?.label ?? null}
+              icon={<TrendingDown size={22} />}
+              books={data.recent_price_drops.items}
+              empty={data.recent_price_drops.empty_state}
+              showDrop
+            />
+          </section>
+
+          <section id="popular-clicked-deals">
+            <ApiDealSection
+              title={data.popular_clicked_deals.title}
+              subtitle={data.popular_clicked_deals.subtitle}
+              ctaLabel={data.popular_clicked_deals.cta_label}
+              ctaHref={data.popular_clicked_deals.cta_href}
+              windowLabel={data.popular_clicked_deals.window?.label ?? null}
+              icon={<Flame size={22} />}
+              books={data.popular_clicked_deals.items}
+              empty={data.popular_clicked_deals.empty_state}
+              showDeal
+            />
+          </section>
+
+          <section className="p-4" style={{ border: border2, background: C.white, boxShadow: shadow8 }}>
+            <PriceDisclaimer />
+          </section>
         </>
       )}
-      <HowItWorks />
+      <section id="how-it-works">
+        <HowItWorks />
+      </section>
     </main>
   );
 }

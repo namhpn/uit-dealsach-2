@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useMemo, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { Link } from "react-router";
 import { Plus, RotateCcw, Archive, Save } from "lucide-react";
 import {
@@ -54,7 +54,6 @@ export default function AdminCatalogPage({ kind }: { kind: Kind }) {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [form, setForm] = useState<Record<string, string>>({});
-  const activeCategories = useMemo(() => items.filter((item) => "status" in item && item.status === "active"), [items]);
 
   async function load() {
     setLoading(true);
@@ -125,7 +124,7 @@ export default function AdminCatalogPage({ kind }: { kind: Kind }) {
           <table className="w-full border-collapse text-[13px]" style={{ background: C.white, border: border2, boxShadow: shadow4 }}>
             <thead style={{ background: C.boneWhite }}><tr>{headers(kind).map((h) => <th key={h} className="p-3 text-left uppercase" style={{ border: border2 }}>{h}</th>)}</tr></thead>
             <tbody>
-              {items.map((item) => <Row key={item.id} kind={kind} item={item} onLifecycle={() => lifecycle(item)} onSave={(patch) => quickSave(item, patch)} categories={activeCategories as AdminCategoryDto[]} />)}
+              {items.map((item) => <Row key={item.id} kind={kind} item={item} onLifecycle={() => lifecycle(item)} onSave={(patch) => quickSave(item, patch)} />)}
             </tbody>
           </table>
         )}
@@ -134,10 +133,16 @@ export default function AdminCatalogPage({ kind }: { kind: Kind }) {
   );
 }
 
-function Row({ kind, item, onLifecycle, onSave }: { kind: Kind; item: AnyItem; onLifecycle: () => void; onSave: (patch: Record<string, unknown>) => void; categories: AdminCategoryDto[] }) {
+function Row({ kind, item, onLifecycle, onSave }: { kind: Kind; item: AnyItem; onLifecycle: () => void; onSave: (patch: Record<string, unknown>) => void }) {
   if (kind === "books") {
     const book = item as AdminBookDto;
-    return <TableRow cells={[book.title, book.author, book.category.name, book.is_featured ? "Nổi bật" : "Thường", statusLabel(book.status), `${book.offer_count ?? 0} ưu đãi`]} action={<><NbButton small onClick={() => onSave({ is_featured: !book.is_featured })}>Nổi bật</NbButton><LifeButton status={book.status} onClick={onLifecycle} /></>} />;
+    return (
+      <BookRow
+        book={book}
+        onLifecycle={onLifecycle}
+        onSave={onSave}
+      />
+    );
   }
   if (kind === "retailers") {
     const retailer = item as AdminRetailerDto;
@@ -157,6 +162,91 @@ function Row({ kind, item, onLifecycle, onSave }: { kind: Kind; item: AnyItem; o
 
 function TableRow({ cells, action }: { cells: ReactNode[]; action: ReactNode }) {
   return <tr>{cells.map((cell, index) => <td key={index} className="p-3 align-top" style={{ border: border2 }}>{cell}</td>)}<td className="p-3" style={{ border: border2 }}><div className="flex flex-wrap items-center gap-2">{action}</div></td></tr>;
+}
+
+function BookRow({ book, onLifecycle, onSave }: { book: AdminBookDto; onLifecycle: () => void; onSave: (patch: Record<string, unknown>) => void }) {
+  const [releaseDate, setReleaseDate] = useState(book.release_date ?? "");
+  const [pageCount, setPageCount] = useState(book.page_count === null ? "" : String(book.page_count));
+  const [dimensions, setDimensions] = useState(book.dimensions ?? "");
+  const [format, setFormat] = useState(book.format ?? "");
+
+  useEffect(() => {
+    setReleaseDate(book.release_date ?? "");
+    setPageCount(book.page_count === null ? "" : String(book.page_count));
+    setDimensions(book.dimensions ?? "");
+    setFormat(book.format ?? "");
+  }, [book.dimensions, book.format, book.page_count, book.release_date]);
+
+  function saveMetadata() {
+    onSave({
+      release_date: releaseDate.trim() === "" ? null : releaseDate.trim(),
+      page_count: pageCount.trim() === "" ? null : Number(pageCount),
+      dimensions: dimensions.trim() === "" ? null : dimensions.trim(),
+      format: format.trim() === "" ? null : format.trim(),
+    });
+  }
+
+  const metadataEditor = (
+    <div className="grid grid-cols-1 gap-2 xl:grid-cols-2">
+      <label className="text-[11px] font-bold uppercase">
+        Ngày phát hành
+        <input
+          type="date"
+          value={releaseDate}
+          onChange={(event) => setReleaseDate(event.target.value)}
+          className="mt-1 h-9 w-full px-2 text-[12px] normal-case"
+          style={{ border: border2, background: C.boneWhite }}
+        />
+      </label>
+      <label className="text-[11px] font-bold uppercase">
+        Số trang
+        <input
+          value={pageCount}
+          onChange={(event) => setPageCount(event.target.value.replace(/\D/g, ""))}
+          className="mt-1 h-9 w-full px-2 text-[12px] normal-case"
+          style={{ border: border2, background: C.boneWhite }}
+        />
+      </label>
+      <label className="text-[11px] font-bold uppercase">
+        Kích thước
+        <input
+          value={dimensions}
+          onChange={(event) => setDimensions(event.target.value)}
+          className="mt-1 h-9 w-full px-2 text-[12px] normal-case"
+          style={{ border: border2, background: C.boneWhite }}
+        />
+      </label>
+      <label className="text-[11px] font-bold uppercase">
+        Định dạng
+        <input
+          value={format}
+          onChange={(event) => setFormat(event.target.value)}
+          className="mt-1 h-9 w-full px-2 text-[12px] normal-case"
+          style={{ border: border2, background: C.boneWhite }}
+        />
+      </label>
+    </div>
+  );
+
+  return (
+    <TableRow
+      cells={[
+        book.title,
+        book.author,
+        book.category.name,
+        book.is_featured ? "Nổi bật" : "Thường",
+        statusLabel(book.status),
+        metadataEditor,
+      ]}
+      action={(
+        <>
+          <NbButton small onClick={() => onSave({ is_featured: !book.is_featured })}>Nổi bật</NbButton>
+          <NbButton small onClick={saveMetadata}><Save size={13} /> Lưu chi tiết</NbButton>
+          <LifeButton status={book.status} onClick={onLifecycle} />
+        </>
+      )}
+    />
+  );
 }
 
 function LifeButton({ status, onClick }: { status: string; onClick: () => void }) {
@@ -197,7 +287,7 @@ function fields(kind: Kind) {
 }
 
 function headers(kind: Kind) {
-  if (kind === "books") return ["Tên", "Tác giả", "Danh mục", "Nổi bật", "Trạng thái", "Ưu đãi", "Thao tác"];
+  if (kind === "books") return ["Tên", "Tác giả", "Danh mục", "Nổi bật", "Trạng thái", "Thông số", "Thao tác"];
   if (kind === "retailers") return ["Tên", "Slug", "Tên miền duyệt", "Trạng thái", "Phụ thuộc", "Thao tác"];
   if (kind === "merchants") return ["Tên", "Slug", "Nền tảng", "Trạng thái", "Phụ thuộc", "Thao tác"];
   if (kind === "offers") return ["Tên", "Sách", "Nền tảng / nhà bán", "Trạng thái", "Quan sát mới nhất", "Rà soát", "Thao tác"];

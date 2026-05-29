@@ -4,7 +4,7 @@ Last updated: 2026-05-29
 
 ## Current Branch
 
-`feature/t0019-commerce-homepage-refresh`
+`feature/t0020-productdetail-refresh`
 
 Baseline source for T0007: local `main` after T0006 merge.
 
@@ -32,6 +32,7 @@ Baseline source for T0007: local `main` after T0006 merge.
 | T0017 | 2026-05-28 | Added ERD and markdown-only UML documentation, then refactored README with a concise System Architecture section and direct links to design docs. |
 | T0018 | 2026-05-28 | Added async public search autocomplete, conditional Office 365 SMTP delivery with safe fallback for outbound auth/alert emails, updated seeded Admin email, and refreshed verification docs/tests. |
 | T0019 | 2026-05-29 | Refreshed the homepage as commerce-first Neubrutalism with frontend-configured banner actions, discovery metadata + reference-price support, seeded same-day freshness stability, and public-catalog/frontend verification updates. |
+| T0020 | 2026-05-29 | Refreshed ProductDetailPage into a price-comparison-first layout, added book technical metadata schema/API/admin editing support, moved full alert form into the price-history module, and updated public/admin catalog verification coverage. |
 
 ## Current Folder Structure
 
@@ -802,6 +803,17 @@ T0019:
 7. Ran Dockerized `PublicCatalog` subset, full backend PHPUnit, frontend build, and discovery route registration check; all passed.
 8. Did not complete browser screenshot/manual UI capture in this run; interactive homepage visual verification remains recommended before merge if visual evidence is required.
 
+T0020:
+
+1. Reviewed required docs and `docs/implementation_logs/T0020.md`.
+2. Created branch `feature/t0020-productdetail-refresh` from local `main`.
+3. Added migration `2026-05-29-000001_AddBookTechnicalMetadata.php` to introduce nullable `books.release_date`, `books.page_count`, `books.dimensions`, and `books.format`.
+4. Extended `BookModel`, `AdminCatalogService`, `PublicCatalogService`, and frontend API types so admin/public book payloads support the new metadata fields and public book detail summary includes `highest_eligible_price`.
+5. Refreshed `ProductDetailPage` to a price-comparison-first hierarchy with a single large contain-mode cover, best-price reference handling (`highest_eligible_price > lowest_eligible_price`), hard-bordered seller state blocks, moved alert form under the price-history module, no chart gradient, technical metadata fallback (`Chưa cập nhật`), and related-book cap at 4.
+6. Added row-level admin book metadata editing inputs in `AdminCatalogPage` while keeping quick-create minimal.
+7. Updated demo seed books with representative metadata values and retained at least one null-metadata scenario for fallback rendering checks.
+8. Ran Dockerized focused backend tests (`PublicCatalog`, `AdminCatalog`), full backend PHPUnit, frontend build, and public book routes registration check; all passed.
+
 ## Known Issues
 
 See `docs/Known_Issues_And_Followups.md`.
@@ -814,7 +826,7 @@ Closed in T0006:
 
 * KI-0008 — fresh disposable long-running Docker app containers now normalize `backend/writable` ownership during startup without a manual `chown`.
 
-Open after T0019:
+Open after T0020:
 
 * KI-0009 remains open — demo book cover paths still rely on fallback rendering because the referenced `/demo/covers/*` image files are not present.
 * KI-0011, KI-0012, and KI-0013 are closed by T0016.

@@ -259,6 +259,51 @@ Use this section for tickets that change homepage discovery metadata, homepage c
 
    Expected result: both commands pass.
 
+## Product Detail Commerce Refresh Verification
+
+Use this section for tickets that change ProductDetailPage layout hierarchy, public detail metadata, seller row states, or alert-form placement.
+
+1. Run focused and full backend tests:
+
+   ```bash
+   docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit --filter PublicCatalog'
+   docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit --filter AdminCatalog'
+   docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit'
+   ```
+
+   Expected result: all commands return `OK`.
+
+2. Run frontend build:
+
+   ```bash
+   docker compose run --rm frontend npm run build
+   ```
+
+   Expected result: build succeeds.
+
+3. Confirm public detail route still exists:
+
+   ```bash
+   docker compose run --rm app sh -lc 'cd backend && php spark routes | grep -E "api/public/books/\\([0-9]+\\)"'
+   ```
+
+   Expected result: `GET /api/public/books/([0-9]+)` is listed.
+
+4. Open a public book detail page and verify:
+
+   - hero uses one large cover frame with `contain` image behavior;
+   - best-price panel shows current lowest eligible price or status label;
+   - reference strikethrough price appears only when highest eligible price is greater than lowest;
+   - seller groups remain visible with purchasable rows first and disabled hard-label blocks:
+     - `CHƯA CÓ LIÊN KẾT`
+     - `GIÁ THAM KHẢO CŨ`
+     - `TẠM HẾT HÀNG`
+   - seller CTA text is `ĐẾN NƠI BÁN`;
+   - full alert form appears in/directly below the price-history module and uses `THEO DÕI GIẢM GIÁ`;
+   - technical metadata shows seeded values where present and `Chưa cập nhật` when missing;
+   - related books remain frontend-fallback based and capped to 4;
+   - bottom disclaimer remains visible and complete.
+
 3. Build frontend:
 
    ```bash

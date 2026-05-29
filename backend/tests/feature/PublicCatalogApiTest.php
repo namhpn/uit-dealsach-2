@@ -152,7 +152,8 @@ final class PublicCatalogApiTest extends CIUnitTestCase
 
     public function testBookDetailGroupsOffersAndSuppressesInactiveBuyActions(): void
     {
-        $nhaGiaKim = $this->json($this->get('/api/public/books/' . $this->bookIdByIsbn('9786041000003')))['data']['offers'];
+        $nhaGiaKimResponse = $this->json($this->get('/api/public/books/' . $this->bookIdByIsbn('9786041000003')))['data'];
+        $nhaGiaKim = $nhaGiaKimResponse['offers'];
         $dacNhanTam = $this->json($this->get('/api/public/books/' . $this->bookIdByIsbn('9786041000004')))['data']['offers'];
         $nghiGiau = $this->json($this->get('/api/public/books/' . $this->bookIdByIsbn('9786041000007')))['data']['offers'];
 
@@ -166,6 +167,24 @@ final class PublicCatalogApiTest extends CIUnitTestCase
         $this->assertNull($dacNhanTam['unavailable'][0]['buy_action']);
         $this->assertNull($nghiGiau['stale_reference'][0]['buy_action']);
         $this->assertNotNull($dacNhanTam['unavailable'][0]['last_available_price']);
+        $this->assertSame('ĐẾN NƠI BÁN', $nhaGiaKim['purchasable'][0]['buy_action']['label']);
+        $this->assertArrayHasKey('highest_eligible_price', $nhaGiaKimResponse['summary']);
+    }
+
+    public function testBookDetailReturnsTechnicalMetadataAndEligiblePriceReferenceSummary(): void
+    {
+        $body = $this->json($this->get('/api/public/books/' . $this->bookIdByIsbn('9786041000001')));
+        $book = $body['data']['book'];
+        $summary = $body['data']['summary'];
+
+        $this->assertArrayHasKey('release_date', $book);
+        $this->assertArrayHasKey('page_count', $book);
+        $this->assertArrayHasKey('dimensions', $book);
+        $this->assertArrayHasKey('format', $book);
+        $this->assertArrayHasKey('highest_eligible_price', $summary);
+        $this->assertNotNull($summary['lowest_eligible_price']);
+        $this->assertNotNull($summary['highest_eligible_price']);
+        $this->assertGreaterThanOrEqual($summary['lowest_eligible_price'], $summary['highest_eligible_price']);
     }
 
     public function testLowestEligiblePriceCoversCurrentEligibilityRules(): void

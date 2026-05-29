@@ -511,6 +511,10 @@ class AdminCatalogService
             'isbn' => $row->isbn,
             'description' => $row->description,
             'cover_image' => $row->cover_image,
+            'release_date' => $row->release_date,
+            'page_count' => $row->page_count === null ? null : (int) $row->page_count,
+            'dimensions' => $row->dimensions,
+            'format' => $row->format,
             'primary_category_id' => (int) $row->primary_category_id,
             'category' => ['id' => (int) $row->primary_category_id, 'name' => (string) $row->category_name, 'slug' => (string) $row->category_slug, 'status' => (string) $row->category_status],
             'is_featured' => (bool) $row->is_featured,
@@ -597,6 +601,10 @@ class AdminCatalogService
             'isbn' => $body['isbn'] ?? $current->isbn ?? null,
             'description' => $body['description'] ?? $current->description ?? null,
             'cover_image' => $body['cover_image'] ?? $current->cover_image ?? null,
+            'release_date' => $this->normalizeOptionalDate($body, 'release_date', $current->release_date ?? null),
+            'page_count' => $this->normalizeOptionalPageCount($body, $current->page_count ?? null),
+            'dimensions' => $this->normalizeOptionalText($body, 'dimensions', $current->dimensions ?? null),
+            'format' => $this->normalizeOptionalText($body, 'format', $current->format ?? null),
             'primary_category_id' => (int) ($body['primary_category_id'] ?? $current->primary_category_id ?? 0),
             'is_featured' => (int) (bool) ($body['is_featured'] ?? $current->is_featured ?? false),
             'status' => $body['status'] ?? $current->status ?? 'active',
@@ -689,6 +697,18 @@ class AdminCatalogService
         $category = $this->categories->find((int) $data['primary_category_id']);
         if ($category === null || $category->status !== 'active') {
             $errors['primary_category_id'] = 'Sách phải thuộc danh mục Active.';
+        }
+        if ($data['release_date'] !== null && ! preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) $data['release_date'])) {
+            $errors['release_date'] = 'Ngày phát hành phải có định dạng YYYY-MM-DD.';
+        }
+        if ($data['page_count'] !== null && (! is_int($data['page_count']) || $data['page_count'] < 1)) {
+            $errors['page_count'] = 'Số trang phải là số nguyên dương.';
+        }
+        if ($data['dimensions'] !== null && mb_strlen((string) $data['dimensions'], 'UTF-8') > 120) {
+            $errors['dimensions'] = 'Kích thước tối đa 120 ký tự.';
+        }
+        if ($data['format'] !== null && mb_strlen((string) $data['format'], 'UTF-8') > 100) {
+            $errors['format'] = 'Định dạng tối đa 100 ký tự.';
         }
 
         return $errors;
@@ -909,6 +929,38 @@ class AdminCatalogService
         }
 
         if (! preg_match('/^-?\d+$/', $raw)) {
+            return -1;
+        }
+
+        return (int) $raw;
+    }
+
+    private function normalizeOptionalDate(array $body, string $field, mixed $fallback): ?string
+    {
+        $value = $this->normalizeOptionalText($body, $field, $fallback);
+        if ($value === null) {
+            return null;
+        }
+
+        return preg_match('/^\d{4}-\d{2}-\d{2}$/', $value) ? $value : '__invalid_date__';
+    }
+
+    private function normalizeOptionalPageCount(array $body, mixed $fallback): ?int
+    {
+        if (! array_key_exists('page_count', $body)) {
+            return $fallback === null ? null : (int) $fallback;
+        }
+
+        if ($body['page_count'] === null) {
+            return null;
+        }
+
+        $raw = trim((string) $body['page_count']);
+        if ($raw === '') {
+            return null;
+        }
+
+        if (! preg_match('/^\d+$/', $raw)) {
             return -1;
         }
 

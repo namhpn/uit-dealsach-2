@@ -180,6 +180,10 @@ export interface AdminBookDto {
   isbn: string | null;
   description: string | null;
   cover_image: string | null;
+  release_date: string | null;
+  page_count: number | null;
+  dimensions: string | null;
+  format: string | null;
   primary_category_id: number;
   category: { id: number; name: string; slug: string; status: string };
   is_featured: boolean;
@@ -403,10 +407,15 @@ export interface BookDetailResponse {
     isbn: string | null;
     description: string | null;
     cover_image: string | null;
+    release_date: string | null;
+    page_count: number | null;
+    dimensions: string | null;
+    format: string | null;
     is_featured: boolean;
   };
   summary: {
     lowest_eligible_price: number | null;
+    highest_eligible_price: number | null;
     offer_count: number;
     status: { value: BookStatusValue; label: string };
     price_disclaimer: string;

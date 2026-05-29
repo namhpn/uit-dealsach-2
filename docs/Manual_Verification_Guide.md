@@ -512,6 +512,55 @@ Use this section for tickets that change `/search` layout, active filters, searc
    * no unintended horizontal scrolling;
    * hero, filters, cards, and pagination remain readable in one-column flow.
 
+## Search Result Original-Reference Rhythm Refinement Verification
+
+Use this section for tickets that refine `/search` visual rhythm toward the `frontend-original` reference while preserving current API-backed behavior.
+
+1. Run frontend build:
+
+   ```bash
+   docker compose run --rm frontend npm run build
+   ```
+
+   Expected result: build succeeds.
+
+2. Run whitespace/conflict check:
+
+   ```bash
+   git diff --check
+   ```
+
+   Expected result: no whitespace errors or conflict markers.
+
+3. Check changed-file scope:
+
+   ```bash
+   git diff --name-only
+   ```
+
+   Expected result: changes are limited to T0024 allowed frontend/docs/bookkeeping files.
+
+4. Static review `frontend/src/app/pages/SearchPage.tsx`:
+
+   Expected result:
+   * sidebar uses lighter hard-shadow treatment than T0021 baseline;
+   * filter groups are collapsible and use tactile single-select rows with accessible form controls;
+   * visible availability/status filter is not present;
+   * hero is tighter (emerald background, hard border, hard shadow, query chip, result count, integrated custom sort control);
+   * duplicate `Xóa bộ lọc` button beside active chips is removed;
+   * result cards render denser with smaller visual footprint;
+   * per-card disclaimer is not rendered for SearchPage cards;
+   * bottom disclaimer uses icon + divider + uppercase reduced-opacity treatment with Vietnamese trust copy.
+
+5. Static review `frontend/src/app/shared.tsx`:
+
+   Expected result:
+   * search compact card behavior is opt-in/scoped (no global homepage/product-detail regression by default);
+   * price-drop badge renders only when `price_drop` exists and a visible reference price is also valid (`highest_eligible_price > lowest_eligible_price`);
+   * price-drop badge style is hard-bordered red stamped treatment with slight rotation.
+
+6. Do not run browser UI testing, browser screenshots, Playwright, Puppeteer, or visual-capture tools for this ticket.
+
 ## SMTP Delivery Verification
 
 Use this section for tickets that add or change outbound email delivery behavior.

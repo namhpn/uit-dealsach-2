@@ -4,7 +4,7 @@ Last updated: 2026-05-29
 
 ## Current Branch
 
-`feature/t0023-productdetail-rhythm-refinement`
+`feature/t0024-search-reference-rhythm`
 
 Baseline source for T0007: local `main` after T0006 merge.
 
@@ -36,6 +36,7 @@ Baseline source for T0007: local `main` after T0006 merge.
 | T0021 | 2026-05-29 | Refreshed SearchPage into a commerce-first Neubrutalist result experience, added active filter chips + numbered pagination + validated price-range UX, and extended public search cards with API-backed `price_drop` metadata. |
 | T0022 | 2026-05-29 | Refined homepage visual rhythm with stronger hero composition, single-active-category featured rail navigation, homepage-specific compact/deal card behavior updates, and non-regressive shared SearchPage compatibility. |
 | T0023 | 2026-05-29 | Refined ProductDetailPage visual rhythm with stronger title/price/action alignment, clearer alert-action separation, hidden empty seller groups, fuller trust disclaimer copy, and scoped related-card layout fixes without API or backend changes. |
+| T0024 | 2026-05-29 | Refined SearchPage visual rhythm toward the original reference with lighter collapsible filter panel treatment, tighter hero/sort integration, denser scoped search cards, stricter price-drop badge gating, and formal bottom disclosure styling without backend/API changes. |
 
 ## Current Folder Structure
 
@@ -332,6 +333,16 @@ docs/implementation_logs/T0023.md
 docs/Repo_Current_State.md
 ```
 
+T0024 changed:
+
+```text
+frontend/src/app/pages/SearchPage.tsx
+frontend/src/app/shared.tsx
+docs/Manual_Verification_Guide.md
+docs/implementation_logs/T0024.md
+docs/Repo_Current_State.md
+```
+
 T0008 changed:
 
 ```text
@@ -449,6 +460,7 @@ docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit --filte
 
 | Area | Command | Last Result | Notes |
 |---|---|---|---|
+| Frontend | `rtk docker compose run --rm frontend npm run build` | Passed for T0024 | Vite production build passed; existing chunk-size warning remains. |
 | Frontend | `rtk docker compose run --rm frontend npm run build` | Passed for T0023 | Vite production build passed; existing chunk-size warning remains. |
 | Frontend | `rtk docker compose run --rm frontend npm run build` | Passed for T0022 | Vite production build passed; existing chunk-size warning remains. |
 | Backend | `docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit --filter PublicCatalog'` | Passed for T0021 | 19 tests, 162 assertions. Includes search-card `price_drop` API coverage. |
@@ -883,6 +895,17 @@ T0023:
 7. Ran `git diff --name-only`; changes remained in the T0023 allowed frontend/docs/bookkeeping files.
 8. Did not run browser UI automation, screenshots, Playwright, Puppeteer, or visual-capture tools per T0023 manual verification constraints.
 
+T0024:
+
+1. Reviewed required docs and `docs/implementation_logs/T0024.md`.
+2. Created branch `feature/t0024-search-reference-rhythm` from local `main`.
+3. Refined `frontend/src/app/pages/SearchPage.tsx` visual rhythm while preserving current API-backed URL-driven search behavior, wishlist behavior, and pagination/filter contracts.
+4. Added scoped `compactVariant` support in `frontend/src/app/shared.tsx` for denser search cards only, with stricter price-drop badge gating tied to visible reference-price conditions.
+5. Ran `rtk docker compose run --rm frontend npm run build`; build passed with the existing chunk-size warning.
+6. Ran `rtk git diff --check`; no whitespace errors or conflict markers.
+7. Ran `rtk git diff --name-only`; changes remained in the T0024 allowed frontend/docs/bookkeeping files.
+8. Did not run browser UI automation, screenshots, Playwright, Puppeteer, or visual-capture tools per T0024 manual verification constraints.
+
 ## Known Issues
 
 See `docs/Known_Issues_And_Followups.md`.
@@ -895,7 +918,7 @@ Closed in T0006:
 
 * KI-0008 — fresh disposable long-running Docker app containers now normalize `backend/writable` ownership during startup without a manual `chown`.
 
-Open after T0023:
+Open after T0024:
 
 * KI-0009 remains open — demo book cover paths still rely on fallback rendering because the referenced `/demo/covers/*` image files are not present.
 * KI-0011, KI-0012, and KI-0013 are closed by T0016.

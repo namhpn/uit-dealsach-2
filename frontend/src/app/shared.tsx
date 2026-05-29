@@ -237,10 +237,12 @@ function BookPrice({
   book,
   compact = false,
   referencePlacement = "above",
+  compactStatus = false,
 }: {
   book: BookCardDto;
   compact?: boolean;
   referencePlacement?: "above" | "below";
+  compactStatus?: boolean;
 }) {
   if (book.lowest_eligible_price !== null) {
     const showReference = book.highest_eligible_price !== null && book.highest_eligible_price > book.lowest_eligible_price;
@@ -262,7 +264,10 @@ function BookPrice({
   }
 
   return (
-    <span className="self-start px-2 py-1 text-[10px] font-bold" style={{ background: C.surfaceVariant, border: `1px solid ${C.black}`, color: C.onSurfaceVariant, fontFamily: FONT }}>
+    <span
+      className={`self-start px-2 py-1 text-[10px] font-bold ${compactStatus ? "line-clamp-2 max-w-full leading-snug" : ""}`}
+      style={{ background: C.surfaceVariant, border: `1px solid ${C.black}`, color: C.onSurfaceVariant, fontFamily: FONT }}
+    >
       {book.status.label}
     </span>
   );
@@ -275,6 +280,7 @@ export function ApiBookCard({
   offerCountLabel = "ưu đãi",
   showPriceDropBadge = false,
   priceReferencePlacement = "above",
+  compactVariant = false,
 }: {
   book: BookCardDto;
   showPriceDisclaimer?: boolean;
@@ -282,25 +288,36 @@ export function ApiBookCard({
   offerCountLabel?: string;
   showPriceDropBadge?: boolean;
   priceReferencePlacement?: "above" | "below";
+  compactVariant?: boolean;
 }) {
   const [pressed, setPressed] = useState(false);
   const wishlist = useWishlistControl(book);
+  const hasReferencePrice = book.lowest_eligible_price !== null
+    && book.highest_eligible_price !== null
+    && book.highest_eligible_price > book.lowest_eligible_price;
+  const showStampedDrop = showPriceDropBadge && book.price_drop && hasReferencePrice;
+  const referenceDropAmount = hasReferencePrice ? book.highest_eligible_price - book.lowest_eligible_price : null;
+  const dropRotate = book.id % 2 === 0 ? "rotate(2deg)" : "rotate(-2deg)";
+  const coverMaxHeight = compactVariant ? 186 : 220;
 
   return (
     <Link
       to={`/book/${book.id}`}
-      className="flex h-full flex-col overflow-hidden focus:outline-none focus-visible:ring-4 focus-visible:ring-emerald-300"
+      className={`flex h-full flex-col overflow-hidden focus:outline-none focus-visible:ring-4 focus-visible:ring-emerald-300 ${compactVariant ? "h-[390px]" : ""}`}
       onMouseDown={() => setPressed(true)}
       onMouseUp={() => setPressed(false)}
       onMouseLeave={() => setPressed(false)}
       style={{ background: C.white, border: border2, boxShadow: pressed ? "none" : shadow4, transform: pressed ? "translate(4px,4px)" : "none", transition: "box-shadow 80ms, transform 80ms" }}
     >
-      <div className="relative shrink-0 overflow-hidden" style={{ background: C.surfaceContainer, aspectRatio: "2/3", maxHeight: 220, borderBottom: border2 }}>
+      <div className="relative shrink-0 overflow-hidden" style={{ background: C.surfaceContainer, aspectRatio: "2/3", maxHeight: coverMaxHeight, borderBottom: border2 }}>
         <CoverImage title={book.title} src={book.cover_image} />
-        {showPriceDropBadge && book.price_drop && (
-          <span className="absolute left-2 top-2 inline-flex items-center gap-1 px-2 py-1 text-[10px] font-extrabold uppercase" style={{ background: C.dealRed, color: C.white, border: border2, fontFamily: FONT, boxShadow: shadow4 }}>
+        {showStampedDrop && (
+          <span
+            className="absolute left-2 top-2 inline-flex items-center gap-1 px-2 py-1 text-[10px] font-extrabold uppercase"
+            style={{ background: C.dealRed, color: C.white, border: border2, fontFamily: FONT, boxShadow: shadow4, transform: dropRotate }}
+          >
             <TrendingDown size={11} />
-            Giảm {formatVnd(book.price_drop.amount)}
+            Giảm {formatVnd(referenceDropAmount ?? book.price_drop.amount)}
           </span>
         )}
         <button
@@ -319,12 +336,12 @@ export function ApiBookCard({
             </span>
           )}
       </div>
-      <div className="flex flex-1 flex-col gap-1 p-3">
-        <p className="text-[10px] font-bold uppercase leading-none" style={{ color: C.outline, fontFamily: FONT }}>{book.category}</p>
-        <h3 className="mt-0.5 line-clamp-2 text-[13px] font-bold leading-snug" style={{ color: C.onSurface, fontFamily: FONT }}>{book.title}</h3>
+      <div className={`flex flex-1 flex-col ${compactVariant ? "gap-1 p-2.5" : "gap-1 p-3"}`}>
+        <p className="line-clamp-1 text-[10px] font-bold uppercase leading-none" style={{ color: C.outline, fontFamily: FONT }}>{book.category}</p>
+        <h3 className={`mt-0.5 line-clamp-2 font-bold leading-snug ${compactVariant ? "text-[12px]" : "text-[13px]"}`} style={{ color: C.onSurface, fontFamily: FONT }}>{book.title}</h3>
         <p className="line-clamp-1 text-[11px]" style={{ color: C.onSurfaceVariant, fontFamily: FONT }}>{book.author}</p>
-        <div className="mt-auto flex flex-col gap-1 pt-3">
-          <BookPrice book={book} compact referencePlacement={priceReferencePlacement} />
+        <div className={`mt-auto flex flex-col gap-1 ${compactVariant ? "pt-2" : "pt-3"}`}>
+          <BookPrice book={book} compact referencePlacement={priceReferencePlacement} compactStatus={compactVariant} />
           <span className="mt-1.5 self-start px-1.5 py-0.5 text-[10px] font-bold uppercase" style={{ background: C.boneWhite, color: C.onSurface, fontFamily: FONT, border: "1px solid #000" }}>
             {book.offer_count} {offerCountLabel}
           </span>

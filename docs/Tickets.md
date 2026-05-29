@@ -33,4 +33,5 @@
 | T0018 | Add Search Autocomplete and Office 365 Email Delivery | Done | T0017 | Frontend / Backend Email |
 | T0019 | Commerce-First Neubrutalist Homepage Refresh | Done | T0018 | Frontend + Public Catalog API |
 | T0020 | Commerce-First Neubrutalist ProductDetailPage Refresh | Done | T0019 | Frontend + Public catalog + Admin catalog |
-| T0021 | Commerce-First Neubrutalist SearchResultPage Refresh | In Progress | T0020 | Public frontend + public catalog API |
+| T0021 | Commerce-First Neubrutalist SearchResultPage Refresh | Done | T0020 | Public frontend + public catalog API |
+| T0022 | Homepage Visual Rhythm Refinement | In Progress | T0021 | Frontend Homepage |

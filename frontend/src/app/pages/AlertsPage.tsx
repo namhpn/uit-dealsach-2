@@ -40,7 +40,7 @@ const STATUS_STYLES: Record<PriceAlertStatus, { bg: string; color: string }> = {
   Paused: { bg: C.boneWhite, color: C.onSurface },
   "Auto-paused": { bg: "#fff4cc", color: "#6b4b00" },
   Expired: { bg: C.surfaceVariant, color: C.onSurfaceVariant },
-  Disabled: { bg: "#fff1f1", color: C.secondary },
+  Disabled: { bg: "#fff1f1", color: C.dealRed },
 };
 
 export default function AlertsPage() {
@@ -264,7 +264,7 @@ function AlertCard({
                 {ALERT_TYPE_LABELS[alert.alert_type]}
               </span>
               {!alert.alert_emails_enabled && (
-                <span className="px-2 py-1 text-[10px] font-extrabold uppercase" style={{ background: "#fff1f1", color: C.secondary, border: `1px solid ${C.black}`, fontFamily: FONT }}>
+                <span className="px-2 py-1 text-[10px] font-extrabold uppercase" style={{ background: "#fff1f1", color: C.dealRed, border: `1px solid ${C.black}`, fontFamily: FONT }}>
                   Email đang tắt
                 </span>
               )}
@@ -305,7 +305,7 @@ function AlertCard({
             </button>
           </form>
         )}
-        {targetError && <p role="alert" className="text-[12px] font-bold" style={{ color: C.secondary, fontFamily: FONT }}>{targetError}</p>}
+        {targetError && <p role="alert" className="text-[12px] font-bold" style={{ color: C.dealRed, fontFamily: FONT }}>{targetError}</p>}
 
         <div className="flex flex-wrap gap-2">
           {canPause && <ActionButton icon={<Pause size={13} />} label="Tạm dừng" onClick={() => onAction("Đã tạm dừng cảnh báo.", () => pausePriceAlert(alert.id))} />}
@@ -349,7 +349,7 @@ function ActionButton({ icon, label, danger = false, onClick }: { icon: ReactNod
       type="button"
       onClick={onClick}
       className="flex items-center gap-1.5 px-3 py-2 text-[11px] font-extrabold uppercase"
-      style={{ background: danger ? "#fff1f1" : C.boneWhite, color: danger ? C.secondary : C.onSurface, border: border2, fontFamily: FONT }}
+      style={{ background: danger ? "#fff1f1" : C.boneWhite, color: danger ? C.dealRed : C.onSurface, border: border2, fontFamily: FONT }}
     >
       {icon}
       {label}

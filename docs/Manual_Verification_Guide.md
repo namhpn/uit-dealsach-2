@@ -238,6 +238,51 @@ Use this section for tickets that add or change asynchronous public search sugge
 
    Expected result: loading, empty, and error states are shown in Vietnamese where applicable; selecting a suggestion opens the correct `/book/:id`; pressing Enter still navigates to `/search?...`.
 
+## Homepage Discovery Refresh Verification
+
+Use this section for tickets that change homepage discovery metadata, homepage card pricing presentation, or homepage banner CTA behavior.
+
+1. Confirm discovery route is still registered:
+
+   ```bash
+   docker compose run --rm app sh -lc 'cd backend && php spark routes | grep "api/public/discovery"'
+   ```
+
+   Expected result: `GET /api/public/discovery` is listed.
+
+2. Run focused public catalog tests and full backend tests:
+
+   ```bash
+   docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit --filter PublicCatalog'
+   docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit'
+   ```
+
+   Expected result: both commands pass.
+
+3. Build frontend:
+
+   ```bash
+   docker compose run --rm frontend npm run build
+   ```
+
+   Expected result: Vite build succeeds (existing chunk-size warning is acceptable unless the ticket targets bundle splitting).
+
+4. Open homepage and verify section order and CTA behavior:
+
+   Expected result:
+   * section order remains Hero → Featured books → Recent price drops → Popular clicked deals → How it works.
+   * hero CTA actions navigate only to existing internal routes/anchors.
+   * homepage card CTA text is `Đến nơi bán →` and opens `/book/{id}`, not external seller URLs.
+
+5. Verify discovery response shape and homepage card data:
+
+   Expected result:
+   * each discovery section includes `title`, `subtitle`, `cta_label`, `cta_href`, `items`, and `empty_state`.
+   * time-windowed sections include `window` metadata.
+   * book cards include both `lowest_eligible_price` and `highest_eligible_price`.
+   * reference/strikethrough pricing displays only when highest eligible price is greater than lowest eligible price.
+   * homepage shows one module-level price disclaimer instead of per-card disclaimer text.
+
 ## SMTP Delivery Verification
 
 Use this section for tickets that add or change outbound email delivery behavior.

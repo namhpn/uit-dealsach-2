@@ -136,7 +136,7 @@ function Header() {
                   <p className="px-3 py-3 text-[12px] font-bold" style={{ color: C.onSurfaceVariant, fontFamily: FONT }}>Đang tải gợi ý...</p>
                 )}
                 {!suggestionLoading && suggestionError && (
-                  <p className="px-3 py-3 text-[12px] font-bold" style={{ color: C.secondary, fontFamily: FONT }}>Không tải được gợi ý. Nhấn Enter để tìm kiếm.</p>
+                  <p className="px-3 py-3 text-[12px] font-bold" style={{ color: C.dealRed, fontFamily: FONT }}>Không tải được gợi ý. Nhấn Enter để tìm kiếm.</p>
                 )}
                 {!suggestionLoading && !suggestionError && suggestions.length === 0 && (
                   <p className="px-3 py-3 text-[12px] font-bold" style={{ color: C.onSurfaceVariant, fontFamily: FONT }}>Không tìm thấy gợi ý phù hợp.</p>
@@ -160,7 +160,7 @@ function Header() {
                               {item.author} • {item.category}
                             </span>
                           </span>
-                          <span className="mt-0.5 text-[11px] font-bold" style={{ color: item.lowest_eligible_price !== null ? C.secondary : C.onSurfaceVariant, fontFamily: FONT }}>
+                          <span className="mt-0.5 text-[11px] font-bold" style={{ color: item.lowest_eligible_price !== null ? C.dealRed : C.onSurfaceVariant, fontFamily: FONT }}>
                             {item.lowest_eligible_price !== null ? formatVnd(item.lowest_eligible_price) : item.status.label}
                           </span>
                         </button>

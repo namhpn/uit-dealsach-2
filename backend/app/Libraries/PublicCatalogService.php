@@ -19,6 +19,7 @@ class PublicCatalogService
     private const UNAVAILABLE = 'unavailable';
     private const VALID_DESTINATION = 'valid';
     private const VIETNAM_TIMEZONE = 'Asia/Ho_Chi_Minh';
+    private const DISCOVERY_WINDOW_DAYS = 7;
 
     private BaseConnection $db;
     private DateTimeImmutable $now;
@@ -164,6 +165,11 @@ class PublicCatalogService
         usort($featured, $this->cardTitleSorter());
 
         $priceDrops = $this->recentPriceDrops();
+        $window = [
+            'label' => self::DISCOVERY_WINDOW_DAYS . ' ngày gần đây',
+            'days' => self::DISCOVERY_WINDOW_DAYS,
+            'timezone' => self::VIETNAM_TIMEZONE,
+        ];
         $cardById = [];
         foreach ($cards as $card) {
             $cardById[$card['id']] = $card;
@@ -188,16 +194,27 @@ class PublicCatalogService
         return [
             'featured_books' => [
                 'title' => 'Sách nổi bật',
+                'subtitle' => 'Danh sách sách nổi bật được nhóm theo danh mục để bạn khám phá nhanh.',
+                'cta_label' => 'Xem tất cả sách',
+                'cta_href' => '/search',
                 'items' => array_slice($featured, 0, 12),
                 'empty_state' => count($featured) === 0 ? 'Chưa có sách nổi bật.' : null,
             ],
             'recent_price_drops' => [
                 'title' => 'Sách giảm giá gần đây',
+                'subtitle' => 'Mức giảm dựa trên quan sát giá đủ điều kiện trong cửa sổ thời gian gần đây.',
+                'cta_label' => 'Mở trang tìm kiếm',
+                'cta_href' => '/search',
+                'window' => $window,
                 'items' => $dropCards,
                 'empty_state' => count($dropCards) === 0 ? 'Chưa có sách giảm giá đủ điều kiện trong 7 ngày gần đây.' : null,
             ],
             'popular_clicked_deals' => [
                 'title' => 'Ưu đãi được quan tâm',
+                'subtitle' => 'Xếp hạng theo lượt chuyển hướng Affiliate Redirect thành công trong cửa sổ thời gian gần đây.',
+                'cta_label' => 'Khám phá thêm',
+                'cta_href' => '/search',
+                'window' => $window,
                 'items' => $popularClickedDeals,
                 'empty_state' => count($popularClickedDeals) === 0 ? 'Chưa có ưu đãi phổ biến trong 7 ngày gần đây.' : null,
             ],
@@ -325,6 +342,7 @@ class PublicCatalogService
             }
 
             $lowestPrice = $eligiblePrices === [] ? null : min($eligiblePrices);
+            $highestPrice = $eligiblePrices === [] ? null : max($eligiblePrices);
 
             $cards[$bookId] = [
                 'id' => (int) $book->id,
@@ -338,6 +356,7 @@ class PublicCatalogService
                 'is_featured' => (bool) $book->is_featured,
                 'offer_count' => count($offers),
                 'lowest_eligible_price' => $lowestPrice,
+                'highest_eligible_price' => $highestPrice,
                 'status' => $lowestPrice === null ? $this->bookNoPriceStatus($offers, $bucketFlags) : [
                     'value' => 'available_now',
                     'label' => 'Có ưu đãi hiện tại',
@@ -923,7 +942,7 @@ class PublicCatalogService
             ];
         }
 
-        $windowStart = $this->now->modify('-7 days')->format('Y-m-d');
+        $windowStart = $this->now->modify('-' . self::DISCOVERY_WINDOW_DAYS . ' days')->format('Y-m-d');
         $drops = [];
         $books = $this->activeBookRows();
 
@@ -977,7 +996,7 @@ class PublicCatalogService
      */
     private function popularClickedDeals(): array
     {
-        $windowStart = $this->now->modify('-7 days')->format('Y-m-d H:i:s');
+        $windowStart = $this->now->modify('-' . self::DISCOVERY_WINDOW_DAYS . ' days')->format('Y-m-d H:i:s');
         $rows = $this->db->table('affiliate_redirects ar')
             ->select('ar.book_id, ar.retailer_platform_id, b.title AS book_title, r.name AS retailer_name')
             ->join('books b', 'b.id = ar.book_id')

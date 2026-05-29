@@ -174,8 +174,10 @@ final class PublicCatalogApiTest extends CIUnitTestCase
         $nghiGiau = $this->json($this->get('/api/public/books?q=nghi%20giau'))['data']['items'][0];
 
         $this->assertSame(139000, $nhaGiaKim['lowest_eligible_price']);
+        $this->assertSame(139000, $nhaGiaKim['highest_eligible_price']);
         $this->assertSame('available_now', $nhaGiaKim['status']['value']);
         $this->assertNull($nghiGiau['lowest_eligible_price']);
+        $this->assertNull($nghiGiau['highest_eligible_price']);
     }
 
     public function testPriceHistoryUsesObservationTimeEligibilityAndOmitsExactTimestamps(): void
@@ -192,7 +194,19 @@ final class PublicCatalogApiTest extends CIUnitTestCase
     public function testDiscoveryReturnsPriceDropsAndPersistedPopularClickedDeals(): void
     {
         $body = $this->json($this->get('/api/public/discovery'));
+        $featuredSection = $body['data']['featured_books'];
+        $dropsSection = $body['data']['recent_price_drops'];
+        $popularSection = $body['data']['popular_clicked_deals'];
         $featuredCategorySlugs = array_unique(array_column($body['data']['featured_books']['items'], 'category_slug'));
+        $allDiscoveryCards = [
+            ...$featuredSection['items'],
+            ...$dropsSection['items'],
+            ...$popularSection['items'],
+        ];
+        $cardsWithReferenceSpread = array_values(array_filter($allDiscoveryCards, static fn (array $card): bool => isset($card['lowest_eligible_price'], $card['highest_eligible_price'])
+            && $card['lowest_eligible_price'] !== null
+            && $card['highest_eligible_price'] !== null
+            && $card['highest_eligible_price'] > $card['lowest_eligible_price']));
 
         $this->assertNotEmpty($body['data']['featured_books']['items']);
         $this->assertGreaterThanOrEqual(4, count($featuredCategorySlugs));
@@ -204,6 +218,17 @@ final class PublicCatalogApiTest extends CIUnitTestCase
         $this->assertSame(3, $body['data']['popular_clicked_deals']['items'][0]['popular_clicked_deal']['redirect_count_7d']);
         $this->assertSame('Fahasa', $body['data']['popular_clicked_deals']['items'][0]['popular_clicked_deal']['top_retailer']['name']);
         $this->assertNull($body['data']['popular_clicked_deals']['empty_state']);
+        $this->assertSame('Mở trang tìm kiếm', $dropsSection['cta_label']);
+        $this->assertSame('/search', $dropsSection['cta_href']);
+        $this->assertSame('7 ngày gần đây', $dropsSection['window']['label']);
+        $this->assertSame(7, $dropsSection['window']['days']);
+        $this->assertSame('Asia/Ho_Chi_Minh', $dropsSection['window']['timezone']);
+        $this->assertSame('Khám phá thêm', $popularSection['cta_label']);
+        $this->assertSame('/search', $popularSection['cta_href']);
+        $this->assertArrayHasKey('subtitle', $featuredSection);
+        $this->assertArrayHasKey('subtitle', $dropsSection);
+        $this->assertArrayHasKey('subtitle', $popularSection);
+        $this->assertNotEmpty($cardsWithReferenceSpread);
     }
 
     public function testFiltersEndpointReturnsMetadataWithoutBroadNoAvailableOfferFilter(): void

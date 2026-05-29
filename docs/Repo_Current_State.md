@@ -1,10 +1,10 @@
 # Repo Current State
 
-Last updated: 2026-05-28
+Last updated: 2026-05-29
 
 ## Current Branch
 
-`feature/t0018-autocomplete-smtp-office365`
+`feature/t0019-commerce-homepage-refresh`
 
 Baseline source for T0007: local `main` after T0006 merge.
 
@@ -31,6 +31,7 @@ Baseline source for T0007: local `main` after T0006 merge.
 | T0016 | 2026-05-28 | Fixed local credentialed API CORS preflight/response handling, added env-driven allowed origins, implemented category display metadata schema/API/UI support, seeded deterministic dashboard alert/email/audit scenarios, and closed KI-0011/0012/0013 with full backend/frontend verification. |
 | T0017 | 2026-05-28 | Added ERD and markdown-only UML documentation, then refactored README with a concise System Architecture section and direct links to design docs. |
 | T0018 | 2026-05-28 | Added async public search autocomplete, conditional Office 365 SMTP delivery with safe fallback for outbound auth/alert emails, updated seeded Admin email, and refreshed verification docs/tests. |
+| T0019 | 2026-05-29 | Refreshed the homepage as commerce-first Neubrutalism with frontend-configured banner actions, discovery metadata + reference-price support, seeded same-day freshness stability, and public-catalog/frontend verification updates. |
 
 ## Current Folder Structure
 
@@ -285,6 +286,25 @@ docs/Repo_Current_State.md
 docs/Known_Issues_And_Followups.md
 ```
 
+T0019 changed:
+
+```text
+backend/app/Database/Seeds/DealSachDemoSeeder.php
+backend/app/Libraries/PublicCatalogService.php
+backend/tests/feature/PublicCatalogApiTest.php
+frontend/src/app/Root.tsx
+frontend/src/app/api.ts
+frontend/src/app/pages/AccountPage.tsx
+frontend/src/app/pages/AlertsPage.tsx
+frontend/src/app/pages/HomePage.tsx
+frontend/src/app/pages/ProductDetailPage.tsx
+frontend/src/app/pages/WishlistPage.tsx
+frontend/src/app/shared.tsx
+docs/Manual_Verification_Guide.md
+docs/implementation_logs/T0019.md
+docs/Repo_Current_State.md
+```
+
 T0008 changed:
 
 ```text
@@ -364,6 +384,8 @@ docs/Repo_Current_State.md
 * T0015 added no frontend, backend, Composer, or npm dependency changes.
 * T0016 added no frontend, backend, Composer, or npm dependency changes.
 * T0017 added no frontend, backend, Composer, or npm dependency changes.
+* T0018 added no frontend, backend, Composer, or npm dependency changes.
+* T0019 added no frontend, backend, Composer, or npm dependency changes.
 
 ## Available Scripts / Commands
 
@@ -400,6 +422,10 @@ docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit --filte
 
 | Area | Command | Last Result | Notes |
 |---|---|---|---|
+| Backend | `docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit --filter PublicCatalog'` | Passed for T0019 | 17 tests, 143 assertions. |
+| Backend | `docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit'` | Passed for T0019 | 78 tests, 778 assertions. |
+| Frontend | `docker compose run --rm frontend npm run build` | Passed for T0019 | Vite production build passed; existing chunk-size warning remains. |
+| Backend routes | `docker compose run --rm app sh -lc 'cd backend && php spark routes \| grep "api/public/discovery"'` | Passed for T0019 | Confirmed `GET /api/public/discovery` route remains registered. |
 | Backend | `docker compose -p dealsach_t0018 run --rm --build app sh -lc 'cd backend && php vendor/bin/phpunit --filter "Auth\|Alert\|PublicCatalog"'` | Passed for T0018 | 46 tests, 550 assertions. Includes autocomplete endpoint coverage and existing auth/alert regression checks. |
 | Backend | `docker compose -p dealsach_t0018 run --rm --build app sh -lc 'cd backend && php vendor/bin/phpunit'` | Passed for T0018 | 78 tests, 764 assertions. |
 | Frontend | `docker compose -p dealsach_t0018 run --rm frontend npm run build` | Passed for T0018 | Vite build passed; existing chunk-size warning remains and no new dependencies were installed. |
@@ -765,6 +791,17 @@ T0018:
 9. Ran disposable migration/seed and verified seeded Admin email plus route registration for autocomplete and auth email-code request.
 10. Updated reusable verification guidance for autocomplete + SMTP in `docs/Manual_Verification_Guide.md`.
 
+T0019:
+
+1. Reviewed required docs and `docs/implementation_logs/T0019.md`.
+2. Created branch `feature/t0019-commerce-homepage-refresh` from local `main`.
+3. Updated public discovery payload metadata (`subtitle`, `cta_label`, `cta_href`, optional `window`) and added `highest_eligible_price` to public book cards without introducing dynamic homepage section architecture.
+4. Refreshed homepage/shared UI to keep API-backed section order while adding controlled Neubrutalist CTA behavior, category shelf descriptions, module-level disclaimer placement, and `Đến nơi bán →` book-detail navigation.
+5. Split frontend color tokens so `secondary` now represents a neutral accent and `dealRed` is used for commercial/error emphasis in allowed pages.
+6. Updated seeded observation timestamps to avoid future-dated “today” observations and kept deterministic tie/drop scenario coverage while adding at least one highest-vs-lowest reference spread.
+7. Ran Dockerized `PublicCatalog` subset, full backend PHPUnit, frontend build, and discovery route registration check; all passed.
+8. Did not complete browser screenshot/manual UI capture in this run; interactive homepage visual verification remains recommended before merge if visual evidence is required.
+
 ## Known Issues
 
 See `docs/Known_Issues_And_Followups.md`.
@@ -777,7 +814,7 @@ Closed in T0006:
 
 * KI-0008 — fresh disposable long-running Docker app containers now normalize `backend/writable` ownership during startup without a manual `chown`.
 
-Open after T0018:
+Open after T0019:
 
 * KI-0009 remains open — demo book cover paths still rely on fallback rendering because the referenced `/demo/covers/*` image files are not present.
 * KI-0011, KI-0012, and KI-0013 are closed by T0016.

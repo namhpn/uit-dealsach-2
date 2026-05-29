@@ -4,7 +4,7 @@ Last updated: 2026-05-29
 
 ## Current Branch
 
-`feature/t0021-search-refresh`
+`feature/t0022-homepage-rhythm-refinement`
 
 Baseline source for T0007: local `main` after T0006 merge.
 
@@ -34,6 +34,7 @@ Baseline source for T0007: local `main` after T0006 merge.
 | T0019 | 2026-05-29 | Refreshed the homepage as commerce-first Neubrutalism with frontend-configured banner actions, discovery metadata + reference-price support, seeded same-day freshness stability, and public-catalog/frontend verification updates. |
 | T0020 | 2026-05-29 | Refreshed ProductDetailPage into a price-comparison-first layout, added book technical metadata schema/API/admin editing support, moved full alert form into the price-history module, and updated public/admin catalog verification coverage. |
 | T0021 | 2026-05-29 | Refreshed SearchPage into a commerce-first Neubrutalist result experience, added active filter chips + numbered pagination + validated price-range UX, and extended public search cards with API-backed `price_drop` metadata. |
+| T0022 | 2026-05-29 | Refined homepage visual rhythm with stronger hero composition, single-active-category featured rail navigation, homepage-specific compact/deal card behavior updates, and non-regressive shared SearchPage compatibility. |
 
 ## Current Folder Structure
 
@@ -437,6 +438,7 @@ docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit --filte
 
 | Area | Command | Last Result | Notes |
 |---|---|---|---|
+| Frontend | `rtk docker compose run --rm frontend npm run build` | Passed for T0022 | Vite production build passed; existing chunk-size warning remains. |
 | Backend | `docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit --filter PublicCatalog'` | Passed for T0021 | 19 tests, 162 assertions. Includes search-card `price_drop` API coverage. |
 | Backend | `docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit'` | Passed for T0021 | 82 tests, 818 assertions. |
 | Frontend | `docker compose run --rm frontend npm run build` | Passed for T0021 | Vite production build passed; existing chunk-size warning remains. |
@@ -844,6 +846,20 @@ T0021:
 9. Ran Dockerized focused backend test (`PublicCatalog`), full backend PHPUnit suite, and frontend build; all passed.
 10. Updated `docs/Manual_Verification_Guide.md` with a dedicated Search Result Commerce Refresh verification section.
 
+T0022:
+
+1. Reviewed required docs and `docs/implementation_logs/T0022.md`.
+2. Created branch `feature/t0022-homepage-rhythm-refinement` from local `main`.
+3. Kept homepage API-backed loading and CTA actions intact while refining hero typography/spacing/image composition in `frontend/src/app/pages/HomePage.tsx`.
+4. Updated shared homepage presentation behavior in `frontend/src/app/shared.tsx` with homepage-scoped variants:
+   * featured category left navigation rail with one active category carousel at a time,
+   * compact featured cards with `Nơi bán`, no compact CTA text, and reference-price placement below current price for homepage usage,
+   * deal section headers with icon + uppercase title + bottom rule + small `Xem thêm`,
+   * homepage deal cards with stronger CTA treatment and publisher removed.
+5. Removed the standalone homepage disclaimer block while preserving shared disclaimer support for other pages.
+6. Ran Dockerized frontend build via `rtk docker compose run --rm frontend npm run build`; build passed with the existing chunk-size warning.
+7. Updated `docs/Manual_Verification_Guide.md` with T0022-specific homepage rhythm verification steps.
+
 ## Known Issues
 
 See `docs/Known_Issues_And_Followups.md`.
@@ -856,7 +872,7 @@ Closed in T0006:
 
 * KI-0008 — fresh disposable long-running Docker app containers now normalize `backend/writable` ownership during startup without a manual `chown`.
 
-Open after T0021:
+Open after T0022:
 
 * KI-0009 remains open — demo book cover paths still rely on fallback rendering because the referenced `/demo/covers/*` image files are not present.
 * KI-0011, KI-0012, and KI-0013 are closed by T0016.

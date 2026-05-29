@@ -12,7 +12,6 @@ import {
   HowItWorks,
   LoadingState,
   NbButton,
-  PriceDisclaimer,
   border2,
   dealBanners,
   shadow8,
@@ -40,25 +39,29 @@ function DealBannerCarousel({ onCtaClick }: { onCtaClick: (banner: DealBanner) =
       onMouseLeave={() => setPaused(false)}
       style={{ width: "100%", maxWidth: "calc(100vw - 32px)", boxSizing: "border-box", background: banner.bg, border: border2, boxShadow: shadow8, transition: "background 350ms" }}
     >
-      <div className="mx-auto flex w-full max-w-[1200px] flex-col items-start gap-8 px-5 py-10 sm:px-12 md:flex-row md:items-center md:gap-12 md:px-20 md:py-14">
-        <div className="relative z-10 flex w-[264px] min-w-0 flex-1 flex-col gap-4 sm:w-full sm:max-w-xl">
+      <div className="mx-auto grid w-full max-w-[1200px] grid-cols-1 gap-6 px-5 py-8 sm:px-8 sm:py-10 md:grid-cols-[minmax(0,1fr)_280px] md:items-center md:gap-8 md:px-12 md:py-12 lg:px-16 lg:py-14">
+        <div className="relative z-10 flex min-w-0 flex-col gap-4 md:max-w-xl">
           {banner.badgeLabel && (
-            <span className="self-start px-3 py-1 text-[10px] font-bold uppercase" style={{ background: C.boneWhite, color: C.black, fontFamily: FONT, border: border2 }}>
+            <span className="self-start px-3 py-1 text-[10px] font-bold uppercase tracking-[0.12em]" style={{ background: C.boneWhite, color: C.black, fontFamily: FONT, border: border2 }}>
               {banner.badgeLabel}
             </span>
           )}
-          <h1 className="text-[24px] sm:text-[clamp(28px,4vw,52px)]" style={{ maxWidth: "100%", whiteSpace: "normal", fontFamily: FONT, color: banner.textColor, fontWeight: 800, lineHeight: 1.08, overflowWrap: "break-word" }}>
+          <h1 className="text-[28px] sm:text-[clamp(34px,5vw,58px)]" style={{ maxWidth: "100%", whiteSpace: "normal", fontFamily: FONT, color: banner.textColor, fontWeight: 800, lineHeight: 1.02, letterSpacing: "-0.03em", overflowWrap: "break-word" }}>
             {banner.headline}
           </h1>
-          <p style={{ maxWidth: "100%", whiteSpace: "normal", fontFamily: FONT, color: banner.textColor, opacity: 0.78, fontSize: 15, lineHeight: 1.6, overflowWrap: "break-word" }}>{banner.sub}</p>
+          <p style={{ maxWidth: "100%", whiteSpace: "normal", fontFamily: FONT, color: banner.textColor, opacity: 0.8, fontSize: 15, lineHeight: 1.6, overflowWrap: "break-word" }}>{banner.sub}</p>
           <p style={{ maxWidth: "100%", whiteSpace: "normal", fontFamily: FONT, color: banner.textColor, opacity: 0.55, fontSize: 11, fontStyle: "italic", lineHeight: 1.4, overflowWrap: "break-word" }}>
             DealSach so sánh giá tham khảo và chuyển người dùng đến nhà bán bên ngoài, không bán sách trực tiếp.
           </p>
-          <NbButton variant={isLight ? "primary" : "secondary"} onClick={() => onCtaClick(banner)} style={{ alignSelf: "flex-start", marginTop: 4 }}>
+          <NbButton
+            variant={isLight ? "primary" : "secondary"}
+            onClick={() => onCtaClick(banner)}
+            style={{ alignSelf: "flex-start", marginTop: 6, padding: "10px 24px", fontSize: 13, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.03em" }}
+          >
             {banner.cta}
           </NbButton>
         </div>
-        <div className="hidden shrink-0 overflow-hidden md:block" style={{ width: 260, height: 300, border: border2 }}>
+        <div className="hidden shrink-0 overflow-hidden md:block" style={{ width: 280, height: 340, border: border2, boxShadow: shadow8 }}>
           <img src={banner.imageUrl} alt={banner.headline} className="h-full w-full object-cover" />
         </div>
       </div>
@@ -152,10 +155,7 @@ export default function HomePage() {
           <section id="recent-price-drops">
             <ApiDealSection
               title={data.recent_price_drops.title}
-              subtitle={data.recent_price_drops.subtitle}
-              ctaLabel={data.recent_price_drops.cta_label}
               ctaHref={data.recent_price_drops.cta_href}
-              windowLabel={data.recent_price_drops.window?.label ?? null}
               icon={<TrendingDown size={22} />}
               books={data.recent_price_drops.items}
               empty={data.recent_price_drops.empty_state}
@@ -166,19 +166,12 @@ export default function HomePage() {
           <section id="popular-clicked-deals">
             <ApiDealSection
               title={data.popular_clicked_deals.title}
-              subtitle={data.popular_clicked_deals.subtitle}
-              ctaLabel={data.popular_clicked_deals.cta_label}
               ctaHref={data.popular_clicked_deals.cta_href}
-              windowLabel={data.popular_clicked_deals.window?.label ?? null}
               icon={<Flame size={22} />}
               books={data.popular_clicked_deals.items}
               empty={data.popular_clicked_deals.empty_state}
               showDeal
             />
-          </section>
-
-          <section className="p-4" style={{ border: border2, background: C.white, boxShadow: shadow8 }}>
-            <PriceDisclaimer />
           </section>
         </>
       )}

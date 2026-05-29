@@ -259,6 +259,73 @@ Use this section for tickets that change homepage discovery metadata, homepage c
 
    Expected result: both commands pass.
 
+## Homepage Visual Rhythm Refinement Verification
+
+Use this section for tickets that refine homepage visual rhythm while preserving API-backed discovery behavior.
+
+1. Run frontend build:
+
+   ```bash
+   docker compose run --rm frontend npm run build
+   ```
+
+   Expected result: build succeeds.
+
+2. Open `/` and verify hero behavior:
+
+   Expected result:
+   * hero keeps the current production copy from shared banners;
+   * hero CTA actions still use internal search/route/anchor behavior;
+   * hero visual weight is stronger through spacing, typography, image framing, and CTA styling;
+   * hero keeps hard edges (no gradient, no rounded corners, no decorative geometry).
+
+3. Verify the featured category module:
+
+   Expected result:
+   * emerald header bar is visible;
+   * left category rail works as navigation (mobile may use horizontal rail);
+   * only one active category is shown at a time;
+   * right panel shows one active-category carousel;
+   * category label uses `display_label` with fallback to `name`.
+
+4. Verify compact featured cards:
+
+   Expected result:
+   * cards show cover/fallback, wishlist, category, title, author, price/status, reference price when available, and `Nơi bán`;
+   * compact cards do not render `Đến nơi bán` CTA text;
+   * compact cards do not render per-card disclaimer text;
+   * card click opens `/book/{id}`;
+   * wishlist click does not navigate and still triggers auth dialog for guests.
+
+5. Verify deal sections:
+
+   Expected result:
+   * section headers show icon, uppercase title, bottom black rule, and small `Xem thêm` button;
+   * header subtitle/window copy is not shown;
+   * deal cards keep badges/metadata, remove publisher text, and emphasize CTA `Đến nơi bán →`;
+   * CTA still navigates to `/book/{id}` (not `/go/offers/{offerId}`).
+
+6. Verify disclaimer treatment:
+
+   Expected result:
+   * homepage standalone disclaimer block is removed;
+   * product detail page disclaimer remains present where previously implemented.
+
+7. Verify `/search` non-regression:
+
+   Expected result:
+   * active filter chips, search cards, and pagination still work;
+   * search card offer-count label behavior remains unchanged for search;
+   * no obvious visual/functional regression from T0021.
+
+8. Verify mobile at approximately 360px:
+
+   Expected result:
+   * no unintended horizontal scrolling;
+   * hero remains readable;
+   * featured category rail remains usable;
+   * hard shadows do not push layout outside the viewport.
+
 ## Product Detail Commerce Refresh Verification
 
 Use this section for tickets that change ProductDetailPage layout hierarchy, public detail metadata, seller row states, or alert-form placement.

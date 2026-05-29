@@ -464,6 +464,18 @@ interface ApiEnvelope<T> {
   errors: Record<string, string> | null;
 }
 
+class ApiRequestError extends Error {
+  readonly status: number;
+  readonly errors: Record<string, string> | null;
+
+  constructor(message: string, status: number, errors: Record<string, string> | null = null) {
+    super(message);
+    this.name = "ApiRequestError";
+    this.status = status;
+    this.errors = errors;
+  }
+}
+
 export async function fetchDiscovery(): Promise<DiscoveryResponse> {
   return apiGet<DiscoveryResponse>("/api/public/discovery");
 }
@@ -734,7 +746,8 @@ async function apiRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
   const body = (await response.json()) as ApiEnvelope<T>;
 
   if (!response.ok || body.status !== "success") {
-    throw new Error(body.message || "Không thể tải dữ liệu DealSach.");
+    const detail = firstApiError(body.errors);
+    throw new ApiRequestError(detail ?? body.message ?? "Không thể tải dữ liệu DealSach.", response.status, body.errors);
   }
 
   return body.data;
@@ -761,7 +774,24 @@ export function formatDateTime(value: string): string {
 }
 
 export function apiErrorMessage(error: unknown): string {
+  if (error instanceof ApiRequestError) {
+    return firstApiError(error.errors) ?? error.message;
+  }
+
   return error instanceof Error ? error.message : "Không thể tải dữ liệu. Vui lòng thử lại sau.";
+}
+
+function firstApiError(errors: Record<string, string> | null | undefined): string | null {
+  if (!errors) {
+    return null;
+  }
+
+  const firstKey = Object.keys(errors)[0];
+  if (!firstKey) {
+    return null;
+  }
+
+  return errors[firstKey] ?? null;
 }
 
 export function coverFallback(title: string): string {

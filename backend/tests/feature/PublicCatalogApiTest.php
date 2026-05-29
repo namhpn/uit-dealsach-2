@@ -135,6 +135,19 @@ final class PublicCatalogApiTest extends CIUnitTestCase
         }
     }
 
+    public function testSearchCardsExposePriceDropMetadataFromEligibleObservations(): void
+    {
+        $body = $this->json($this->get('/api/public/books?q=ca%20phe%20cung%20tony'));
+        $card = $body['data']['items'][0];
+
+        $this->assertSame('Cà phê cùng Tony', $card['title']);
+        $this->assertArrayHasKey('price_drop', $card);
+        $this->assertGreaterThan(0, $card['price_drop']['amount']);
+        $this->assertArrayHasKey('from_price', $card['price_drop']);
+        $this->assertArrayHasKey('to_price', $card['price_drop']);
+        $this->assertArrayHasKey('date', $card['price_drop']);
+    }
+
     public function testBookCardStatusPriorityIsApplied(): void
     {
         $this->makeOnlyMissingLinkBookVisible();

@@ -49,6 +49,9 @@ function HeroSection({
     data.summary.lowest_eligible_price !== null
     && data.summary.highest_eligible_price !== null
     && data.summary.highest_eligible_price > data.summary.lowest_eligible_price;
+  const savingAmount = showReferencePrice
+    ? data.summary.highest_eligible_price! - data.summary.lowest_eligible_price!
+    : null;
 
   return (
     <section style={{ background: C.surfaceLow, border: border4, boxShadow: shadow8 }}>
@@ -67,19 +70,19 @@ function HeroSection({
         </div>
 
         <div className="flex min-w-0 flex-1 flex-col gap-4">
-          <Link to="/search" className="text-[11px] font-bold uppercase" style={{ color: C.outline, fontFamily: FONT }}>
+          <Link to="/search" className="text-[10px] font-bold uppercase" style={{ color: C.outline, fontFamily: FONT, letterSpacing: "0.04em", opacity: 0.85 }}>
             Trang chủ / {data.book.category} / {data.book.title}
           </Link>
 
-          <h1 style={{ fontFamily: FONT, fontSize: "clamp(28px, 4vw, 48px)", fontWeight: 800, lineHeight: 1.05, color: C.black }}>
+          <h1 style={{ fontFamily: FONT, fontSize: "clamp(28px, 4vw, 48px)", fontWeight: 800, lineHeight: 1.03, letterSpacing: "-0.02em", color: C.black }}>
             {data.book.title}
           </h1>
 
-          <div className="flex flex-wrap gap-x-6 gap-y-1">
-            <span className="text-[13px]" style={{ fontFamily: FONT, color: C.onSurfaceVariant }}>
+          <div className="flex flex-wrap gap-x-5 gap-y-1">
+            <span className="text-[12px]" style={{ fontFamily: FONT, color: C.onSurfaceVariant }}>
               Tác giả: <strong style={{ color: C.onSurface }}>{data.book.author}</strong>
             </span>
-            <span className="text-[13px]" style={{ fontFamily: FONT, color: C.onSurfaceVariant }}>
+            <span className="text-[12px]" style={{ fontFamily: FONT, color: C.onSurfaceVariant }}>
               NXB: <strong style={{ color: C.onSurface }}>{data.book.publisher}</strong>
             </span>
           </div>
@@ -92,19 +95,26 @@ function HeroSection({
             </blockquote>
           )}
 
-          <div className="flex flex-wrap items-start gap-3">
+          <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_280px] lg:items-start">
             <div className="flex min-w-[220px] flex-1 flex-col gap-1.5 p-4" style={{ background: C.primaryFixed, border: border4, boxShadow: shadow8 }}>
               <p className="text-[10px] font-bold uppercase" style={{ fontFamily: FONT, color: C.primary }}>
                 Giá tốt nhất hiện tại
               </p>
               {data.summary.lowest_eligible_price !== null ? (
                 <>
-                  {showReferencePrice && (
-                    <span className="text-[14px] font-bold leading-none line-through" style={{ color: C.onSurfaceVariant, fontFamily: FONT }}>
-                      {formatVnd(data.summary.highest_eligible_price!)}
-                    </span>
-                  )}
-                  <span style={{ fontFamily: FONT, fontSize: "clamp(28px,4vw,42px)", fontWeight: 800, color: C.dealRed, lineHeight: 1 }}>
+                  {showReferencePrice ? (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-[14px] font-bold leading-none line-through" style={{ color: C.onSurfaceVariant, fontFamily: FONT }}>
+                        {formatVnd(data.summary.highest_eligible_price!)}
+                      </span>
+                      {savingAmount !== null && (
+                        <span className="px-2 py-0.5 text-[10px] font-extrabold uppercase" style={{ background: C.dealRed, color: C.white, border: border2, fontFamily: FONT }}>
+                          TIẾT KIỆM {formatVnd(savingAmount)}
+                        </span>
+                      )}
+                    </div>
+                  ) : null}
+                  <span style={{ fontFamily: FONT, fontSize: "clamp(28px,4vw,42px)", fontWeight: 800, color: C.black, lineHeight: 1 }}>
                     {formatVnd(data.summary.lowest_eligible_price)}
                   </span>
                 </>
@@ -118,18 +128,18 @@ function HeroSection({
 
             <div className="flex flex-col gap-2">
               <button
-                className="flex items-center justify-center gap-2 px-4 py-3 text-[11px] font-extrabold uppercase"
-                title={wishlisted ? "Bỏ khỏi danh sách yêu thích" : "Lưu vào danh sách yêu thích"}
+                className="flex h-12 w-full items-center justify-center gap-2 px-4 py-3 text-[11px] font-extrabold uppercase"
+                title={wishlisted ? "Bỏ khỏi danh sách yêu thích" : "Thêm vào Wishlist"}
                 onClick={onToggleWishlist}
                 style={{ border: border2, background: wishlisted ? C.primaryFixed : C.white, color: wishlisted ? C.primary : C.onSurface, fontFamily: FONT, boxShadow: shadow4, cursor: "pointer" }}
               >
                 <Heart size={16} fill={wishlisted ? C.primary : "none"} />
-                {wishlisted ? "Đã lưu" : "Lưu sách"}
+                {wishlisted ? "Đã lưu" : "Thêm vào Wishlist"}
               </button>
               <a
                 href="#price-alerts"
-                className="flex items-center justify-center gap-2 px-4 py-3 text-[11px] font-extrabold uppercase"
-                style={{ border: border2, background: C.white, color: C.onSurface, fontFamily: FONT, boxShadow: shadow4 }}
+                className="flex h-12 w-full items-center justify-center gap-2 px-4 py-3 text-[11px] font-extrabold uppercase"
+                style={{ border: border2, background: C.white, color: C.onSurface, fontFamily: FONT, boxShadow: shadow4, cursor: "pointer" }}
               >
                 <Bell size={16} />
                 THEO DÕI GIẢM GIÁ
@@ -187,22 +197,17 @@ function OfferRow({ offer, isCheapest }: { offer: OfferDto; isCheapest: boolean 
               Rẻ nhất
             </span>
           )}
-          <span className="shrink-0 px-2 py-0.5 text-[10px] font-bold uppercase" style={{ background: C.boneWhite, color: C.onSurface, fontFamily: FONT, border: border2 }}>
-            {offer.status_label}
-          </span>
         </div>
-        <span className="text-[12px]" style={{ fontFamily: FONT, color: C.onSurfaceVariant }}>
-          {offer.merchant.name}
-        </span>
-        <span className="line-clamp-1 text-[11px]" style={{ fontFamily: FONT, color: C.outline }}>
-          {offer.title}
+        <span className="text-[12px] leading-relaxed" style={{ fontFamily: FONT, color: C.onSurfaceVariant }}>
+          <strong style={{ color: C.onSurface }}>{offer.merchant.name}</strong>
+          {offer.title ? ` / ${offer.title}` : ""}
         </span>
       </div>
 
       <div className="flex flex-wrap items-center gap-3 sm:shrink-0 sm:justify-end">
         <div className="text-left sm:text-right">
           {price !== null ? (
-            <p className="text-[20px] font-extrabold leading-none" style={{ fontFamily: FONT, color: isCheapest ? C.dealRed : C.onSurface }}>
+            <p className="text-[20px] font-extrabold leading-none" style={{ fontFamily: FONT, color: C.black }}>
               {formatVnd(price)}
             </p>
           ) : (
@@ -248,31 +253,58 @@ function OfferGroup({ title, description, offers, purchasable = false }: { title
           {description}
         </p>
       </div>
-      {offers.length > 0 ? (
-        <div className="flex flex-col gap-2">
-          {offers.map((offer, index) => (
-            <OfferRow key={offer.id} offer={offer} isCheapest={purchasable && index === 0} />
-          ))}
-        </div>
-      ) : (
-        <EmptyState message="Chưa có ưu đãi trong nhóm này." />
-      )}
+      <div className="flex flex-col gap-2">
+        {offers.map((offer, index) => (
+          <OfferRow key={offer.id} offer={offer} isCheapest={purchasable && index === 0} />
+        ))}
+      </div>
     </section>
   );
 }
 
 function MarketPriceList({ data }: { data: BookDetailResponse }) {
+  const groups = [
+    {
+      key: "purchasable",
+      title: "Bảng giá thị trường",
+      description: `So sánh ${data.offers.purchasable.length} ưu đãi có thể mua ngay.`,
+      offers: data.offers.purchasable,
+      purchasable: true,
+    },
+    {
+      key: "unavailable",
+      title: "Tạm hết hàng",
+      description: "Các ưu đãi này được giữ lại để bạn tham khảo bối cảnh giá.",
+      offers: data.offers.unavailable,
+      purchasable: false,
+    },
+    {
+      key: "stale_reference",
+      title: "Giá tham khảo cũ",
+      description: "Các mức giá cũ không dùng làm giá tốt nhất hiện tại.",
+      offers: data.offers.stale_reference,
+      purchasable: false,
+    },
+    {
+      key: "missing_valid_seller_link",
+      title: "Chưa có liên kết mua hợp lệ",
+      description: "DealSach chưa thể chuyển hướng an toàn cho các ưu đãi này.",
+      offers: data.offers.missing_valid_seller_link,
+      purchasable: false,
+    },
+  ].filter((group) => group.offers.length > 0);
+
   return (
     <div className="flex flex-col gap-8">
-      <OfferGroup
-        title="Bảng giá thị trường"
-        description={`So sánh ${data.offers.purchasable.length} ưu đãi có thể mua ngay.`}
-        offers={data.offers.purchasable}
-        purchasable
-      />
-      <OfferGroup title="Tạm hết hàng" description="Các ưu đãi này được giữ lại để bạn tham khảo bối cảnh giá." offers={data.offers.unavailable} />
-      <OfferGroup title="Giá tham khảo cũ" description="Các mức giá cũ không dùng làm giá tốt nhất hiện tại." offers={data.offers.stale_reference} />
-      <OfferGroup title="Chưa có liên kết mua hợp lệ" description="DealSach chưa thể chuyển hướng an toàn cho các ưu đãi này." offers={data.offers.missing_valid_seller_link} />
+      {groups.map((group) => (
+        <OfferGroup
+          key={group.key}
+          title={group.title}
+          description={group.description}
+          offers={group.offers}
+          purchasable={group.purchasable}
+        />
+      ))}
     </div>
   );
 }
@@ -341,7 +373,7 @@ function PriceHistoryAndAlerts({ data }: { data: BookDetailResponse }) {
     setBusy("lowest");
     try {
       await createPriceAlert({ book_id: data.book.id, alert_type: "new_lowest_price" });
-      setSuccess("Đã lưu cảnh báo giá thấp mới. Nếu cảnh báo tương tự đã tồn tại, DealSach dùng lại cảnh báo hiện có.");
+      setSuccess("Đã lưu cảnh báo khi giảm giá. Nếu cảnh báo tương tự đã tồn tại, DealSach dùng lại cảnh báo hiện có.");
     } catch (err) {
       setTargetError(apiErrorMessage(err));
     } finally {
@@ -389,42 +421,55 @@ function PriceHistoryAndAlerts({ data }: { data: BookDetailResponse }) {
             </h3>
           </div>
           <p className="text-[12px] leading-relaxed" style={{ color: C.onSurfaceVariant, fontFamily: FONT }}>
-            Bạn có thể theo dõi theo mức giá mục tiêu hoặc theo dõi khi xuất hiện mức giá thấp mới.
+            Chọn một trong hai cách theo dõi để nhận thông báo phù hợp với mục tiêu mua sách của bạn.
           </p>
 
-          <form onSubmit={createTargetAlert} className="flex flex-col gap-3">
-            <label className="flex flex-col gap-1 text-[11px] font-extrabold uppercase" style={{ color: C.onSurfaceVariant, fontFamily: FONT }}>
-              Giá mục tiêu VND
-              <input
-                value={targetPrice}
-                onChange={(event) => setTargetPrice(event.target.value.replace(/\D/g, ""))}
-                placeholder="Ví dụ: 90000"
-                inputMode="numeric"
-                className="px-3 py-2 text-sm normal-case outline-none focus-visible:ring-2"
-                style={{ border: border3, color: C.onSurface, fontFamily: FONT }}
-              />
-            </label>
-            <button
-              type="submit"
-              disabled={busy !== null}
-              className="flex items-center justify-center gap-2 px-4 py-2.5 text-[12px] font-extrabold uppercase"
-              style={{ background: C.primary, color: C.white, border: border2, boxShadow: shadow4, fontFamily: FONT, cursor: busy !== null ? "not-allowed" : "pointer" }}
-            >
-              <Bell size={13} />
-              {busy === "target" ? "Đang tạo..." : "THEO DÕI GIẢM GIÁ"}
-            </button>
-          </form>
+          <div className="flex flex-col gap-3 p-3" style={{ border: border2, background: C.white }}>
+            <p className="text-[11px] font-bold uppercase" style={{ fontFamily: FONT, color: C.primary }}>
+              Theo dõi theo giá mục tiêu
+            </p>
+            <form onSubmit={createTargetAlert} className="flex flex-col gap-3">
+              <label className="flex flex-col gap-1 text-[11px] font-extrabold uppercase" style={{ color: C.onSurfaceVariant, fontFamily: FONT }}>
+                Giá mục tiêu VND
+                <input
+                  value={targetPrice}
+                  onChange={(event) => setTargetPrice(event.target.value.replace(/\D/g, ""))}
+                  placeholder="Ví dụ: 90000"
+                  inputMode="numeric"
+                  className="px-3 py-2 text-sm normal-case outline-none focus-visible:ring-2"
+                  style={{ border: border3, color: C.onSurface, fontFamily: FONT }}
+                />
+              </label>
+              <button
+                type="submit"
+                disabled={busy !== null}
+                className="flex items-center justify-center gap-2 px-4 py-2.5 text-[12px] font-extrabold uppercase"
+                style={{ background: C.primary, color: C.white, border: border2, boxShadow: shadow4, fontFamily: FONT, cursor: busy !== null ? "not-allowed" : "pointer" }}
+              >
+                <Bell size={13} />
+                {busy === "target" ? "Đang tạo..." : "THEO DÕI GIẢM GIÁ"}
+              </button>
+            </form>
+          </div>
 
-          <button
-            type="button"
-            disabled={busy !== null}
-            onClick={createNewLowestAlert}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 text-[12px] font-extrabold uppercase"
-            style={{ background: C.white, color: C.onSurface, border: border2, boxShadow: shadow4, fontFamily: FONT, cursor: busy !== null ? "not-allowed" : "pointer" }}
-          >
-            <TrendingDown size={13} />
-            {busy === "lowest" ? "Đang tạo..." : "THEO DÕI GIÁ THẤP MỚI"}
-          </button>
+          <div className="flex flex-col gap-3 p-3" style={{ border: border2, background: C.primaryFixed }}>
+            <p className="text-[11px] font-bold uppercase" style={{ fontFamily: FONT, color: C.primary }}>
+              Theo dõi biến động chung
+            </p>
+            <p className="text-[12px] leading-relaxed" style={{ color: C.onSurfaceVariant, fontFamily: FONT }}>
+              Không cần nhập giá mục tiêu. DealSach sẽ báo khi có nhịp giảm giá mới trong dữ liệu đủ điều kiện.
+            </p>
+            <button
+              type="button"
+              disabled={busy !== null}
+              onClick={createNewLowestAlert}
+              className="flex items-center justify-center gap-2 px-4 py-2.5 text-[12px] font-extrabold uppercase"
+              style={{ background: C.white, color: C.onSurface, border: border2, boxShadow: shadow4, fontFamily: FONT, cursor: busy !== null ? "not-allowed" : "pointer" }}
+            >
+              <TrendingDown size={13} />
+              {busy === "lowest" ? "Đang tạo..." : "Thông báo khi giảm giá"}
+            </button>
+          </div>
 
           {(targetError || success) && (
             <div className="p-3" style={{ border: border2, background: targetError ? "#fff1f1" : C.primaryFixed }}>
@@ -455,7 +500,7 @@ function TechnicalDetails({ data }: { data: BookDetailResponse }) {
     <section style={{ border: border2, boxShadow: shadow8 }}>
       <div className="px-5 py-3" style={{ background: C.onSurface, borderBottom: border2 }}>
         <h2 className="text-[14px] font-extrabold uppercase" style={{ fontFamily: FONT, color: C.white }}>
-          Thông tin kỹ thuật
+          Thông tin chi tiết
         </h2>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2" style={{ background: C.white }}>
@@ -488,7 +533,7 @@ function RelatedBooks({ books }: { books: BookCardDto[] }) {
       </div>
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {books.slice(0, 4).map((book) => (
-          <ApiDealBookCard key={book.id} book={book} compact />
+          <ApiDealBookCard key={book.id} book={book} compact fillWidth />
         ))}
       </div>
     </section>
@@ -506,12 +551,11 @@ function DisclaimerBlock() {
           Lưu ý về giá & liên kết
         </p>
         <p className="text-[13px] leading-relaxed" style={{ fontFamily: FONT, color: C.onSurface }}>
-          Giá hiển thị là giá tham khảo gần đây, giá thực tế tại nơi bán có thể thay đổi theo thời điểm.
+          Tất cả mức giá hiển thị trên DealSach là giá tham khảo được ghi nhận gần đây; giá thực tế có thể thay đổi tại nơi bán theo từng thời điểm.
         </p>
         <p className="text-[13px] leading-relaxed" style={{ fontFamily: FONT, color: C.onSurface }}>
-          DealSach không bán sách trực tiếp và không xử lý thanh toán, giao hàng, đổi trả hoặc hỗ trợ đơn hàng.
+          DealSach không bán sách trực tiếp và không xử lý thanh toán, giao hàng, đổi trả, hoặc hỗ trợ đơn hàng. Khi bạn bấm nút mua, bạn sẽ rời DealSach để đến nơi bán bên ngoài. Một số liên kết có thể là liên kết tiếp thị liên kết (affiliate).
         </p>
-        <PriceDisclaimer />
       </div>
     </section>
   );

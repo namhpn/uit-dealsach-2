@@ -395,6 +395,55 @@ Use this section for tickets that change ProductDetailPage layout hierarchy, pub
    * reference/strikethrough pricing displays only when highest eligible price is greater than lowest eligible price.
    * homepage shows one module-level price disclaimer instead of per-card disclaimer text.
 
+## Product Detail Visual Rhythm Refinement Verification
+
+Use this section for tickets that refine ProductDetailPage visual rhythm while preserving existing API-backed behavior.
+
+1. Run frontend build:
+
+   ```bash
+   docker compose run --rm frontend npm run build
+   ```
+
+   Expected result: build succeeds (existing chunk-size warning is acceptable unless the ticket targets bundle splitting).
+
+2. Run whitespace/conflict check:
+
+   ```bash
+   git diff --check
+   ```
+
+   Expected result: no whitespace errors or conflict markers.
+
+3. Check changed-file scope:
+
+   ```bash
+   git diff --name-only
+   ```
+
+   Expected result: changes stay in the ticket’s allowed ProductDetail/shared/docs files.
+
+4. Static review `frontend/src/app/pages/ProductDetailPage.tsx`:
+
+   Expected result:
+   * title uses tighter letter spacing without breaking responsive behavior;
+   * best-price current value and seller-row prices share the same black color treatment;
+   * wishlist unsaved label is `Thêm vào Wishlist`;
+   * non-empty seller groups render while empty groups are hidden;
+   * price-alert secondary action label is `Thông báo khi giảm giá`;
+   * technical section title is `Thông tin chi tiết`;
+   * disclaimer copy explicitly states reference-price scope, no direct selling/payment/shipping/returns/order-support, and affiliate-link possibility.
+
+5. Static review related-card layout in `frontend/src/app/shared.tsx` + ProductDetail usage:
+
+   Expected result:
+   * related-book cards keep `/book/{id}` navigation and wishlist behavior;
+   * layout supports a stable four-card desktop shelf without introducing global regressions to homepage/search card behavior.
+
+6. Do not run browser UI automation or screenshot/capture tools for this ticket:
+
+   Expected result: verification remains command + source-review based.
+
 ## Search Result Commerce Refresh Verification
 
 Use this section for tickets that change `/search` layout, active filters, search-card commerce cues, or search pagination behavior.

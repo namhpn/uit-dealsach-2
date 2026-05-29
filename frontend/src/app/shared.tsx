@@ -399,6 +399,7 @@ export function ApiDealBookCard({
   ctaLabel = "Xem chi tiết",
   showPublisher = !compact,
   emphasizeCta = false,
+  fillWidth = false,
 }: {
   book: BookCardDto;
   showDrop?: boolean;
@@ -407,17 +408,18 @@ export function ApiDealBookCard({
   ctaLabel?: string;
   showPublisher?: boolean;
   emphasizeCta?: boolean;
+  fillWidth?: boolean;
 }) {
   const navigate = useNavigate();
   const [pressed, setPressed] = useState(false);
   const wishlist = useWishlistControl(book);
   const dropRotate = book.id % 2 === 0 ? "rotate(2deg)" : "rotate(-3deg)";
-  const cardWidth = compact ? 200 : 280;
+  const cardWidth = compact ? (fillWidth ? "100%" : 200) : 280;
   const coverH = compact ? 220 : 320;
 
   return (
     <div
-      className="flex shrink-0 cursor-pointer flex-col overflow-hidden"
+      className={`flex cursor-pointer flex-col overflow-hidden ${fillWidth ? "w-full" : "shrink-0"}`}
       onClick={() => navigate(`/book/${book.id}`)}
       onMouseDown={() => setPressed(true)}
       onMouseUp={() => setPressed(false)}

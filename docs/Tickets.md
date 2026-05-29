@@ -31,4 +31,5 @@
 | T0016 | Local Dev CORS and Known-Issue Cleanup | Done | T0015 | Backend / Frontend / Docker / Demo data |
 | T0017 | Add Design Documentation and README Architecture | Done | T0016 | Documentation / Design / Architecture |
 | T0018 | Add Search Autocomplete and Office 365 Email Delivery | Done | T0017 | Frontend / Backend Email |
-| T0019 | Commerce-First Neubrutalist Homepage Refresh | In Progress | T0018 | Frontend + Public Catalog API |
+| T0019 | Commerce-First Neubrutalist Homepage Refresh | Done | T0018 | Frontend + Public Catalog API |
+| T0020 | Commerce-First Neubrutalist ProductDetailPage Refresh | In Progress | T0019 | Frontend + Public catalog + Admin catalog |

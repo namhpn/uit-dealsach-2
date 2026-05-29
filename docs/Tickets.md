@@ -32,4 +32,5 @@
 | T0017 | Add Design Documentation and README Architecture | Done | T0016 | Documentation / Design / Architecture |
 | T0018 | Add Search Autocomplete and Office 365 Email Delivery | Done | T0017 | Frontend / Backend Email |
 | T0019 | Commerce-First Neubrutalist Homepage Refresh | Done | T0018 | Frontend + Public Catalog API |
-| T0020 | Commerce-First Neubrutalist ProductDetailPage Refresh | In Progress | T0019 | Frontend + Public catalog + Admin catalog |
+| T0020 | Commerce-First Neubrutalist ProductDetailPage Refresh | Done | T0019 | Frontend + Public catalog + Admin catalog |
+| T0021 | Commerce-First Neubrutalist SearchResultPage Refresh | In Progress | T0020 | Public frontend + public catalog API |

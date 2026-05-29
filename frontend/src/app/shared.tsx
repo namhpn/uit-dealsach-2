@@ -262,10 +262,14 @@ export function ApiBookCard({
   book,
   showPriceDisclaimer = true,
   showCommerceCta = false,
+  offerCountLabel = "ưu đãi",
+  showPriceDropBadge = false,
 }: {
   book: BookCardDto;
   showPriceDisclaimer?: boolean;
   showCommerceCta?: boolean;
+  offerCountLabel?: string;
+  showPriceDropBadge?: boolean;
 }) {
   const [pressed, setPressed] = useState(false);
   const wishlist = useWishlistControl(book);
@@ -281,6 +285,12 @@ export function ApiBookCard({
     >
       <div className="relative shrink-0 overflow-hidden" style={{ background: C.surfaceContainer, aspectRatio: "2/3", maxHeight: 220, borderBottom: border2 }}>
         <CoverImage title={book.title} src={book.cover_image} />
+        {showPriceDropBadge && book.price_drop && (
+          <span className="absolute left-2 top-2 inline-flex items-center gap-1 px-2 py-1 text-[10px] font-extrabold uppercase" style={{ background: C.dealRed, color: C.white, border: border2, fontFamily: FONT, boxShadow: shadow4 }}>
+            <TrendingDown size={11} />
+            Giảm {formatVnd(book.price_drop.amount)}
+          </span>
+        )}
         <button
           type="button"
           onClick={wishlist.toggle}
@@ -304,7 +314,7 @@ export function ApiBookCard({
         <div className="mt-auto flex flex-col gap-1 pt-3">
           <BookPrice book={book} compact />
           <span className="mt-1.5 self-start px-1.5 py-0.5 text-[10px] font-bold uppercase" style={{ background: C.boneWhite, color: C.onSurface, fontFamily: FONT, border: "1px solid #000" }}>
-            {book.offer_count} ưu đãi
+            {book.offer_count} {offerCountLabel}
           </span>
           {showCommerceCta && (
             <span className="mt-2 self-start text-[11px] font-extrabold uppercase" style={{ color: C.primary, fontFamily: FONT }}>

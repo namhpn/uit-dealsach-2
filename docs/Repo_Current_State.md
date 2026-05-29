@@ -4,7 +4,7 @@ Last updated: 2026-05-29
 
 ## Current Branch
 
-`feature/t0020-productdetail-refresh`
+`feature/t0021-search-refresh`
 
 Baseline source for T0007: local `main` after T0006 merge.
 
@@ -33,6 +33,7 @@ Baseline source for T0007: local `main` after T0006 merge.
 | T0018 | 2026-05-28 | Added async public search autocomplete, conditional Office 365 SMTP delivery with safe fallback for outbound auth/alert emails, updated seeded Admin email, and refreshed verification docs/tests. |
 | T0019 | 2026-05-29 | Refreshed the homepage as commerce-first Neubrutalism with frontend-configured banner actions, discovery metadata + reference-price support, seeded same-day freshness stability, and public-catalog/frontend verification updates. |
 | T0020 | 2026-05-29 | Refreshed ProductDetailPage into a price-comparison-first layout, added book technical metadata schema/API/admin editing support, moved full alert form into the price-history module, and updated public/admin catalog verification coverage. |
+| T0021 | 2026-05-29 | Refreshed SearchPage into a commerce-first Neubrutalist result experience, added active filter chips + numbered pagination + validated price-range UX, and extended public search cards with API-backed `price_drop` metadata. |
 
 ## Current Folder Structure
 
@@ -306,6 +307,19 @@ docs/implementation_logs/T0019.md
 docs/Repo_Current_State.md
 ```
 
+T0021 changed:
+
+```text
+backend/app/Libraries/PublicCatalogService.php
+backend/tests/feature/PublicCatalogApiTest.php
+frontend/src/app/api.ts
+frontend/src/app/pages/SearchPage.tsx
+frontend/src/app/shared.tsx
+docs/Manual_Verification_Guide.md
+docs/implementation_logs/T0021.md
+docs/Repo_Current_State.md
+```
+
 T0008 changed:
 
 ```text
@@ -423,6 +437,9 @@ docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit --filte
 
 | Area | Command | Last Result | Notes |
 |---|---|---|---|
+| Backend | `docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit --filter PublicCatalog'` | Passed for T0021 | 19 tests, 162 assertions. Includes search-card `price_drop` API coverage. |
+| Backend | `docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit'` | Passed for T0021 | 82 tests, 818 assertions. |
+| Frontend | `docker compose run --rm frontend npm run build` | Passed for T0021 | Vite production build passed; existing chunk-size warning remains. |
 | Backend | `docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit --filter PublicCatalog'` | Passed for T0019 | 17 tests, 143 assertions. |
 | Backend | `docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit'` | Passed for T0019 | 78 tests, 778 assertions. |
 | Frontend | `docker compose run --rm frontend npm run build` | Passed for T0019 | Vite production build passed; existing chunk-size warning remains. |
@@ -814,6 +831,19 @@ T0020:
 7. Updated demo seed books with representative metadata values and retained at least one null-metadata scenario for fallback rendering checks.
 8. Ran Dockerized focused backend tests (`PublicCatalog`, `AdminCatalog`), full backend PHPUnit, frontend build, and public book routes registration check; all passed.
 
+T0021:
+
+1. Reviewed required docs and `docs/implementation_logs/T0021.md`.
+2. Created branch `feature/t0021-search-refresh` from local `main`.
+3. Refreshed `frontend/src/app/pages/SearchPage.tsx` into a commerce-first Neubrutalist search result layout with emerald hero, filter sidebar, active chips, mobile filter toggle (`aria-expanded`), numbered pagination, and empty-state actions.
+4. Removed visible availability filtering from search UI while preserving API-backed category/author/publisher/retailer/price/sort behavior.
+5. Extended `ApiBookCard` in `frontend/src/app/shared.tsx` for search-specific `NƠI BÁN` labeling and optional API-backed price-drop badge rendering.
+6. Updated frontend API error handling in `frontend/src/app/api.ts` to surface specific backend validation messages when present.
+7. Extended `PublicCatalogService::listBooks()` to include `price_drop` metadata on search cards using existing recent eligible observation drop calculations.
+8. Added `PublicCatalogApiTest::testSearchCardsExposePriceDropMetadataFromEligibleObservations`.
+9. Ran Dockerized focused backend test (`PublicCatalog`), full backend PHPUnit suite, and frontend build; all passed.
+10. Updated `docs/Manual_Verification_Guide.md` with a dedicated Search Result Commerce Refresh verification section.
+
 ## Known Issues
 
 See `docs/Known_Issues_And_Followups.md`.
@@ -826,7 +856,7 @@ Closed in T0006:
 
 * KI-0008 — fresh disposable long-running Docker app containers now normalize `backend/writable` ownership during startup without a manual `chown`.
 
-Open after T0020:
+Open after T0021:
 
 * KI-0009 remains open — demo book cover paths still rely on fallback rendering because the referenced `/demo/covers/*` image files are not present.
 * KI-0011, KI-0012, and KI-0013 are closed by T0016.

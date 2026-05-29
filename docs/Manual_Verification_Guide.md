@@ -328,6 +328,74 @@ Use this section for tickets that change ProductDetailPage layout hierarchy, pub
    * reference/strikethrough pricing displays only when highest eligible price is greater than lowest eligible price.
    * homepage shows one module-level price disclaimer instead of per-card disclaimer text.
 
+## Search Result Commerce Refresh Verification
+
+Use this section for tickets that change `/search` layout, active filters, search-card commerce cues, or search pagination behavior.
+
+1. Run focused and full backend tests:
+
+   ```bash
+   docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit --filter PublicCatalog'
+   docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit'
+   ```
+
+   Expected result: both commands return `OK`.
+
+2. Run frontend build:
+
+   ```bash
+   docker compose run --rm frontend npm run build
+   ```
+
+   Expected result: build succeeds.
+
+3. Open `/search` and verify the result hero:
+
+   Expected result:
+   * hard-bordered emerald hero renders;
+   * heading is `Kết quả tìm kiếm` when no `q`;
+   * heading context is `Kết quả tìm kiếm cho` plus query chip when `q` exists;
+   * hero shows `Tìm thấy {total} đầu sách`;
+   * hero contains sort control sourced from API `sorts`.
+
+4. Verify filter panel behavior:
+
+   Expected result:
+   * visible filters include query, category, author, publisher, retailer, min/max price, and sort;
+   * `Tình trạng` is not visible;
+   * mobile filter toggle updates `aria-expanded`;
+   * filter updates reset URL `page=1`.
+
+5. Verify active filter chips:
+
+   Expected result:
+   * chips render for active visible filters and non-default sort;
+   * removing each chip updates URL/results and resets `page=1`;
+   * `Xóa bộ lọc` clears visible active filters.
+
+6. Verify search cards and pagination:
+
+   Expected result:
+   * cards remain links to `/book/{id}`;
+   * wishlist control does not trigger card navigation;
+   * offer-count label is `NƠI BÁN`;
+   * price-drop badge appears only on cards with API `price_drop`;
+   * reference/strikethrough price appears only when `highest_eligible_price > lowest_eligible_price`;
+   * numbered pagination uses backend pagination metadata and URL `page`.
+
+7. Verify empty/validation states:
+
+   Expected result:
+   * empty state uses backend `empty_state.message` when present;
+   * empty state exposes `Xóa bộ lọc` and `Về trang chủ` actions;
+   * invalid price input (non-integer or `min > max`) shows a clear Vietnamese validation message.
+
+8. Verify mobile layout at ~360px width:
+
+   Expected result:
+   * no unintended horizontal scrolling;
+   * hero, filters, cards, and pagination remain readable in one-column flow.
+
 ## SMTP Delivery Verification
 
 Use this section for tickets that add or change outbound email delivery behavior.

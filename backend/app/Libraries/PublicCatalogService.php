@@ -49,6 +49,16 @@ class PublicCatalogService
         $perPage = (int) ($query['per_page'] ?? 12);
         $books = $this->bookCards();
         $cardsById = [];
+        $priceDropsByBookId = [];
+
+        foreach ($this->recentPriceDrops() as $drop) {
+            $priceDropsByBookId[(int) $drop['book_id']] = [
+                'amount' => (int) $drop['drop_amount'],
+                'from_price' => (int) $drop['from_price'],
+                'to_price' => (int) $drop['to_price'],
+                'date' => (string) $drop['date'],
+            ];
+        }
 
         foreach ($books as $card) {
             $cardsById[$card['id']] = $card;
@@ -57,7 +67,14 @@ class PublicCatalogService
         $filtered = $this->applyListFilters(array_values($cardsById), $query);
         $sorted = $this->sortCards($filtered, (string) ($query['sort'] ?? 'relevance'), trim((string) ($query['q'] ?? '')));
         $total = count($sorted);
-        $items = array_slice($sorted, ($page - 1) * $perPage, $perPage);
+        $items = array_map(function (array $card) use ($priceDropsByBookId): array {
+            $drop = $priceDropsByBookId[(int) $card['id']] ?? null;
+            if ($drop !== null) {
+                $card['price_drop'] = $drop;
+            }
+
+            return $card;
+        }, array_slice($sorted, ($page - 1) * $perPage, $perPage));
 
         return [
             'ok' => true,

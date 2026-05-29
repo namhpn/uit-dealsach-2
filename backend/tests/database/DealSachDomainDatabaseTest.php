@@ -86,6 +86,25 @@ final class DealSachDomainDatabaseTest extends CIUnitTestCase
         $this->assertSame(10, (int) $row->display_order);
     }
 
+    public function testBookTechnicalMetadataColumnsAndSeedValuesExist(): void
+    {
+        foreach (['release_date', 'page_count', 'dimensions', 'format'] as $field) {
+            $this->assertTrue($this->db->fieldExists($field, 'books'), sprintf('Missing books.%s', $field));
+        }
+
+        $row = $this->db->table('books')
+            ->select('release_date, page_count, dimensions, format')
+            ->where('isbn', '9786041000001')
+            ->get()
+            ->getFirstRow();
+
+        $this->assertNotNull($row);
+        $this->assertNotNull($row->release_date);
+        $this->assertGreaterThan(0, (int) $row->page_count);
+        $this->assertNotEmpty((string) $row->dimensions);
+        $this->assertNotEmpty((string) $row->format);
+    }
+
     public function testPriceObservationsStoreObservationTimeFacts(): void
     {
         $row = $this->db->table('price_observations')

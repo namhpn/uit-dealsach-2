@@ -99,6 +99,51 @@ final class AdminCatalogFeatureTest extends CIUnitTestCase
         $this->assertSame('Paused', $this->db->table('price_alerts')->where('id', $alertId)->get()->getFirstRow()->status);
     }
 
+    public function testAdminBookApisSupportTechnicalMetadataFields(): void
+    {
+        $token = $this->adminToken();
+        $categoryId = $this->category();
+
+        $create = $this->withHeaders($this->cookie($token))->post('/api/admin/books', [
+            'title' => 'Sách có thông số',
+            'author' => 'DealSach',
+            'publisher' => 'NXB Kiểm thử',
+            'primary_category_id' => $categoryId,
+            'release_date' => '2024-10-11',
+            'page_count' => 288,
+            'dimensions' => '13x20.5 cm',
+            'format' => 'Bìa mềm',
+            'status' => 'active',
+        ]);
+        $create->assertStatus(201);
+        $created = $this->json($create)['data'];
+
+        $this->assertSame('2024-10-11', $created['release_date']);
+        $this->assertSame(288, $created['page_count']);
+        $this->assertSame('13x20.5 cm', $created['dimensions']);
+        $this->assertSame('Bìa mềm', $created['format']);
+
+        $update = $this
+            ->withHeaders([
+                ...$this->cookie($token),
+                'Content-Type' => 'application/json',
+            ])
+            ->withBody(json_encode([
+                'release_date' => null,
+                'page_count' => 320,
+                'dimensions' => '14x21 cm',
+                'format' => 'Bìa cứng',
+            ], JSON_UNESCAPED_UNICODE))
+            ->call('patch', '/api/admin/books/' . $created['id']);
+        $update->assertOK();
+        $updated = $this->json($update)['data'];
+
+        $this->assertNull($updated['release_date']);
+        $this->assertSame(320, $updated['page_count']);
+        $this->assertSame('14x21 cm', $updated['dimensions']);
+        $this->assertSame('Bìa cứng', $updated['format']);
+    }
+
     public function testRetailerMerchantOfferValidationEligibilityAndAuditMasking(): void
     {
         $token = $this->adminToken();

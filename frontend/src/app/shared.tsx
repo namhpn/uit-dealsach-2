@@ -132,7 +132,15 @@ export function PriceDisclaimer({ compact = false }: { compact?: boolean }) {
   );
 }
 
-export function CoverImage({ title, src }: { title: string; src: string | null }) {
+export function CoverImage({
+  title,
+  src,
+  fit = "cover",
+}: {
+  title: string;
+  src: string | null;
+  fit?: "cover" | "contain";
+}) {
   const [failed, setFailed] = useState(false);
   const imageSrc = src && src.startsWith("/") && typeof window !== "undefined" && window.location.port === "5173" ? `http://localhost${src}` : src;
 
@@ -144,7 +152,7 @@ export function CoverImage({ title, src }: { title: string; src: string | null }
     );
   }
 
-  return <img src={imageSrc} alt={`Bìa sách ${title}`} className="h-full w-full object-cover" onError={() => setFailed(true)} />;
+  return <img src={imageSrc} alt={`Bìa sách ${title}`} className={`h-full w-full ${fit === "contain" ? "object-contain" : "object-cover"}`} onError={() => setFailed(true)} />;
 }
 
 export function NbButton({

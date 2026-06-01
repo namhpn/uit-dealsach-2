@@ -34,6 +34,42 @@ final class DealSachDomainDatabaseTest extends CIUnitTestCase
         $this->assertGreaterThanOrEqual(2, $offerCount / $bookCount);
     }
 
+    public function testSeedDistributesSixBooksPerCategoryWithExpectedOfferDensity(): void
+    {
+        $rows = $this->db->table('books b')
+            ->select('c.slug AS category_slug, b.id AS book_id, COUNT(o.id) AS offer_count')
+            ->join('categories c', 'c.id = b.primary_category_id')
+            ->join('offers o', 'o.book_id = b.id', 'left')
+            ->groupBy('c.slug, b.id')
+            ->orderBy('c.slug', 'ASC')
+            ->get()
+            ->getResult();
+
+        $stats = [];
+        foreach ($rows as $row) {
+            $slug = (string) $row->category_slug;
+            if (! isset($stats[$slug])) {
+                $stats[$slug] = ['books' => 0, 'offer_2' => 0, 'offer_4' => 0];
+            }
+
+            $stats[$slug]['books']++;
+            $offers = (int) $row->offer_count;
+            if ($offers === 2) {
+                $stats[$slug]['offer_2']++;
+            }
+            if ($offers === 4) {
+                $stats[$slug]['offer_4']++;
+            }
+        }
+
+        foreach (['ky-nang-song', 'van-hoc-viet-nam', 'kinh-te', 'cong-nghe', 'thieu-nhi', 'lich-su'] as $slug) {
+            $this->assertArrayHasKey($slug, $stats);
+            $this->assertSame(6, $stats[$slug]['books'], sprintf('Category %s should contain exactly 6 books.', $slug));
+            $this->assertSame(3, $stats[$slug]['offer_2'], sprintf('Category %s should have exactly 3 books with 2 offers.', $slug));
+            $this->assertSame(3, $stats[$slug]['offer_4'], sprintf('Category %s should have exactly 3 books with 4 offers.', $slug));
+        }
+    }
+
     public function testSeedRelationshipsAreCompleteAndConsistent(): void
     {
         $booksWithoutCategory = $this->db->table('books b')

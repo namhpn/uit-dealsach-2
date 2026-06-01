@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
-import { Check, ChevronDown, Info, SlidersHorizontal, X } from "lucide-react";
+import { ChevronDown, Info, SlidersHorizontal, X } from "lucide-react";
 import { apiErrorMessage, fetchBooks, fetchFilters, FiltersResponse, PaginatedBooksResponse } from "../api";
 import { ApiBookCard, C, ErrorState, FONT, LoadingState, border2, border3, shadow4, shadow8 } from "../shared";
 
@@ -8,7 +8,7 @@ const visibleFilterKeys = ["q", "category", "author", "publisher", "retailer", "
 const removableFilterKeys = ["q", "category", "author", "publisher", "retailer", "min_price", "max_price", "sort"] as const;
 const defaultSort = "relevance";
 
-type FilterGroupKey = "keyword" | "category" | "author" | "publisher" | "retailer" | "price";
+type FilterGroupKey = "category" | "author" | "publisher" | "retailer" | "price";
 
 export default function SearchPage() {
   const navigate = useNavigate();
@@ -19,11 +19,9 @@ export default function SearchPage() {
   const [error, setError] = useState<string | null>(null);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [priceError, setPriceError] = useState<string | null>(null);
-  const [keywordInput, setKeywordInput] = useState("");
   const [minPriceInput, setMinPriceInput] = useState("");
   const [maxPriceInput, setMaxPriceInput] = useState("");
   const [openGroups, setOpenGroups] = useState<Record<FilterGroupKey, boolean>>({
-    keyword: true,
     category: true,
     author: false,
     publisher: false,
@@ -49,7 +47,6 @@ export default function SearchPage() {
   }, [searchParams]);
 
   useEffect(() => {
-    setKeywordInput(params.get("q") ?? "");
     setMinPriceInput(params.get("min_price") ?? "");
     setMaxPriceInput(params.get("max_price") ?? "");
   }, [params]);
@@ -86,7 +83,6 @@ export default function SearchPage() {
 
   const activeChips = useMemo(() => {
     const chips: Array<{ key: string; label: string; clear: () => void }> = [];
-    const q = params.get("q");
     const category = params.get("category");
     const author = params.get("author");
     const publisher = params.get("publisher");
@@ -94,10 +90,6 @@ export default function SearchPage() {
     const minPrice = params.get("min_price");
     const maxPrice = params.get("max_price");
     const sort = params.get("sort") ?? defaultSort;
-
-    if (q) {
-      chips.push({ key: "q", label: `Từ khóa: ${q}`, clear: () => update({ q: "" }) });
-    }
 
     if (category) {
       const categoryLabel = filters?.categories.find((item) => item.slug === category)?.display_label
@@ -176,7 +168,6 @@ export default function SearchPage() {
 
     setPriceError(null);
     update({
-      q: keywordInput,
       min_price: minPriceInput,
       max_price: maxPriceInput,
     });
@@ -235,18 +226,47 @@ export default function SearchPage() {
 
           <form onSubmit={submitFilters} className="flex flex-col px-4 pb-4">
             <FilterGroup
-              id="filter-group-keyword"
-              label="Từ khóa"
-              open={openGroups.keyword}
-              onToggle={() => toggleGroup("keyword")}
+              id="filter-group-price"
+              label="Khoảng giá (VND)"
+              open={openGroups.price}
+              onToggle={() => toggleGroup("price")}
             >
-              <input
-                value={keywordInput}
-                onChange={(event) => setKeywordInput(event.target.value)}
-                placeholder="Tên sách, tác giả, ISBN"
-                className="w-full px-3 py-2 text-[13px] outline-none"
-                style={{ border: border3, fontFamily: FONT, color: C.onSurface }}
-              />
+              <div className="grid grid-cols-2 gap-2">
+                <FilterLabel label="Từ">
+                  <input
+                    value={minPriceInput}
+                    onChange={(event) => setMinPriceInput(event.target.value)}
+                    inputMode="numeric"
+                    placeholder="0"
+                    className="w-full px-2 py-1.5 text-[12px] outline-none"
+                    style={{ border: border2, background: C.boneWhite, fontFamily: FONT, color: C.onSurface }}
+                  />
+                </FilterLabel>
+                <FilterLabel label="Đến">
+                  <input
+                    value={maxPriceInput}
+                    onChange={(event) => setMaxPriceInput(event.target.value)}
+                    inputMode="numeric"
+                    placeholder="999000"
+                    className="w-full px-2 py-1.5 text-[12px] outline-none"
+                    style={{ border: border2, background: C.boneWhite, fontFamily: FONT, color: C.onSurface }}
+                  />
+                </FilterLabel>
+              </div>
+
+              {priceError && (
+                <p className="text-[12px] font-bold" style={{ color: C.dealRed, fontFamily: FONT }}>
+                  {priceError}
+                </p>
+              )}
+
+              <button
+                type="submit"
+                className="mt-1 px-4 py-2 text-[12px] font-extrabold uppercase"
+                style={{ border: border3, background: C.primary, color: C.white, fontFamily: FONT, boxShadow: shadow4 }}
+              >
+                Áp dụng bộ lọc
+              </button>
             </FilterGroup>
 
             <FilterGroup
@@ -304,93 +324,42 @@ export default function SearchPage() {
                 options={filters?.retailers.map((item) => ({ value: item.slug, label: item.name })) ?? []}
               />
             </FilterGroup>
-
-            <FilterGroup
-              id="filter-group-price"
-              label="Khoảng giá (VND)"
-              open={openGroups.price}
-              onToggle={() => toggleGroup("price")}
-            >
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1">
-                <FilterLabel label="Giá từ">
-                  <input
-                    value={minPriceInput}
-                    onChange={(event) => setMinPriceInput(event.target.value)}
-                    inputMode="numeric"
-                    placeholder="0"
-                    className="w-full px-3 py-2 text-[13px] outline-none"
-                    style={{ border: border3, fontFamily: FONT, color: C.onSurface }}
-                  />
-                </FilterLabel>
-                <FilterLabel label="Giá đến">
-                  <input
-                    value={maxPriceInput}
-                    onChange={(event) => setMaxPriceInput(event.target.value)}
-                    inputMode="numeric"
-                    placeholder="999000"
-                    className="w-full px-3 py-2 text-[13px] outline-none"
-                    style={{ border: border3, fontFamily: FONT, color: C.onSurface }}
-                  />
-                </FilterLabel>
-              </div>
-
-              {priceError && (
-                <p className="text-[12px] font-bold" style={{ color: C.dealRed, fontFamily: FONT }}>
-                  {priceError}
-                </p>
-              )}
-
-              <button
-                type="submit"
-                className="mt-1 px-4 py-2.5 text-[12px] font-extrabold uppercase"
-                style={{ border: border3, background: C.primary, color: C.white, fontFamily: FONT, boxShadow: shadow4 }}
-              >
-                Áp dụng bộ lọc
-              </button>
-            </FilterGroup>
           </form>
         </aside>
 
         <section className="min-w-0">
-          <div className="flex flex-col gap-3 p-4" style={{ border: border3, background: C.primaryContainer, boxShadow: shadow8 }}>
-            {query ? (
+          <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:p-5" style={{ border: border2, background: C.primaryContainer, boxShadow: shadow8 }}>
+            <div className="flex min-w-0 flex-col gap-1.5">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-[11px] font-bold uppercase" style={{ color: "rgba(255,255,255,0.74)", fontFamily: FONT }}>
+                <span className="text-[11px] font-bold uppercase" style={{ color: "rgba(255,255,255,0.72)", fontFamily: FONT }}>
                   Kết quả tìm kiếm cho
                 </span>
-                <span className="px-3 py-1 text-[13px] font-extrabold" style={{ border: border2, background: C.primaryFixed, color: C.primary, fontFamily: FONT, boxShadow: shadow4 }}>
-                  {query}
+                <span className="px-3 py-1 text-[12px] font-extrabold" style={{ border: border2, background: C.primaryFixed, color: C.primary, fontFamily: FONT, boxShadow: shadow4 }}>
+                  {query || "Toàn bộ đầu sách"}
                 </span>
               </div>
-            ) : (
-              <h1 className="text-[22px] font-extrabold uppercase leading-tight" style={{ color: C.white, fontFamily: FONT, letterSpacing: "-0.02em" }}>
-                Kết quả tìm kiếm
-              </h1>
-            )}
-
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-              <p className="text-[13px] font-bold" style={{ color: C.white, fontFamily: FONT }}>
+              <p className="text-[13px] font-bold" style={{ color: "rgba(255,255,255,0.85)", fontFamily: FONT }}>
                 Tìm thấy {(data?.pagination.total ?? 0).toLocaleString("vi-VN")} đầu sách
               </p>
-              <div className="flex w-full max-w-[290px] flex-col gap-1 sm:w-auto">
-                <span className="text-[10px] font-extrabold uppercase" style={{ color: "rgba(255,255,255,0.76)", fontFamily: FONT }}>
-                  Sắp xếp
-                </span>
-                <div className="relative" style={{ boxShadow: shadow4 }}>
-                  <select
-                    value={sortValue}
-                    onChange={(event) => update({ sort: event.target.value })}
-                    className="w-full appearance-none px-3 py-2 pr-9 text-[13px] font-bold outline-none"
-                    style={{ border: border3, background: C.white, color: C.onSurface, fontFamily: FONT }}
-                  >
-                    {(filters?.sorts ?? [{ value: defaultSort, label: "Liên quan nhất" }]).map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown size={14} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2" style={{ color: C.primary }} />
-                </div>
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              <span className="text-[11px] font-bold uppercase" style={{ color: "rgba(255,255,255,0.72)", fontFamily: FONT }}>
+                Sắp xếp
+              </span>
+              <div className="relative" style={{ boxShadow: shadow4 }}>
+                <select
+                  value={sortValue}
+                  onChange={(event) => update({ sort: event.target.value })}
+                  className="w-full appearance-none px-3 py-2 pr-9 text-[12px] font-bold outline-none"
+                  style={{ border: border2, background: C.white, color: C.onSurface, fontFamily: FONT }}
+                >
+                  {(filters?.sorts ?? [{ value: defaultSort, label: "Liên quan nhất" }]).map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown size={14} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2" style={{ color: C.primary }} />
               </div>
             </div>
           </div>
@@ -418,7 +387,7 @@ export default function SearchPage() {
                 )}
 
                 {data.items.length > 0 ? (
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                     {data.items.map((book) => (
                       <ApiBookCard
                         key={book.id}
@@ -513,7 +482,7 @@ export default function SearchPage() {
 function FilterLabel({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="flex flex-col gap-1">
-      <span className="text-[11px] font-extrabold uppercase" style={{ color: C.outline, fontFamily: FONT }}>
+      <span className="text-[10px] font-bold uppercase tracking-wide" style={{ color: C.outline, fontFamily: FONT }}>
         {label}
       </span>
       {children}
@@ -535,21 +504,21 @@ function FilterGroup({
   children: React.ReactNode;
 }) {
   return (
-    <section className="pt-3" style={{ borderTop: `1px solid ${C.outlineVariant}` }}>
+    <section style={{ borderTop: `1px solid ${C.outlineVariant}` }}>
       <button
         type="button"
         onClick={onToggle}
         aria-expanded={open}
         aria-controls={id}
-        className="flex w-full items-center justify-between pb-2"
+        className="flex w-full items-center justify-between py-3"
       >
-        <span className="text-[10px] font-extrabold uppercase" style={{ color: C.primary, fontFamily: FONT, letterSpacing: "0.08em" }}>
+        <span className="text-[11px] font-bold uppercase tracking-widest" style={{ color: C.primary, fontFamily: FONT }}>
           {label}
         </span>
         <ChevronDown size={14} style={{ color: C.primary, transform: open ? "rotate(180deg)" : "none", transition: "transform 150ms" }} />
       </button>
       {open && (
-        <div id={id} className="flex flex-col gap-2 pb-1">
+        <div id={id} className="flex flex-col gap-2 pb-3">
           {children}
         </div>
       )}
@@ -568,32 +537,35 @@ function FilterSingleSelectRows({
   options: Array<{ value: string; label: string }>;
   onChange: (value: string) => void;
 }) {
-  const allRows = [{ value: "", label: "Tất cả" }, ...options];
-
   return (
-    <div role="radiogroup" className="max-h-52 space-y-1 overflow-y-auto pr-1">
-      {allRows.map((option) => (
-        <label
-          key={option.value || `${name}-all`}
-          className="flex cursor-pointer items-center gap-2 px-2 py-1.5"
-          style={{ border: border2, background: value === option.value ? C.primaryFixed : C.white, boxShadow: value === option.value ? "none" : shadow4, transform: value === option.value ? "translate(2px,2px)" : "none", transition: "transform 80ms, box-shadow 80ms, background 80ms" }}
-        >
-          <input
-            type="radio"
-            name={name}
-            value={option.value}
-            checked={value === option.value}
-            onChange={() => onChange(option.value)}
-            className="sr-only"
-          />
-          <span className="flex h-4 w-4 items-center justify-center" style={{ border: border2, background: value === option.value ? C.primary : C.white }}>
-            {value === option.value && <Check size={10} style={{ color: C.white }} />}
-          </span>
-          <span className="line-clamp-1 text-[11px] font-bold uppercase" style={{ color: value === option.value ? C.primary : C.onSurface, fontFamily: FONT }}>
-            {option.label}
-          </span>
-        </label>
-      ))}
+    <div className="space-y-1.5">
+      {options.map((option) => {
+        const active = value === option.value;
+        return (
+          <button
+            key={`${name}-${option.value}`}
+            type="button"
+            onClick={() => onChange(active ? "" : option.value)}
+            className="group flex w-full items-center gap-2.5 py-0.5 text-left"
+            style={{
+              fontFamily: FONT,
+              color: C.onSurface,
+            }}
+            aria-pressed={active}
+          >
+            <span
+              className="flex h-4 w-4 shrink-0 items-center justify-center"
+              style={{ border: border2, background: active ? C.primary : C.white }}
+              aria-hidden
+            >
+              {active && <span className="h-2 w-2" style={{ background: C.white }} />}
+            </span>
+            <span className="line-clamp-1 text-[12px] leading-snug group-hover:underline">
+              {option.label}
+            </span>
+          </button>
+        );
+      })}
     </div>
   );
 }

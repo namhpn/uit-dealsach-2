@@ -236,7 +236,7 @@ final class PriceAlertFeatureTest extends CIUnitTestCase
         $bookId = $this->bookIdByIsbn('9786041000003');
         $alertId = $this->createTargetAlert($token, $bookId, 200000);
         $offerId = $this->offerIdByTitle('Nhà giả kim - tái bản');
-        $base = $this->nowInVietnam()->setTime(12, 0, 0);
+        $base = $this->nowInVietnam()->modify('+2 hours');
 
         $this->appendObservation($offerId, 80000, $this->formatDateTime($base));
         $summary = $this->evaluateAt($this->formatDateTime($base->modify('+5 minutes')));
@@ -266,7 +266,7 @@ final class PriceAlertFeatureTest extends CIUnitTestCase
         $bookId = $this->bookIdByIsbn('9786041000007');
         $alertId = $this->createNewLowestAlert($token, $bookId);
         $offerId = $this->offerIdByTitle('Nghĩ giàu làm giàu');
-        $base = $this->nowInVietnam()->setTime(12, 0, 0);
+        $base = $this->nowInVietnam()->modify('+2 hours');
 
         $this->appendObservation($offerId, 120000, $this->formatDateTime($base));
         $baseline = $this->evaluateAt($this->formatDateTime($base->modify('+5 minutes')));
@@ -286,7 +286,7 @@ final class PriceAlertFeatureTest extends CIUnitTestCase
         $token = $this->createAuthenticatedSession('fail-alert@example.com');
         $bookId = $this->bookIdByIsbn('9786041000003');
         $alertId = $this->createTargetAlert($token, $bookId, 200000);
-        $base = $this->nowInVietnam()->setTime(12, 0, 0);
+        $base = $this->nowInVietnam()->modify('+2 hours');
 
         $this->appendObservation($this->offerIdByTitle('Nhà giả kim - tái bản'), 79000, $this->formatDateTime($base));
         $summary = $this->evaluateAt($this->formatDateTime($base->modify('+5 minutes')));
@@ -306,7 +306,7 @@ final class PriceAlertFeatureTest extends CIUnitTestCase
         $alertId = $this->createTargetAlert($token, $bookId, 200000);
         $offerId = $this->offerIdByTitle('Nhà giả kim - tái bản');
         $redirectsBeforeEmailClick = $this->db->table('affiliate_redirects')->countAllResults();
-        $base = $this->nowInVietnam()->setTime(12, 0, 0);
+        $base = $this->nowInVietnam()->modify('+2 hours');
 
         foreach ([80000, 79000, 78000] as $index => $price) {
             $observedAt = $this->formatDateTime($base->modify('+' . $index . ' hour'));

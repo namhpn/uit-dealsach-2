@@ -39,7 +39,7 @@ function DealBannerCarousel({ onCtaClick }: { onCtaClick: (banner: DealBanner) =
       onMouseLeave={() => setPaused(false)}
       style={{ width: "100%", maxWidth: "calc(100vw - 32px)", boxSizing: "border-box", background: banner.bg, border: border2, boxShadow: shadow8, transition: "background 350ms" }}
     >
-      <div className="mx-auto grid w-full max-w-[1200px] grid-cols-1 gap-6 px-5 py-8 sm:px-8 sm:py-10 md:grid-cols-[minmax(0,1fr)_280px] md:items-center md:gap-8 md:px-12 md:py-12 lg:px-16 lg:py-14">
+      <div className="mx-auto grid w-full max-w-[1200px] grid-cols-1 gap-6 px-6 py-8 sm:px-12 sm:py-10 md:grid-cols-[minmax(0,1fr)_280px] md:items-center md:gap-8 md:px-16 md:py-12 lg:px-20 lg:py-14">
         <div className="relative z-10 flex min-w-0 flex-col gap-4 md:max-w-xl">
           {banner.badgeLabel && (
             <span className="self-start px-3 py-1 text-[10px] font-bold uppercase tracking-[0.12em]" style={{ background: C.boneWhite, color: C.black, fontFamily: FONT, border: border2 }}>
@@ -66,8 +66,8 @@ function DealBannerCarousel({ onCtaClick }: { onCtaClick: (banner: DealBanner) =
         </div>
       </div>
 
-      <button onClick={() => go(current - 1)} className="absolute left-3 top-1/2 hidden h-9 w-9 -translate-y-1/2 items-center justify-center sm:flex" style={{ background: banner.textColor, color: banner.bg, border: `2px solid ${banner.textColor}` }} aria-label="Trước"><ChevronLeft size={18} /></button>
-      <button onClick={() => go(current + 1)} className="absolute right-3 top-1/2 hidden h-9 w-9 -translate-y-1/2 items-center justify-center sm:flex" style={{ background: banner.textColor, color: banner.bg, border: `2px solid ${banner.textColor}` }} aria-label="Tiếp"><ChevronRight size={18} /></button>
+      <button onClick={() => go(current - 1)} className="absolute left-2 top-1/2 hidden h-9 w-9 -translate-y-1/2 items-center justify-center sm:flex" style={{ background: banner.textColor, color: banner.bg, border: `2px solid ${banner.textColor}` }} aria-label="Trước"><ChevronLeft size={18} /></button>
+      <button onClick={() => go(current + 1)} className="absolute right-2 top-1/2 hidden h-9 w-9 -translate-y-1/2 items-center justify-center sm:flex" style={{ background: banner.textColor, color: banner.bg, border: `2px solid ${banner.textColor}` }} aria-label="Tiếp"><ChevronRight size={18} /></button>
 
       <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-2">
         {dealBanners.map((_, index) => (
@@ -143,9 +143,6 @@ export default function HomePage() {
           <section id="featured-books">
             <ApiFeaturedCategoryShelves
               title={data.featured_books.title}
-              subtitle={data.featured_books.subtitle}
-              ctaLabel={data.featured_books.cta_label}
-              ctaHref={data.featured_books.cta_href}
               books={data.featured_books.items}
               categories={filters.categories}
               empty={data.featured_books.empty_state}

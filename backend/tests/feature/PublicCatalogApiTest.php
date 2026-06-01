@@ -137,15 +137,27 @@ final class PublicCatalogApiTest extends CIUnitTestCase
 
     public function testSearchCardsExposePriceDropMetadataFromEligibleObservations(): void
     {
-        $body = $this->json($this->get('/api/public/books?q=ca%20phe%20cung%20tony'));
+        $this->forceLatestCycleDropForOffer('Dế Mèn phiêu lưu ký', 68000);
+        $body = $this->json($this->get('/api/public/books?q=de%20men%20phieu%20luu%20ky'));
         $card = $body['data']['items'][0];
 
-        $this->assertSame('Cà phê cùng Tony', $card['title']);
+        $this->assertSame('Dế Mèn phiêu lưu ký', $card['title']);
         $this->assertArrayHasKey('price_drop', $card);
         $this->assertGreaterThan(0, $card['price_drop']['amount']);
         $this->assertArrayHasKey('from_price', $card['price_drop']);
         $this->assertArrayHasKey('to_price', $card['price_drop']);
         $this->assertArrayHasKey('date', $card['price_drop']);
+        $this->assertSame($card['price_drop']['from_price'] - $card['price_drop']['to_price'], $card['price_drop']['amount']);
+        $this->assertSame($card['lowest_eligible_price'], $card['price_drop']['to_price']);
+    }
+
+    public function testSearchCardsExcludePriceDropWhenLatestCycleDidNotDecrease(): void
+    {
+        $body = $this->json($this->get('/api/public/books?q=cha%20giau%20cha%20ngheo'));
+        $card = $body['data']['items'][0];
+
+        $this->assertSame('Cha giàu cha nghèo', $card['title']);
+        $this->assertArrayNotHasKey('price_drop', $card);
     }
 
     public function testBookCardStatusPriorityIsApplied(): void
@@ -225,6 +237,7 @@ final class PublicCatalogApiTest extends CIUnitTestCase
 
     public function testDiscoveryReturnsPriceDropsAndPersistedPopularClickedDeals(): void
     {
+        $this->forceLatestCycleDropForOffer('Dế Mèn phiêu lưu ký', 68000);
         $body = $this->json($this->get('/api/public/discovery'));
         $featuredSection = $body['data']['featured_books'];
         $dropsSection = $body['data']['recent_price_drops'];
@@ -244,6 +257,11 @@ final class PublicCatalogApiTest extends CIUnitTestCase
         $this->assertGreaterThanOrEqual(4, count($featuredCategorySlugs));
         $this->assertNotEmpty($body['data']['recent_price_drops']['items']);
         $this->assertGreaterThan(0, $body['data']['recent_price_drops']['items'][0]['price_drop']['amount']);
+        foreach ($dropsSection['items'] as $dropCard) {
+            $this->assertSame($dropCard['price_drop']['from_price'] - $dropCard['price_drop']['to_price'], $dropCard['price_drop']['amount']);
+            $this->assertSame($dropCard['lowest_eligible_price'], $dropCard['price_drop']['to_price']);
+        }
+        $this->assertNotContains('Cha giàu cha nghèo', array_column($dropsSection['items'], 'title'));
         $this->assertNotEmpty($body['data']['popular_clicked_deals']['items']);
         $this->assertGreaterThanOrEqual(5, count($body['data']['popular_clicked_deals']['items']));
         $this->assertSame('Cà phê cùng Tony', $body['data']['popular_clicked_deals']['items'][0]['title']);
@@ -318,6 +336,32 @@ final class PublicCatalogApiTest extends CIUnitTestCase
         $this->db->table('offers')
             ->where('id', $this->offerIdByTitle('Đắc nhân tâm - bản phổ thông'))
             ->update(['status' => 'inactive']);
+    }
+
+    private function forceLatestCycleDropForOffer(string $offerTitle, int $latestPrice): void
+    {
+        $offerId = $this->offerIdByTitle($offerTitle);
+        $latestCycleId = (int) $this->db->table('observation_cycles')
+            ->select('id')
+            ->orderBy('cycle_date', 'DESC')
+            ->limit(1)
+            ->get()
+            ->getFirstRow()
+            ->id;
+
+        $this->db->table('price_observations')
+            ->where('offer_id', $offerId)
+            ->where('observation_cycle_id', $latestCycleId)
+            ->update([
+                'availability_status' => 'available',
+                'listed_item_price' => $latestPrice,
+                'book_status_at_observation' => 'active',
+                'offer_status_at_observation' => 'active',
+                'retailer_status_at_observation' => 'active',
+                'merchant_status_at_observation' => 'active',
+                'merchant_retailer_consistent_at_observation' => 1,
+                'destination_status_at_observation' => 'valid',
+            ]);
     }
 
     /**

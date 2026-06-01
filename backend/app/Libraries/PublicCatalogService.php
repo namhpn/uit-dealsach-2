@@ -219,7 +219,7 @@ class PublicCatalogService
                 'subtitle' => 'Danh sách sách nổi bật được nhóm theo danh mục để bạn khám phá nhanh.',
                 'cta_label' => 'Xem tất cả sách',
                 'cta_href' => '/search',
-                'items' => array_slice($featured, 0, 12),
+                'items' => $featured,
                 'empty_state' => count($featured) === 0 ? 'Chưa có sách nổi bật.' : null,
             ],
             'recent_price_drops' => [
@@ -967,33 +967,38 @@ class PublicCatalogService
         $windowStart = $this->now->modify('-' . self::DISCOVERY_WINDOW_DAYS . ' days')->format('Y-m-d');
         $drops = [];
         $books = $this->activeBookRows();
+        $cards = $this->bookCards();
 
         foreach ($byBook as $bookId => $cycles) {
-            $bestDrop = null;
-            $previousEligible = null;
-
-            foreach ($cycles as $cycle) {
-                if ($previousEligible !== null && $cycle['date'] >= $windowStart && $cycle['price'] < $previousEligible['price']) {
-                    $drop = [
-                        'book_id' => $bookId,
-                        'date' => $cycle['date'],
-                        'from_price' => $previousEligible['price'],
-                        'to_price' => $cycle['price'],
-                        'drop_amount' => $previousEligible['price'] - $cycle['price'],
-                        'title' => $books[$bookId]->title ?? '',
-                    ];
-
-                    if ($bestDrop === null || $drop['drop_amount'] > $bestDrop['drop_amount'] || ($drop['drop_amount'] === $bestDrop['drop_amount'] && $drop['date'] > $bestDrop['date'])) {
-                        $bestDrop = $drop;
-                    }
-                }
-
-                $previousEligible = $cycle;
+            $card = $cards[$bookId] ?? null;
+            if ($card === null || $card['lowest_eligible_price'] === null) {
+                continue;
             }
 
-            if ($bestDrop !== null) {
-                $drops[] = $bestDrop;
+            if (count($cycles) < 2) {
+                continue;
             }
+
+            $currentCycle = $cycles[count($cycles) - 1];
+            $previousCycle = $cycles[count($cycles) - 2];
+            $currentLowestPrice = (int) $card['lowest_eligible_price'];
+
+            if ($currentCycle['date'] < $windowStart) {
+                continue;
+            }
+
+            if ($currentLowestPrice >= (int) $previousCycle['price']) {
+                continue;
+            }
+
+            $drops[] = [
+                'book_id' => $bookId,
+                'date' => $currentCycle['date'],
+                'from_price' => (int) $previousCycle['price'],
+                'to_price' => $currentLowestPrice,
+                'drop_amount' => (int) $previousCycle['price'] - $currentLowestPrice,
+                'title' => $books[$bookId]->title ?? '',
+            ];
         }
 
         usort($drops, static function (array $a, array $b): int {

@@ -298,12 +298,12 @@ export function ApiBookCard({
   const showStampedDrop = showPriceDropBadge && book.price_drop && hasReferencePrice;
   const referenceDropAmount = hasReferencePrice ? book.highest_eligible_price - book.lowest_eligible_price : null;
   const dropRotate = book.id % 2 === 0 ? "rotate(2deg)" : "rotate(-2deg)";
-  const coverMaxHeight = compactVariant ? 186 : 220;
+  const coverMaxHeight = compactVariant ? 168 : 220;
 
   return (
     <Link
       to={`/book/${book.id}`}
-      className={`flex h-full flex-col overflow-hidden focus:outline-none focus-visible:ring-4 focus-visible:ring-emerald-300 ${compactVariant ? "h-[390px]" : ""}`}
+      className={`flex h-full flex-col overflow-hidden focus:outline-none focus-visible:ring-4 focus-visible:ring-emerald-300 ${compactVariant ? "h-[352px]" : ""}`}
       onMouseDown={() => setPressed(true)}
       onMouseUp={() => setPressed(false)}
       onMouseLeave={() => setPressed(false)}
@@ -336,13 +336,13 @@ export function ApiBookCard({
             </span>
           )}
       </div>
-      <div className={`flex flex-1 flex-col ${compactVariant ? "gap-1 p-2.5" : "gap-1 p-3"}`}>
+      <div className={`flex flex-1 flex-col ${compactVariant ? "gap-1 p-2" : "gap-1 p-3"}`}>
         <p className="line-clamp-1 text-[10px] font-bold uppercase leading-none" style={{ color: C.outline, fontFamily: FONT }}>{book.category}</p>
         <h3 className={`mt-0.5 line-clamp-2 font-bold leading-snug ${compactVariant ? "text-[12px]" : "text-[13px]"}`} style={{ color: C.onSurface, fontFamily: FONT }}>{book.title}</h3>
         <p className="line-clamp-1 text-[11px]" style={{ color: C.onSurfaceVariant, fontFamily: FONT }}>{book.author}</p>
-        <div className={`mt-auto flex flex-col gap-1 ${compactVariant ? "pt-2" : "pt-3"}`}>
+        <div className={`mt-auto flex flex-col gap-1 ${compactVariant ? "pt-1.5" : "pt-3"}`}>
           <BookPrice book={book} compact referencePlacement={priceReferencePlacement} compactStatus={compactVariant} />
-          <span className="mt-1.5 self-start px-1.5 py-0.5 text-[10px] font-bold uppercase" style={{ background: C.boneWhite, color: C.onSurface, fontFamily: FONT, border: "1px solid #000" }}>
+          <span className="mt-1 self-start px-1.5 py-0.5 text-[10px] font-bold uppercase" style={{ background: C.boneWhite, color: C.onSurface, fontFamily: FONT, border: "1px solid #000" }}>
             {book.offer_count} {offerCountLabel}
           </span>
           {showCommerceCta && (
@@ -414,6 +414,7 @@ export function ApiDealBookCard({
   showDeal = false,
   compact = false,
   ctaLabel = "Xem chi tiết",
+  offerCountLabel = "nơi bán",
   showPublisher = !compact,
   emphasizeCta = false,
   fillWidth = false,
@@ -423,6 +424,7 @@ export function ApiDealBookCard({
   showDeal?: boolean;
   compact?: boolean;
   ctaLabel?: string;
+  offerCountLabel?: string;
   showPublisher?: boolean;
   emphasizeCta?: boolean;
   fillWidth?: boolean;
@@ -432,6 +434,7 @@ export function ApiDealBookCard({
   const wishlist = useWishlistControl(book);
   const dropRotate = book.id % 2 === 0 ? "rotate(2deg)" : "rotate(-3deg)";
   const cardWidth = compact ? (fillWidth ? "100%" : 200) : 280;
+  const cardHeight = compact ? undefined : 560;
   const coverH = compact ? 220 : 320;
 
   return (
@@ -441,7 +444,7 @@ export function ApiDealBookCard({
       onMouseDown={() => setPressed(true)}
       onMouseUp={() => setPressed(false)}
       onMouseLeave={() => setPressed(false)}
-      style={{ width: cardWidth, background: C.white, border: border2, boxShadow: pressed ? "none" : shadow4, transform: pressed ? "translate(4px,4px)" : "none", transition: "box-shadow 80ms, transform 80ms" }}
+      style={{ width: cardWidth, height: cardHeight, background: C.white, border: border2, boxShadow: pressed ? "none" : shadow4, transform: pressed ? "translate(4px,4px)" : "none", transition: "box-shadow 80ms, transform 80ms" }}
     >
       <div className="relative" style={{ height: coverH, borderBottom: border2, background: C.surfaceContainer, overflow: "hidden" }}>
         <CoverImage title={book.title} src={book.cover_image} />
@@ -467,17 +470,14 @@ export function ApiDealBookCard({
         </button>
       </div>
       <div className={`flex flex-1 flex-col gap-1 ${compact ? "p-3" : "p-5"}`}>
-        <p className="text-[10px] font-bold uppercase leading-none" style={{ color: C.outline, fontFamily: FONT }}>{book.category}</p>
+        <p className="line-clamp-1 pt-0.5 text-[10px] font-bold uppercase leading-[1.25]" style={{ color: C.outline, fontFamily: FONT }}>{book.category}</p>
         <h3 className="mt-0.5 line-clamp-2 font-bold leading-snug" style={{ fontFamily: FONT, fontSize: compact ? 13 : 14, color: C.onSurface }}>{book.title}</h3>
         <p className="line-clamp-1" style={{ fontSize: compact ? 11 : 12, color: C.onSurfaceVariant, fontFamily: FONT }}>{book.author}</p>
         {showPublisher && <p className="line-clamp-1 text-[11px]" style={{ color: C.outline, fontFamily: FONT }}>{book.publisher}</p>}
         <div className="mt-auto flex flex-col gap-1 pt-3">
-          <BookPrice book={book} compact={compact} />
+          <BookPrice book={book} compact={compact} compactStatus />
           <div className="mt-1.5 flex flex-wrap gap-1.5">
-            <span className="self-start px-1.5 py-0.5 text-[10px] font-bold uppercase" style={{ background: C.boneWhite, color: C.onSurface, fontFamily: FONT, border: "1px solid #000" }}>{book.offer_count} ưu đãi</span>
-            {showDeal && book.popular_clicked_deal?.top_retailer && (
-              <span className="self-start px-1.5 py-0.5 text-[10px] font-bold uppercase" style={{ background: C.primaryFixed, color: C.primary, fontFamily: FONT, border: "1px solid #000" }}>{book.popular_clicked_deal.top_retailer.name}</span>
-            )}
+            <span className="self-start px-1.5 py-0.5 text-[10px] font-bold uppercase" style={{ background: C.boneWhite, color: C.onSurface, fontFamily: FONT, border: "1px solid #000" }}>{book.offer_count} {offerCountLabel}</span>
           </div>
         </div>
         <Link
@@ -611,8 +611,8 @@ export function ApiDealSection({
                   showDrop={showDrop}
                   showDeal={showDeal}
                   ctaLabel="Đến nơi bán →"
+                  offerCountLabel="nơi bán"
                   showPublisher={false}
-                  emphasizeCta
                 />
               </div>
             ))}
@@ -628,17 +628,11 @@ export function ApiDealSection({
 
 export function ApiFeaturedCategoryShelves({
   title,
-  subtitle,
-  ctaLabel,
-  ctaHref,
   books,
   categories,
   empty,
 }: {
   title: string;
-  subtitle: string;
-  ctaLabel: string;
-  ctaHref: string;
   books: BookCardDto[];
   categories: CategoryFilterDto[];
   empty: string | null;
@@ -675,17 +669,9 @@ export function ApiFeaturedCategoryShelves({
           <Star size={17} style={{ color: C.white }} />
           <h2 className="text-[15px] font-extrabold uppercase" style={{ color: C.white, fontFamily: FONT }}>{title}</h2>
         </div>
-        <Link to={ctaHref} className="text-[12px] font-bold uppercase" style={{ color: C.primaryFixed, fontFamily: FONT }}>
-          {ctaLabel}
-        </Link>
       </div>
       <div className="flex flex-col md:flex-row">
-        <div className="w-full border-b-2 border-black md:w-[220px] md:shrink-0 md:border-b-0 md:border-r-2" style={{ background: C.boneWhite }}>
-          <div className="px-4 pt-4 pb-2">
-            <p className="text-[10px] font-extrabold uppercase" style={{ color: C.primary, fontFamily: FONT, letterSpacing: "0.03em" }}>
-              {subtitle}
-            </p>
-          </div>
+        <div className="w-full border-b-2 border-black md:w-[240px] md:shrink-0 md:border-b-0 md:border-r-2" style={{ background: C.boneWhite }}>
           <div className="flex overflow-x-auto md:flex-col md:overflow-visible">
             {shelves.map((category) => {
               const active = activeCategory?.slug === category.slug;
@@ -694,7 +680,7 @@ export function ApiFeaturedCategoryShelves({
                   key={category.slug}
                   type="button"
                   onClick={() => setActiveSlug(category.slug)}
-                  className="min-w-[160px] px-4 py-3 text-left text-[11px] font-bold uppercase md:min-w-0"
+                  className="min-w-[176px] px-5 py-3.5 text-left text-[12px] font-bold uppercase md:min-w-0 md:text-[13px]"
                   style={{
                     fontFamily: FONT,
                     color: active ? C.primary : C.onSurface,
@@ -716,7 +702,7 @@ export function ApiFeaturedCategoryShelves({
             <>
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex min-w-0 flex-col gap-1">
-                  <h3 className="text-[14px] font-extrabold uppercase" style={{ color: C.onSurface, fontFamily: FONT }}>
+                  <h3 className="text-[16px] font-extrabold uppercase" style={{ color: C.onSurface, fontFamily: FONT }}>
                     {activeCategory.display_label ?? activeCategory.name}
                   </h3>
                   {activeCategory.display_description && (
@@ -725,7 +711,11 @@ export function ApiFeaturedCategoryShelves({
                     </p>
                   )}
                 </div>
-                <Link to={`/search?category=${encodeURIComponent(activeCategory.slug)}`} className="text-[11px] font-bold uppercase" style={{ color: C.primary, fontFamily: FONT }}>
+                <Link
+                  to={`/search?category=${encodeURIComponent(activeCategory.slug)}`}
+                  className="inline-flex items-center px-3 py-1.5 text-[11px] font-extrabold uppercase"
+                  style={{ color: C.primary, fontFamily: FONT, border: border2, background: C.boneWhite, boxShadow: shadow4 }}
+                >
                   Xem tất cả
                 </Link>
               </div>

@@ -108,6 +108,8 @@ final class WishlistFeatureTest extends CIUnitTestCase
         $this->assertTrue($item['archived']);
         $this->assertSame('archived', $item['status']['value']);
         $this->assertSame('Sách đã lưu trữ', $item['status']['label']);
+        $this->assertArrayHasKey('highest_eligible_price', $item);
+        $this->assertNull($item['highest_eligible_price']);
     }
 
     public function testInvalidatedOrDeactivatedSessionIsRejected(): void

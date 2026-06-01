@@ -561,6 +561,81 @@ Use this section for tickets that refine `/search` visual rhythm toward the `fro
 
 6. Do not run browser UI testing, browser screenshots, Playwright, Puppeteer, or visual-capture tools for this ticket.
 
+## Wishlist Original-Reference Visual Refinement Verification
+
+Use this section for tickets that refine `/wishlist` visual rhythm while preserving authenticated wishlist API behavior.
+
+1. Reset and seed local database state:
+
+   ```bash
+   docker compose run --rm app sh -lc 'cd backend && php spark migrate && php spark db:seed DealSachDemoSeeder'
+   ```
+
+   Expected result: migration and seeding complete successfully.
+
+2. Run frontend build:
+
+   ```bash
+   docker compose run --rm frontend npm run build
+   ```
+
+   Expected result: build succeeds (existing chunk-size warning is acceptable unless the ticket targets bundle splitting).
+
+3. Run focused wishlist tests:
+
+   ```bash
+   docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit --filter Wishlist'
+   ```
+
+   Expected result: wishlist-focused tests pass, including archived-book fallback card shape assertions.
+
+4. Run full backend suite:
+
+   ```bash
+   docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit'
+   ```
+
+   Expected result: suite passes, or fails only for known out-of-scope KI-0015 baseline seed-scenario coverage and that failure is documented in the completion report.
+
+5. Manually verify guest `/wishlist` state:
+
+   Expected result:
+   * Vietnamese login-required panel is shown;
+   * `Đăng nhập / Đăng ký` opens the existing auth dialog.
+
+6. Manually verify authenticated populated `/wishlist` state:
+
+   Expected result:
+   * stamped `Danh sách yêu thích` header, explanatory copy, and saved-count badge are visible;
+   * `Đang theo dõi` shelf header and count treatment are visible;
+   * cards render as responsive 1-column mobile / 2-column desktop grid;
+   * active titles link to `/book/{id}`; archived titles do not link;
+   * archived cards remain visible and show `Đã lưu trữ`;
+   * cards include category chip, author/publisher, saved date, and price/status behavior with no `N/A`.
+
+7. Manually verify remove behavior:
+
+   Expected result:
+   * `Bỏ lưu` button enters pending/disabled state for the clicked card;
+   * duplicate remove clicks are prevented while pending;
+   * success removes the card from the grid;
+   * failure shows a Vietnamese error and keeps/restores item state.
+
+8. Manually verify empty state:
+
+   Expected result:
+   * empty state remains Vietnamese and hard-edged;
+   * clear `/search` CTA (`Khám phá sách`) is present.
+
+9. Run whitespace/conflict check and changed-file scope checks:
+
+   ```bash
+   git diff --check
+   git diff --name-only
+   ```
+
+   Expected result: no whitespace/conflict issues; changed files are limited to T0026 allowed areas plus bookkeeping docs.
+
 ## SMTP Delivery Verification
 
 Use this section for tickets that add or change outbound email delivery behavior.

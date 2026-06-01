@@ -60,6 +60,7 @@ class WishlistService
                 'is_featured' => false,
                 'offer_count' => 0,
                 'lowest_eligible_price' => null,
+                'highest_eligible_price' => null,
                 'status' => [
                     'value' => $archived ? 'archived' : 'no_tracked_offer',
                     'label' => $archived ? 'Sách đã lưu trữ' : 'Chưa có ưu đãi',

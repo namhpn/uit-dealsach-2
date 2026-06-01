@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { Link } from "react-router";
 import { BarChart3, Bell, ExternalLink, MailCheck, ScrollText, ShieldCheck, TriangleAlert } from "lucide-react";
 import { AdminDashboardDto, apiErrorMessage, fetchAdminDashboard, formatDateTime, formatVnd } from "../api";
-import { C, EmptyState, FONT, border2, shadow4, shadow8 } from "../shared";
+import { AdminBackLink, AdminHeader, AdminTableShell, C, ErrorState, LoadingState, PageShell, border2, shadow4 } from "../shared";
 import { AdminGate } from "./AdminPage";
 
 export default function AdminDashboardPage() {
@@ -39,30 +39,21 @@ export default function AdminDashboardPage() {
 
   return (
     <AdminGate>
-      <main className="mx-auto flex min-w-[768px] max-w-[1180px] flex-col gap-6 px-8 py-10" style={{ fontFamily: FONT }}>
-        <section className="p-6" style={{ background: C.primary, color: C.white, border: border2, boxShadow: shadow8 }}>
-          <div className="flex items-center justify-between gap-5">
-            <div>
-              <div className="flex items-center gap-3">
-                <ShieldCheck size={28} />
-                <h1 className="text-[30px] font-extrabold uppercase">Bảng báo cáo Admin</h1>
-              </div>
-              <p className="mt-2 text-[13px]" style={{ color: C.primaryFixed }}>
-                Theo dõi lượt chuyển tiếp, email, lỗi liên kết, cảnh báo, biến động giá và thao tác quản trị trong cửa sổ mặc định 7 ngày.
-              </p>
-            </div>
-            <div className="flex gap-2">
-              {navItems.map((item) => (
-                <Link key={item.to} to={item.to} className="px-3 py-2 text-[12px] font-extrabold uppercase" style={{ background: C.white, color: C.primary, border: border2 }}>
-                  {item.label}
-                </Link>
-              ))}
-            </div>
-          </div>
-        </section>
+      <PageShell variant="admin" className="min-w-[768px] max-w-[1180px]">
+        <AdminHeader
+          title="Bảng báo cáo Admin"
+          icon={<ShieldCheck size={24} />}
+          description="Theo dõi lượt chuyển tiếp, email, lỗi liên kết, cảnh báo, biến động giá và thao tác quản trị trong cửa sổ mặc định 7 ngày."
+          backLink={<AdminBackLink />}
+          actions={navItems.map((item) => (
+            <Link key={item.to} to={item.to} className="px-3 py-2 text-[11px] font-extrabold uppercase" style={{ background: C.white, color: C.primary, border: border2, boxShadow: shadow4 }}>
+              {item.label}
+            </Link>
+          ))}
+        />
 
-        {loading && <EmptyState message="Đang tải báo cáo quản trị..." />}
-        {error && <EmptyState message={error} />}
+        {loading && <LoadingState label="Đang tải báo cáo quản trị..." />}
+        {error && <ErrorState message={error} />}
         {!loading && !error && data && (
           <>
             <section className="flex items-center justify-between p-4 text-[13px] font-bold" style={{ background: C.boneWhite, border: border2, boxShadow: shadow4 }}>
@@ -112,7 +103,7 @@ export default function AdminDashboardPage() {
             </section>
           </>
         )}
-      </main>
+      </PageShell>
     </AdminGate>
   );
 }
@@ -159,7 +150,7 @@ function ReportBlock({ title, rows, empty }: { title: string; rows: { label: str
 
 function TableBlock({ title, headers, rows }: { title: string; headers: string[]; rows: string[][] }) {
   return (
-    <section className="overflow-hidden" style={{ background: C.white, border: border2, boxShadow: shadow4 }}>
+    <AdminTableShell>
       <h2 className="p-4 text-[16px] font-extrabold uppercase" style={{ borderBottom: border2 }}>{title}</h2>
       {rows.length === 0 ? (
         <p className="p-4 text-[13px] font-bold" style={{ color: C.onSurfaceVariant }}>Chưa có dữ liệu phù hợp.</p>
@@ -171,7 +162,7 @@ function TableBlock({ title, headers, rows }: { title: string; headers: string[]
           <tbody>{rows.map((row, index) => <tr key={`${row.join("-")}-${index}`}>{row.map((cell, cellIndex) => <td key={cellIndex} className="p-3 align-top font-bold" style={{ borderTop: `1px solid ${C.black}` }}>{cell}</td>)}</tr>)}</tbody>
         </table>
       )}
-    </section>
+    </AdminTableShell>
   );
 }
 

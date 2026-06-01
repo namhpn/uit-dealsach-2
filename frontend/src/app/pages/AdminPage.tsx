@@ -2,30 +2,36 @@ import { Link } from "react-router";
 import type { ReactNode } from "react";
 import { BarChart3, Bell, BookOpen, Building2, FolderTree, ScrollText, ShieldCheck, Store, Tags, Users } from "lucide-react";
 import { useAuth } from "../auth";
-import { C, EmptyState, FONT, NbButton, border2, shadow4, shadow8 } from "../shared";
+import { AdminHeader, C, NbButton, PageShell, PromptCard, border2, shadow4 } from "../shared";
 
 export function AdminGate({ children }: { children: ReactNode }) {
   const auth = useAuth();
 
   if (auth.loading) {
-    return <main className="mx-auto max-w-[1000px] px-4 py-10 text-sm font-bold">Đang kiểm tra phiên đăng nhập...</main>;
+    return <PageShell variant="admin" className="text-sm font-bold">Đang kiểm tra phiên đăng nhập...</PageShell>;
   }
   if (!auth.authenticated) {
     return (
-      <main className="mx-auto max-w-[900px] px-4 py-10">
-        <EmptyState message="Vui lòng đăng nhập bằng tài khoản Admin để truy cập khu vực quản trị." />
-        <div className="mt-4"><NbButton onClick={auth.openAuthDialog}>Đăng nhập Admin</NbButton></div>
-      </main>
+      <PageShell variant="admin">
+        <PromptCard
+          icon={<ShieldCheck size={20} style={{ color: C.primary }} />}
+          title="Khu vực quản trị"
+          description="Vui lòng đăng nhập bằng tài khoản Admin để truy cập khu vực quản trị."
+          cta={<NbButton onClick={auth.openAuthDialog}>Đăng nhập Admin</NbButton>}
+        />
+      </PageShell>
     );
   }
   if (auth.user?.role !== "admin") {
     return (
-      <main className="mx-auto max-w-[900px] px-4 py-10">
-        <section className="p-6" style={{ background: "#fff1f1", border: border2, boxShadow: shadow8, fontFamily: FONT }}>
-          <h1 className="text-[22px] font-extrabold uppercase" style={{ color: C.secondary }}>Không có quyền quản trị</h1>
-          <p className="mt-2 text-[13px]" style={{ color: C.onSurfaceVariant }}>Tài khoản hiện tại không được phép truy cập trang Admin.</p>
-        </section>
-      </main>
+      <PageShell variant="admin">
+        <PromptCard
+          icon={<ShieldCheck size={20} style={{ color: C.dealRed }} />}
+          title="Không có quyền quản trị"
+          description="Tài khoản hiện tại không được phép truy cập trang Admin."
+          cta={<Link to="/" className="px-4 py-2.5 text-[12px] font-extrabold uppercase" style={{ border: border2, background: C.boneWhite, color: C.onSurface, boxShadow: shadow4 }}>Về trang chủ</Link>}
+        />
+      </PageShell>
     );
   }
 
@@ -35,14 +41,12 @@ export function AdminGate({ children }: { children: ReactNode }) {
 export default function AdminPage() {
   return (
     <AdminGate>
-      <main className="mx-auto flex min-w-[768px] max-w-[1120px] flex-col gap-6 px-8 py-10">
-        <section className="p-6" style={{ background: C.primary, color: C.white, border: border2, boxShadow: shadow8, fontFamily: FONT }}>
-          <div className="flex items-center gap-3">
-            <ShieldCheck size={28} />
-            <h1 className="text-[30px] font-extrabold uppercase">Bảng quản trị DealSach</h1>
-          </div>
-          <p className="mt-2 text-[13px]" style={{ color: C.primaryFixed }}>Quản lý catalog, người dùng, hoạt động cảnh báo và nhật ký kiểm toán.</p>
-        </section>
+      <PageShell variant="admin" className="min-w-[768px] max-w-[1120px]">
+        <AdminHeader
+          title="Bảng quản trị DealSach"
+          icon={<ShieldCheck size={24} />}
+          description="Quản lý catalog, người dùng, hoạt động cảnh báo và nhật ký kiểm toán."
+        />
         <nav className="grid grid-cols-4 gap-4">
           <AdminLink to="/admin/dashboard" icon={<BarChart3 size={22} />} title="Báo cáo" desc="Tổng quan 7 ngày về redirect, email, cảnh báo và giá." />
           <AdminLink to="/admin/books" icon={<BookOpen size={22} />} title="Sách" desc="Tạo, cập nhật, lưu trữ và đánh dấu nổi bật." />
@@ -54,14 +58,14 @@ export default function AdminPage() {
           <AdminLink to="/admin/alerts" icon={<Bell size={22} />} title="Cảnh báo" desc="Theo dõi hoạt động và tắt cảnh báo có vấn đề." />
           <AdminLink to="/admin/audit" icon={<ScrollText size={22} />} title="Kiểm toán" desc="Xem lịch sử thao tác Admin đã ghi nhận." />
         </nav>
-      </main>
+      </PageShell>
     </AdminGate>
   );
 }
 
 function AdminLink({ to, icon, title, desc }: { to: string; icon: ReactNode; title: string; desc: string }) {
   return (
-    <Link to={to} className="flex flex-col gap-3 p-5" style={{ background: C.white, border: border2, boxShadow: shadow4, fontFamily: FONT }}>
+    <Link to={to} className="flex flex-col gap-3 p-5" style={{ background: C.white, border: border2, boxShadow: shadow4 }}>
       <span className="flex h-11 w-11 items-center justify-center" style={{ background: C.primaryFixed, border: border2, color: C.primary }}>{icon}</span>
       <strong className="text-[17px] uppercase">{title}</strong>
       <span className="text-[13px] leading-relaxed" style={{ color: C.onSurfaceVariant }}>{desc}</span>

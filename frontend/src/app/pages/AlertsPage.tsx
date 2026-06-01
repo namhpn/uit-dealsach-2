@@ -21,7 +21,7 @@ import {
   updatePriceAlertTarget,
 } from "../api";
 import { useAuth } from "../auth";
-import { C, CoverImage, ErrorState, FONT, LoadingState, NbButton, border2, shadow4, shadow8 } from "../shared";
+import { C, CoverImage, ErrorState, FONT, LoadingState, NbButton, PageIntro, PageShell, PromptCard, StampHeading, StatusChip, border2, shadow4, shadow8 } from "../shared";
 
 const ALERT_TYPE_LABELS: Record<PriceAlertDto["alert_type"], string> = {
   target_price: "Giá mục tiêu",
@@ -202,49 +202,29 @@ export default function AlertsPage() {
 
   if (!auth.authenticated) {
     return (
-      <main className="mx-auto flex max-w-[980px] flex-col gap-6 px-4 py-10 sm:px-8">
-        <section className="flex flex-col gap-4 p-6" style={{ background: C.white, border: border2, boxShadow: shadow8, fontFamily: FONT }}>
-          <div className="inline-flex w-fit items-center gap-2 px-3 py-2" style={{ border: border2, background: C.primary, color: C.white, boxShadow: shadow4 }}>
-            <Bell size={18} />
-            <h1 className="text-[20px] font-black uppercase">Cảnh báo giá</h1>
-          </div>
-          <p className="border-l-4 pl-3 text-[14px] leading-relaxed" style={{ borderColor: C.primary, color: C.onSurfaceVariant }}>
-            Đăng nhập để lưu sách bạn quan tâm, đặt mốc giá phù hợp và nhận email khi giá thuận lợi trước khi mua.
-          </p>
-          <div className="flex flex-wrap items-center gap-3">
-            <NbButton onClick={auth.openAuthDialog}>Đăng nhập để theo dõi giá</NbButton>
-            <Link
-              to="/search"
-              className="px-4 py-2.5 text-[12px] font-extrabold uppercase"
-              style={{ background: C.boneWhite, color: C.onSurface, border: border2, boxShadow: shadow4, fontFamily: FONT }}
-            >
-              Tìm sách để theo dõi
-            </Link>
-          </div>
-        </section>
-      </main>
+      <PageShell>
+        <PromptCard
+          icon={<Bell size={20} style={{ color: C.primary }} />}
+          title="Cảnh báo giá"
+          description="Đăng nhập để lưu sách bạn quan tâm, đặt mốc giá phù hợp và nhận email khi giá thuận lợi trước khi mua."
+          cta={<NbButton onClick={auth.openAuthDialog}>Đăng nhập để theo dõi giá</NbButton>}
+          secondaryCta={<Link to="/search" className="px-4 py-2.5 text-[12px] font-extrabold uppercase" style={{ background: C.boneWhite, color: C.onSurface, border: border2, boxShadow: shadow4, fontFamily: FONT }}>Tìm sách để theo dõi</Link>}
+        />
+      </PageShell>
     );
   }
 
   return (
-    <main className="mx-auto flex max-w-[1160px] flex-col gap-6 px-4 py-10 sm:px-8">
+    <PageShell>
       <section className="flex flex-col gap-4">
-        <div
-          className="inline-flex w-fit max-w-full items-center gap-2 px-4 py-3"
-          style={{ background: C.white, border: border2, boxShadow: shadow8, transform: "rotate(-1deg)", fontFamily: FONT }}
-        >
-          <Bell size={20} style={{ color: C.primary }} />
-          <h1 className="text-[28px] font-black uppercase leading-none">Cảnh báo giá</h1>
-        </div>
-        <p className="max-w-[900px] border-l-4 pl-3 text-[14px] leading-relaxed" style={{ borderColor: C.primary, color: C.onSurfaceVariant, fontFamily: FONT }}>
-          Theo dõi sách đã lưu, kiểm soát mốc giá mục tiêu và nhận email khi giá tham khảo đạt điều kiện phù hợp để bạn ra quyết định nhanh hơn.
-        </p>
+        <StampHeading title="Cảnh báo giá" icon={<Bell size={20} style={{ color: C.primary }} />} />
+        <PageIntro>Theo dõi sách đã lưu, kiểm soát mốc giá mục tiêu và nhận email khi giá tham khảo đạt điều kiện phù hợp để bạn ra quyết định nhanh hơn.</PageIntro>
         <div className="flex flex-wrap gap-2" style={{ fontFamily: FONT }}>
-          <HeaderChip label="Đang theo dõi" value={activeCount} bg={C.primary} color={C.white} />
-          <HeaderChip label="Cần chú ý" value={attentionCount} bg="#fff4cc" color="#5f4700" />
-          <HeaderChip label="Đã tắt" value={disabledCount} bg={C.boneWhite} color={C.onSurface} />
-          <HeaderTextChip label={preference?.alert_emails_enabled ?? true ? "Email đang bật" : "Email đang tắt"} />
-          <HeaderTextChip label={auth.user?.email ?? "Chưa có email"} />
+          <StatusChip label={`Đang theo dõi: ${activeCount}`} variant="primary" />
+          <StatusChip label={`Cần chú ý: ${attentionCount}`} variant="warning" />
+          <StatusChip label={`Đã tắt: ${disabledCount}`} variant="muted" />
+          <StatusChip label={preference?.alert_emails_enabled ?? true ? "Email đang bật" : "Email đang tắt"} variant={(preference?.alert_emails_enabled ?? true) ? "success" : "muted"} />
+          <StatusChip label={auth.user?.email ?? "Chưa có email"} />
         </div>
       </section>
 
@@ -284,24 +264,7 @@ export default function AlertsPage() {
           />
         </div>
       )}
-    </main>
-  );
-}
-
-function HeaderChip({ label, value, bg, color }: { label: string; value: number; bg: string; color: string }) {
-  return (
-    <span className="inline-flex items-center gap-2 px-2.5 py-1 text-[10px] font-extrabold uppercase" style={{ border: border2, background: bg, color }}>
-      {label}
-      <strong className="text-[11px]">{value}</strong>
-    </span>
-  );
-}
-
-function HeaderTextChip({ label }: { label: string }) {
-  return (
-    <span className="px-2.5 py-1 text-[10px] font-extrabold uppercase" style={{ border: border2, background: C.white, color: C.onSurface }}>
-      {label}
-    </span>
+    </PageShell>
   );
 }
 

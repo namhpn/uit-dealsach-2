@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router";
+import { useParams } from "react-router";
 import { addAdminOfferObservation, AdminOfferDto, apiErrorMessage, fetchAdminOffer, formatDateTime, formatVnd } from "../api";
-import { C, ErrorState, LoadingState, NbButton, border2, shadow4 } from "../shared";
+import { AdminBackLink, AdminHeader, AdminTableShell, C, ErrorState, LoadingState, NbButton, NbDenseInput, NbSelect, PageShell, border2, shadow4 } from "../shared";
 import { AdminGate } from "./AdminPage";
 
 export default function AdminBookDetailPage() {
@@ -42,8 +42,8 @@ export default function AdminBookDetailPage() {
 
   return (
     <AdminGate>
-      <main className="mx-auto flex min-w-[768px] max-w-[1120px] flex-col gap-5 px-8 py-10">
-        <div className="flex items-center justify-between"><h1 className="text-[28px] font-extrabold uppercase">Quan sát ưu đãi</h1><Link className="text-[13px] font-bold underline" to="/admin/offers">Về ưu đãi</Link></div>
+      <PageShell variant="admin" className="min-w-[768px] max-w-[1120px] gap-5">
+        <AdminHeader title="Quan sát ưu đãi" description="Thêm vòng quan sát mới cho ưu đãi và xem lịch sử theo chu kỳ." backLink={<AdminBackLink to="/admin/offers" label="Về ưu đãi" />} />
         {error && <ErrorState message={error} />}
         {loading ? <LoadingState label="Đang tải ưu đãi..." /> : offer && (
           <>
@@ -54,21 +54,23 @@ export default function AdminBookDetailPage() {
             </section>
             <section className="grid grid-cols-[1fr_1fr_1fr_auto] gap-3 p-4" style={{ background: C.white, border: border2, boxShadow: shadow4 }}>
               <Field label="Ngày chu kỳ" value={form.cycle_date} onChange={(value) => setForm((current) => ({ ...current, cycle_date: value }))} placeholder="YYYY-MM-DD" />
-              <label className="flex flex-col gap-1 text-[12px] font-bold uppercase">Tình trạng<select className="h-10 px-3" style={{ border: border2, background: C.boneWhite }} value={form.availability_status} onChange={(event) => setForm((current) => ({ ...current, availability_status: event.target.value }))}><option value="available">Còn hàng</option><option value="unavailable">Hết hàng</option></select></label>
+              <label className="flex flex-col gap-1 text-[12px] font-bold uppercase">Tình trạng<NbSelect className="h-10 px-3 text-[13px]" value={form.availability_status} onChange={(event) => setForm((current) => ({ ...current, availability_status: event.target.value }))}><option value="available">Còn hàng</option><option value="unavailable">Hết hàng</option></NbSelect></label>
               <Field label="Giá VND" value={form.listed_item_price} onChange={(value) => setForm((current) => ({ ...current, listed_item_price: value }))} />
               <div className="self-end"><NbButton onClick={submit}>Thêm</NbButton></div>
             </section>
-            <table className="w-full border-collapse text-[13px]" style={{ background: C.white, border: border2, boxShadow: shadow4 }}>
+            <AdminTableShell>
+            <table className="w-full border-collapse text-[13px]">
               <thead style={{ background: C.boneWhite }}><tr>{["Chu kỳ", "Thời điểm", "Tình trạng", "Giá", "Trạng thái ghi nhận"].map((h) => <th key={h} className="p-3 text-left uppercase" style={{ border: border2 }}>{h}</th>)}</tr></thead>
               <tbody>{(offer.observations ?? []).map((row) => <tr key={row.id}><td className="p-3" style={{ border: border2 }}>{row.cycle_date}</td><td className="p-3" style={{ border: border2 }}>{formatDateTime(row.observed_at)}</td><td className="p-3" style={{ border: border2 }}>{row.availability_status === "available" ? "Còn hàng" : "Hết hàng"}</td><td className="p-3" style={{ border: border2 }}>{row.listed_item_price ? formatVnd(row.listed_item_price) : "-"}</td><td className="p-3" style={{ border: border2 }}>{row.book_status_at_observation} / {row.offer_status_at_observation} / {row.destination_status_at_observation}</td></tr>)}</tbody>
             </table>
+            </AdminTableShell>
           </>
         )}
-      </main>
+      </PageShell>
     </AdminGate>
   );
 }
 
 function Field({ label, value, onChange, placeholder = "" }: { label: string; value: string; onChange: (value: string) => void; placeholder?: string }) {
-  return <label className="flex flex-col gap-1 text-[12px] font-bold uppercase">{label}<input className="h-10 px-3 text-[13px] normal-case" style={{ border: border2, background: C.boneWhite }} value={value} placeholder={placeholder} onChange={(event) => onChange(event.target.value)} /></label>;
+  return <label className="flex flex-col gap-1 text-[12px] font-bold uppercase">{label}<NbDenseInput className="h-10 px-3 text-[13px]" value={value} placeholder={placeholder} onChange={(event) => onChange(event.target.value)} /></label>;
 }

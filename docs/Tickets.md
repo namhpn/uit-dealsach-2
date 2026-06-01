@@ -38,4 +38,5 @@
 | T0023 | ProductDetailPage Visual Rhythm Refinement | Done | T0022 | Frontend |
 | T0024 | SearchResultPage Original-Reference Visual Rhythm Refinement | Done | T0023 | Public frontend |
 | T0025 | ProductDetail Offer Cheapest Ordering Fix | Done | T0024 | Backend/API |
-| T0026 | WishlistPage Original-Reference Visual Refinement | In Progress | T0025 | Frontend / Wishlist |
+| T0026 | WishlistPage Original-Reference Visual Refinement | Done | T0025 | Frontend / Wishlist |
+| T0027 | AlertPage Buyer Dashboard and Login Prompt Card Refinement | In Progress | T0026 | Frontend UX |

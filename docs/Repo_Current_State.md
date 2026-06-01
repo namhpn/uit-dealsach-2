@@ -4,7 +4,7 @@ Last updated: 2026-06-01
 
 ## Current Branch
 
-`feature/t0026-wishlist-reference-refinement`
+`feature/t0027-alertpage-buyer-dashboard-refinement`
 `main`
 
 Baseline source for T0007: local `main` after T0006 merge.
@@ -40,6 +40,7 @@ Baseline source for T0007: local `main` after T0006 merge.
 | T0024 | 2026-05-29 | Refined SearchPage visual rhythm toward the original reference with lighter collapsible filter panel treatment, tighter hero/sort integration, denser scoped search cards, stricter price-drop badge gating, and formal bottom disclosure styling without backend/API changes. |
 | T0025 | 2026-05-29 | Fixed ProductDetail purchasable-offer ordering so API detail `offers.purchasable` sorts by current eligible price ascending and keeps summary lowest-price consistency. |
 | T0026 | 2026-06-01 | Refined WishlistPage visual rhythm to the original-reference direction with API-backed grid cards, tactile remove pending state, archived/non-archived behavior preservation, and a wishlist fallback payload compatibility fix. |
+| T0027 | 2026-06-01 | Refined `/alerts` into a buyer-first grouped dashboard (`Đang theo dõi`, `Cần chú ý`, `Đã tắt`) and upgraded the shared email-code auth dialog into a split DealSach login prompt while preserving existing alert/auth API behavior. |
 | T0025 | 2026-06-01 | Fixed backend ProductDetail purchasable-offer ordering to sort by current eligible `latest_price` (tie-breaker `offer id`), added seeded regression coverage for `Cho tôi xin một vé đi tuổi thơ`, and aligned manual verification/process docs. |
 
 ## Current Folder Structure
@@ -369,6 +370,16 @@ docs/Repo_Current_State.md
 docs/Known_Issues_And_Followups.md
 ```
 
+T0027 changed:
+
+```text
+frontend/src/app/pages/AlertsPage.tsx
+frontend/src/app/auth/AuthContext.tsx
+docs/Manual_Verification_Guide.md
+docs/implementation_logs/T0027.md
+docs/Repo_Current_State.md
+```
+
 T0008 changed:
 
 ```text
@@ -486,6 +497,7 @@ docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit --filte
 
 | Area | Command | Last Result | Notes |
 |---|---|---|---|
+| Frontend | `rtk docker compose run --rm frontend npm run build` | Passed for T0027 | Vite production build passed after AlertPage/Auth dialog refinement; existing chunk-size warning remains. |
 | Backend/Docker DB | `rtk docker compose run --rm app sh -lc 'cd backend && php spark migrate && php spark db:seed DealSachDemoSeeder'` | Passed for T0026 | Migration + seed completed before wishlist/frontend verification. |
 | Frontend | `rtk docker compose run --rm frontend npm run build` | Passed for T0026 | Vite production build passed; existing chunk-size warning remains. |
 | Backend | `rtk docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit --filter Wishlist'` | Passed for T0026 | 9 tests, 85 assertions; includes archived fallback `highest_eligible_price` coverage. |
@@ -967,6 +979,17 @@ T0026:
 7. Ran `rtk docker compose run --rm frontend npm run build`; passed with existing chunk-size warning.
 8. Ran `rtk docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit --filter Wishlist'`; passed (`9 tests`, `85 assertions`).
 9. Ran full backend PHPUnit and focused `DealSachDomainDatabaseTest`; both reproduce known out-of-scope KI-0015 baseline failure in stale-offer scenario coverage.
+
+T0027:
+
+1. Reviewed required docs and `docs/implementation_logs/T0027.md`.
+2. Created branch `feature/t0027-alertpage-buyer-dashboard-refinement` from local `main`.
+3. Refined `frontend/src/app/pages/AlertsPage.tsx` into buyer-first hierarchy with stamped header, compact account email preference strip, and grouped sections: `Đang theo dõi` (Active), `Cần chú ý` (Paused/Auto-paused/Expired), and compact `Đã tắt` history rows.
+4. Preserved existing alert API helpers and lifecycle actions, renamed visible actions to buyer-focused labels (`Sửa`, `Tạm dừng`, `Tiếp tục`, `Gia hạn`, `Theo dõi lại`, `Tắt`), and kept target-price edit hidden by default behind `Sửa`.
+5. Added Vietnamese recent-event translation and secondary-detail de-emphasis while preserving alert data source and existing status semantics.
+6. Updated `frontend/src/app/auth/AuthContext.tsx` shared dialog into a wider split-card layout with unchanged email-code auth flow, cooldown behavior, and `openAuthDialog` / `closeAuthDialog` semantics.
+7. Ran `rtk docker compose run --rm frontend npm run build`; passed with existing chunk-size warning.
+8. Did not run browser automation/screenshot tooling per ticket constraints.
 
 ## Known Issues
 

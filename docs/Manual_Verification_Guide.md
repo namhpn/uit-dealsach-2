@@ -636,6 +636,71 @@ Use this section for tickets that refine `/wishlist` visual rhythm while preserv
 
    Expected result: no whitespace/conflict issues; changed files are limited to T0026 allowed areas plus bookkeeping docs.
 
+## AlertPage Buyer Dashboard Refinement Verification
+
+Use this section for tickets that refine `/alerts` buyer-facing UI hierarchy and the shared email-code login prompt card without backend/API changes.
+
+1. Run frontend build:
+
+   ```bash
+   docker compose run --rm frontend npm run build
+   ```
+
+   Expected result: build succeeds (existing chunk-size warning remains acceptable unless ticket scope targets bundle splitting).
+
+2. Open `/alerts` while logged out.
+
+   Expected result:
+   * page shows a hard-edged Vietnamese login prompt card for `Cảnh báo giá`;
+   * full alert-management dashboard is not shown to guests;
+   * login CTA opens the existing shared auth dialog.
+
+3. Verify shared auth dialog layout and flow.
+
+   Expected result:
+   * desktop dialog renders as a wide split card (form panel + value panel), collapsing to one column on mobile;
+   * flow remains email-code only (no phone/social options);
+   * resend cooldown and verification behavior remain functional;
+   * code step exposes practical email-change affordance.
+
+4. Log in and open `/alerts` with seeded or existing alerts.
+
+   Expected result:
+   * header shows stamped `Cảnh báo giá`, buyer-focused helper copy, and compact status/email chips;
+   * account email preference remains a compact single global strip;
+   * groups render as `Đang theo dõi`, `Cần chú ý`, and `Đã tắt`.
+
+5. Verify alert card hierarchy for both alert types.
+
+   Expected result:
+   * target-price cards emphasize `Giá mục tiêu`, `Giá hiện tại`, and `Còn/Đã chạm mục tiêu/Đang chờ giá`;
+   * new-lowest cards emphasize `Mốc theo dõi`, `Giá hiện tại`, and `Giảm/Đang chờ mốc/Chưa thấp hơn mốc`;
+   * secondary metrics/events are visually subordinate and recent events are Vietnamese labels.
+
+6. Verify lifecycle actions and target-price edit behavior.
+
+   Expected result:
+   * target edit is hidden by default and opens via `Sửa`;
+   * inline target form validates positive integer VND and submits with `Lưu giá`;
+   * lifecycle actions use buyer labels (`Tạm dừng`, `Tiếp tục`, `Gia hạn`, `Theo dõi lại`, `Tắt`);
+   * duplicate action clicks are prevented while action is in flight.
+
+7. Verify disabled/history and empty states.
+
+   Expected result:
+   * disabled alerts remain visible by default in compact muted history treatment;
+   * disabled rows show status as `Đã tắt` and `Chỉ xem lịch sử`-style cue;
+   * empty authenticated state keeps Vietnamese copy and includes `/search` CTA.
+
+8. Run scope checks:
+
+   ```bash
+   git diff --check
+   git diff --name-only
+   ```
+
+   Expected result: no whitespace/conflict issues; changed files remain inside T0027 allowed areas plus required bookkeeping docs.
+
 ## SMTP Delivery Verification
 
 Use this section for tickets that add or change outbound email delivery behavior.

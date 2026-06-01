@@ -1022,6 +1022,34 @@ Use this section for DealSach catalog read endpoints.
 
 7. Verify price range filters use only currently eligible offers and exclude books without currently eligible offers.
 
+## ProductDetail Offer Cheapest Ordering Verification
+
+Use this section for tickets that change backend ordering of `GET /api/public/books/{bookId}` offer groups.
+
+1. Reset and seed the database:
+
+   ```bash
+   docker compose run --rm app sh -lc 'cd backend && php spark migrate && php spark db:seed DealSachDemoSeeder'
+   ```
+
+   Expected result: migrations complete and `DealSachDemoSeeder` runs successfully.
+
+2. Run focused public catalog coverage:
+
+   ```bash
+   docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit --filter PublicCatalogApiTest'
+   ```
+
+   Expected result: public catalog suite passes, including the purchasable-offer ordering assertion for `Cho tôi xin một vé đi tuổi thơ`.
+
+3. Run the targeted ordering assertion directly when isolating regressions:
+
+   ```bash
+   docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit --filter PublicCatalogApiTest::testBookDetailPurchasableOffersAreSortedByCurrentEligiblePriceAndMatchSummaryLowestPrice'
+   ```
+
+   Expected result: `offers.purchasable` is ascending by `latest_price` (tie-breaker `id`), FAHASA `82000` is first, and `summary.lowest_eligible_price` equals `offers.purchasable[0].latest_price`.
+
 ## DealSach Product Verification Checklist
 
 Use relevant items only:

@@ -5,6 +5,7 @@ Last updated: 2026-06-01
 ## Current Branch
 
 `feature/t0026-wishlist-reference-refinement`
+`main`
 
 Baseline source for T0007: local `main` after T0006 merge.
 
@@ -39,6 +40,7 @@ Baseline source for T0007: local `main` after T0006 merge.
 | T0024 | 2026-05-29 | Refined SearchPage visual rhythm toward the original reference with lighter collapsible filter panel treatment, tighter hero/sort integration, denser scoped search cards, stricter price-drop badge gating, and formal bottom disclosure styling without backend/API changes. |
 | T0025 | 2026-05-29 | Fixed ProductDetail purchasable-offer ordering so API detail `offers.purchasable` sorts by current eligible price ascending and keeps summary lowest-price consistency. |
 | T0026 | 2026-06-01 | Refined WishlistPage visual rhythm to the original-reference direction with API-backed grid cards, tactile remove pending state, archived/non-archived behavior preservation, and a wishlist fallback payload compatibility fix. |
+| T0025 | 2026-06-01 | Fixed backend ProductDetail purchasable-offer ordering to sort by current eligible `latest_price` (tie-breaker `offer id`), added seeded regression coverage for `Cho tôi xin một vé đi tuổi thơ`, and aligned manual verification/process docs. |
 
 ## Current Folder Structure
 
@@ -489,6 +491,8 @@ docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit --filte
 | Backend | `rtk docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit --filter Wishlist'` | Passed for T0026 | 9 tests, 85 assertions; includes archived fallback `highest_eligible_price` coverage. |
 | Backend | `rtk docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit --filter DealSachDomainDatabaseTest'` | Failed for T0026 (known baseline) | `testSeedScenarioCoverage` fails on stale-offer scenario count (`countLatestStaleOffers() = 0` vs expected `>= 2`), tracked as KI-0015. |
 | Backend | `rtk docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit'` | Failed for T0026 (known baseline) | Same KI-0015 baseline failure as focused DealSachDomainDatabaseTest; wishlist-focused tests still pass. |
+| Backend | `rtk docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit --filter PublicCatalogApiTest'` | Passed for T0025 | 19 tests, 195 assertions. Includes seeded ordering check for `Cho tôi xin một vé đi tuổi thơ`. |
+| Backend | `rtk docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit'` | Failed for T0025 | 1 unrelated baseline failure: `DealSachDomainDatabaseTest::testSeedScenarioCoverage` (`0 is equal to 2 or is greater than 2` at line 177). Logged as KI-0015. |
 | Frontend | `rtk docker compose run --rm frontend npm run build` | Passed for T0024 | Vite production build passed; existing chunk-size warning remains. |
 | Frontend | `rtk docker compose run --rm frontend npm run build` | Passed for T0023 | Vite production build passed; existing chunk-size warning remains. |
 | Frontend | `rtk docker compose run --rm frontend npm run build` | Passed for T0022 | Vite production build passed; existing chunk-size warning remains. |
@@ -944,6 +948,14 @@ T0025:
 5. Ran focused PublicCatalog tests and full backend PHPUnit; both passed.
 6. Updated `docs/Manual_Verification_Guide.md` with T0025 verification steps.
 
+2. Traced the mismatch to `PublicCatalogService::groupedOffersForBook()` preserving DB insertion order instead of ordering `offers.purchasable` by current eligible price.
+3. Updated backend grouping to sort only `offers.purchasable` by `latest_price` ascending with tie-breaker `id` ascending; non-purchasable groups remained unchanged.
+4. Added `PublicCatalogApiTest::testBookDetailPurchasableOffersAreSortedByCurrentEligiblePriceAndMatchSummaryLowestPrice` using seeded `Cho tôi xin một vé đi tuổi thơ` data to verify FAHASA `82000` first, TIKI `141000` not first, and summary lowest-price alignment.
+5. Ran `rtk docker compose run --rm app sh -lc 'cd backend && php spark migrate && php spark db:seed DealSachDemoSeeder'`; migrate + seed passed.
+6. Ran `rtk docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit --filter PublicCatalogApiTest'`; passed (`19 tests, 195 assertions`).
+7. Ran `rtk docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit'`; failed due out-of-scope baseline test `DealSachDomainDatabaseTest::testSeedScenarioCoverage`.
+8. Re-ran the failing baseline test in isolation to confirm reproducibility; same failure persisted and was recorded as KI-0015.
+
 T0026:
 
 1. Reviewed required docs and `docs/implementation_logs/T0026.md`.
@@ -969,6 +981,7 @@ Closed in T0006:
 * KI-0008 — fresh disposable long-running Docker app containers now normalize `backend/writable` ownership during startup without a manual `chown`.
 
 Open after T0026:
+Open after T0025:
 
 * KI-0009 remains open — demo book cover paths still rely on fallback rendering because the referenced `/demo/covers/*` image files are not present.
 * KI-0011, KI-0012, and KI-0013 are closed by T0016.
@@ -978,3 +991,8 @@ Open after T0026:
 ## Next Recommended Ticket
 
 Prioritize a small backend test-data stabilization ticket for KI-0015, then remove fixed `container_name` usage from Docker Compose (KI-0014), followed by KI-0009 demo cover asset alignment.
+* KI-0015 added in T0025 — full backend suite baseline currently fails at `DealSachDomainDatabaseTest::testSeedScenarioCoverage` after fresh Docker migrate+seed.
+
+## Next Recommended Ticket
+
+Prioritize a small backend baseline-stability ticket for KI-0015, then remove fixed `container_name` usage from Docker Compose (KI-0014), then follow with KI-0009 demo cover asset alignment.

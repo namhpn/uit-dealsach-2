@@ -853,6 +853,8 @@ class PublicCatalogService
             $groups[$classification][] = $this->serializeOffer($offer, $classification);
         }
 
+        usort($groups['purchasable'], static fn (array $a, array $b): int => [$a['latest_price'], $a['id']] <=> [$b['latest_price'], $b['id']]);
+
         return $groups;
     }
 

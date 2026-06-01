@@ -1,10 +1,10 @@
 # Repo Current State
 
-Last updated: 2026-05-29
+Last updated: 2026-06-01
 
 ## Current Branch
 
-`feature/t0024-search-reference-rhythm`
+`feature/t0026-wishlist-reference-refinement`
 
 Baseline source for T0007: local `main` after T0006 merge.
 
@@ -37,6 +37,8 @@ Baseline source for T0007: local `main` after T0006 merge.
 | T0022 | 2026-05-29 | Refined homepage visual rhythm with stronger hero composition, single-active-category featured rail navigation, homepage-specific compact/deal card behavior updates, and non-regressive shared SearchPage compatibility. |
 | T0023 | 2026-05-29 | Refined ProductDetailPage visual rhythm with stronger title/price/action alignment, clearer alert-action separation, hidden empty seller groups, fuller trust disclaimer copy, and scoped related-card layout fixes without API or backend changes. |
 | T0024 | 2026-05-29 | Refined SearchPage visual rhythm toward the original reference with lighter collapsible filter panel treatment, tighter hero/sort integration, denser scoped search cards, stricter price-drop badge gating, and formal bottom disclosure styling without backend/API changes. |
+| T0025 | 2026-05-29 | Fixed ProductDetail purchasable-offer ordering so API detail `offers.purchasable` sorts by current eligible price ascending and keeps summary lowest-price consistency. |
+| T0026 | 2026-06-01 | Refined WishlistPage visual rhythm to the original-reference direction with API-backed grid cards, tactile remove pending state, archived/non-archived behavior preservation, and a wishlist fallback payload compatibility fix. |
 
 ## Current Folder Structure
 
@@ -343,6 +345,28 @@ docs/implementation_logs/T0024.md
 docs/Repo_Current_State.md
 ```
 
+T0025 changed:
+
+```text
+backend/app/Libraries/PublicCatalogService.php
+backend/tests/feature/PublicCatalogApiTest.php
+docs/Manual_Verification_Guide.md
+docs/implementation_logs/T0025.md
+docs/Repo_Current_State.md
+```
+
+T0026 changed:
+
+```text
+frontend/src/app/pages/WishlistPage.tsx
+backend/app/Libraries/WishlistService.php
+backend/tests/feature/WishlistFeatureTest.php
+docs/Manual_Verification_Guide.md
+docs/implementation_logs/T0026.md
+docs/Repo_Current_State.md
+docs/Known_Issues_And_Followups.md
+```
+
 T0008 changed:
 
 ```text
@@ -460,6 +484,11 @@ docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit --filte
 
 | Area | Command | Last Result | Notes |
 |---|---|---|---|
+| Backend/Docker DB | `rtk docker compose run --rm app sh -lc 'cd backend && php spark migrate && php spark db:seed DealSachDemoSeeder'` | Passed for T0026 | Migration + seed completed before wishlist/frontend verification. |
+| Frontend | `rtk docker compose run --rm frontend npm run build` | Passed for T0026 | Vite production build passed; existing chunk-size warning remains. |
+| Backend | `rtk docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit --filter Wishlist'` | Passed for T0026 | 9 tests, 85 assertions; includes archived fallback `highest_eligible_price` coverage. |
+| Backend | `rtk docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit --filter DealSachDomainDatabaseTest'` | Failed for T0026 (known baseline) | `testSeedScenarioCoverage` fails on stale-offer scenario count (`countLatestStaleOffers() = 0` vs expected `>= 2`), tracked as KI-0015. |
+| Backend | `rtk docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit'` | Failed for T0026 (known baseline) | Same KI-0015 baseline failure as focused DealSachDomainDatabaseTest; wishlist-focused tests still pass. |
 | Frontend | `rtk docker compose run --rm frontend npm run build` | Passed for T0024 | Vite production build passed; existing chunk-size warning remains. |
 | Frontend | `rtk docker compose run --rm frontend npm run build` | Passed for T0023 | Vite production build passed; existing chunk-size warning remains. |
 | Frontend | `rtk docker compose run --rm frontend npm run build` | Passed for T0022 | Vite production build passed; existing chunk-size warning remains. |
@@ -906,6 +935,27 @@ T0024:
 7. Ran `rtk git diff --name-only`; changes remained in the T0024 allowed frontend/docs/bookkeeping files.
 8. Did not run browser UI automation, screenshots, Playwright, Puppeteer, or visual-capture tools per T0024 manual verification constraints.
 
+T0025:
+
+1. Reviewed required docs and `docs/implementation_logs/T0025.md`.
+2. Created branch `fix/t0025-productdetail-cheapest-ordering` from local `main`.
+3. Updated `PublicCatalogService` detail payload ordering for `offers.purchasable` to sort by current eligible `latest_price` ascending with offer-id tie-break.
+4. Added focused API assertions in `PublicCatalogApiTest` to guarantee purchasable order and summary-lowest-price consistency for seeded fixtures.
+5. Ran focused PublicCatalog tests and full backend PHPUnit; both passed.
+6. Updated `docs/Manual_Verification_Guide.md` with T0025 verification steps.
+
+T0026:
+
+1. Reviewed required docs and `docs/implementation_logs/T0026.md`.
+2. Created branch `feature/t0026-wishlist-reference-refinement` from local `main`.
+3. Refined `frontend/src/app/pages/WishlistPage.tsx` into an API-backed Neubrutalist saved-book grid with stamped header, `Đang theo dõi` shelf treatment, compact card disclaimers, archived-card safeguards, and per-item remove pending/disabled behavior.
+4. Applied fallback payload compatibility fix in `backend/app/Libraries/WishlistService.php` so archived/non-public fallback cards include `highest_eligible_price => null`.
+5. Added focused wishlist feature-test coverage for fallback `highest_eligible_price` in archived card responses.
+6. Ran `rtk docker compose run --rm app sh -lc 'cd backend && php spark migrate && php spark db:seed DealSachDemoSeeder'`; passed.
+7. Ran `rtk docker compose run --rm frontend npm run build`; passed with existing chunk-size warning.
+8. Ran `rtk docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit --filter Wishlist'`; passed (`9 tests`, `85 assertions`).
+9. Ran full backend PHPUnit and focused `DealSachDomainDatabaseTest`; both reproduce known out-of-scope KI-0015 baseline failure in stale-offer scenario coverage.
+
 ## Known Issues
 
 See `docs/Known_Issues_And_Followups.md`.
@@ -918,12 +968,13 @@ Closed in T0006:
 
 * KI-0008 — fresh disposable long-running Docker app containers now normalize `backend/writable` ownership during startup without a manual `chown`.
 
-Open after T0024:
+Open after T0026:
 
 * KI-0009 remains open — demo book cover paths still rely on fallback rendering because the referenced `/demo/covers/*` image files are not present.
 * KI-0011, KI-0012, and KI-0013 are closed by T0016.
 * KI-0014 added in T0018 — `frontend` uses fixed `container_name: ds_frontend`, which breaks concurrent disposable `docker compose -p ...` stacks.
+* KI-0015 added in T0026 — full backend suite baseline currently fails `DealSachDomainDatabaseTest::testSeedScenarioCoverage` because seeded stale-offer coverage no longer meets `>= 2` expectation.
 
 ## Next Recommended Ticket
 
-Prioritize a small infrastructure ticket to remove fixed `container_name` usage from Docker Compose (KI-0014), then follow with KI-0009 demo cover asset alignment.
+Prioritize a small backend test-data stabilization ticket for KI-0015, then remove fixed `container_name` usage from Docker Compose (KI-0014), followed by KI-0009 demo cover asset alignment.

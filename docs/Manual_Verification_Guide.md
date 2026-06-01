@@ -96,6 +96,61 @@ docker compose run --rm --service-ports frontend npm run dev -- --host 0.0.0.0
 
 8. Confirm the build succeeds.
 
+## Frontend Style Unification Verification (T0028)
+
+Use this section for frontend-wide shell/header/prompt/button/input/table unification without backend/API changes.
+
+1. Run frontend build:
+
+   ```bash
+   docker compose run --rm frontend npm run build
+   ```
+
+   Expected result: build exits `0` (existing Vite chunk-size warning may remain).
+
+2. Run whitespace/conflict check:
+
+   ```bash
+   git diff --check
+   ```
+
+   Expected result: no whitespace errors or merge-conflict markers.
+
+3. Check changed-file scope:
+
+   ```bash
+   git diff --name-only
+   ```
+
+   Expected result: only T0028 allowed frontend files plus required docs were edited.
+
+4. Verify shared primitives are reused:
+
+   Expected result:
+   - `PageShell`, `StampHeading`, `PageIntro`, `PromptCard`, `StatusChip`, `AdminHeader`, `AdminTableShell`, `NbIconButton`, `NbInput`, `NbDenseInput` appear across public/user/admin pages.
+   - Existing shared exports (`NbButton`, `ApiBookCard`, loading/error/empty states) remain usable.
+
+5. Verify public pages:
+
+   Expected result:
+   - `/` keeps banner carousel, featured shelf, deal sections, and CTA behaviors.
+   - `/search` keeps filter/query/sort/pagination behavior with dense shared inputs/select.
+   - `/book/{id}` keeps offer grouping, chart, alert creation, wishlist toggle, and disclaimer.
+
+6. Verify authenticated user pages:
+
+   Expected result:
+   - `/wishlist`, `/alerts`, `/account` share the same stamped heading + intro + prompt grammar.
+   - Existing T0026 wishlist behavior and T0027 alerts behavior remain unchanged.
+   - Account preference toggle/logout behavior remains unchanged.
+
+7. Verify admin pages:
+
+   Expected result:
+   - `/admin` and admin subpages use consistent Admin header and table shell.
+   - Admin alerts table uses Vietnamese status/event labels where practical.
+   - Admin audit table keeps raw audit data but remains visually contained.
+
 ## Baseline Backend Verification
 
 1. Run:

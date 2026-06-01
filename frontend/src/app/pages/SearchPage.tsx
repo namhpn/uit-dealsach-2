@@ -2,7 +2,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { ChevronDown, Info, SlidersHorizontal, X } from "lucide-react";
 import { apiErrorMessage, fetchBooks, fetchFilters, FiltersResponse, PaginatedBooksResponse } from "../api";
-import { ApiBookCard, C, ErrorState, FONT, LoadingState, border2, border3, shadow4, shadow8 } from "../shared";
+import { ApiBookCard, C, ErrorState, FONT, LoadingState, NbDenseInput, NbSelect, PageShell, border2, border3, shadow4, shadow8 } from "../shared";
 
 const visibleFilterKeys = ["q", "category", "author", "publisher", "retailer", "min_price", "max_price", "sort", "page"] as const;
 const removableFilterKeys = ["q", "category", "author", "publisher", "retailer", "min_price", "max_price", "sort"] as const;
@@ -188,7 +188,7 @@ export default function SearchPage() {
   const sortValue = params.get("sort") ?? defaultSort;
 
   return (
-    <main className="mx-auto flex w-full max-w-[1320px] flex-col gap-4 px-4 py-8 sm:px-6 lg:px-8" style={{ boxSizing: "border-box" }}>
+    <PageShell variant="wide" className="gap-4">
       <button
         type="button"
         className="inline-flex w-fit items-center gap-2 px-3 py-2 text-[12px] font-extrabold uppercase lg:hidden"
@@ -233,23 +233,19 @@ export default function SearchPage() {
             >
               <div className="grid grid-cols-2 gap-2">
                 <FilterLabel label="Từ">
-                  <input
+                  <NbDenseInput
                     value={minPriceInput}
                     onChange={(event) => setMinPriceInput(event.target.value)}
                     inputMode="numeric"
                     placeholder="0"
-                    className="w-full px-2 py-1.5 text-[12px] outline-none"
-                    style={{ border: border2, background: C.boneWhite, fontFamily: FONT, color: C.onSurface }}
                   />
                 </FilterLabel>
                 <FilterLabel label="Đến">
-                  <input
+                  <NbDenseInput
                     value={maxPriceInput}
                     onChange={(event) => setMaxPriceInput(event.target.value)}
                     inputMode="numeric"
                     placeholder="999000"
-                    className="w-full px-2 py-1.5 text-[12px] outline-none"
-                    style={{ border: border2, background: C.boneWhite, fontFamily: FONT, color: C.onSurface }}
                   />
                 </FilterLabel>
               </div>
@@ -347,18 +343,18 @@ export default function SearchPage() {
                 Sắp xếp
               </span>
               <div className="relative" style={{ boxShadow: shadow4 }}>
-                <select
+                <NbSelect
                   value={sortValue}
                   onChange={(event) => update({ sort: event.target.value })}
-                  className="w-full appearance-none px-3 py-2 pr-9 text-[12px] font-bold outline-none"
-                  style={{ border: border2, background: C.white, color: C.onSurface, fontFamily: FONT }}
+                  className="w-full appearance-none pr-9 font-bold"
+                  style={{ background: C.white }}
                 >
                   {(filters?.sorts ?? [{ value: defaultSort, label: "Liên quan nhất" }]).map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
                     </option>
                   ))}
-                </select>
+                </NbSelect>
                 <ChevronDown size={14} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2" style={{ color: C.primary }} />
               </div>
             </div>
@@ -475,7 +471,7 @@ export default function SearchPage() {
           </div>
         </section>
       </section>
-    </main>
+    </PageShell>
   );
 }
 

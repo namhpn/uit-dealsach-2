@@ -3,7 +3,7 @@ import { Link } from "react-router";
 import { ArrowRight, Heart, LayoutList, Trash2 } from "lucide-react";
 import { apiErrorMessage, BookCardDto, fetchWishlist, formatVnd, removeWishlistBook } from "../api";
 import { useAuth } from "../auth";
-import { C, CoverImage, EmptyState, ErrorState, FONT, LoadingState, NbButton, PriceDisclaimer, border2, shadow4, shadow8 } from "../shared";
+import { C, CoverImage, EmptyState, ErrorState, FONT, LoadingState, NbButton, PageIntro, PageShell, PriceDisclaimer, PromptCard, SectionHeader, StampHeading, border2, shadow4 } from "../shared";
 
 export default function WishlistPage() {
   const auth = useAuth();
@@ -63,50 +63,29 @@ export default function WishlistPage() {
 
   if (!auth.authenticated) {
     return (
-      <main className="mx-auto flex max-w-[960px] flex-col gap-6 px-4 py-10 sm:px-8">
-        <section className="p-6" style={{ background: C.white, border: border2, boxShadow: shadow8, fontFamily: FONT }}>
-          <div className="mb-4 flex items-center gap-3">
-            <Heart size={24} style={{ color: C.primary }} />
-            <h1 className="text-[24px] font-extrabold uppercase">Danh sách yêu thích</h1>
-          </div>
-          <p className="mb-5 text-[14px] leading-relaxed" style={{ color: C.onSurfaceVariant }}>
-            Vui lòng đăng nhập bằng email để xem và quản lý sách đã lưu.
-          </p>
-          <NbButton onClick={auth.openAuthDialog}>Đăng nhập / Đăng ký</NbButton>
-        </section>
-      </main>
+      <PageShell>
+        <PromptCard
+          icon={<Heart size={20} style={{ color: C.primary }} />}
+          title="Danh sách yêu thích"
+          description="Vui lòng đăng nhập bằng email để xem và quản lý sách đã lưu."
+          cta={<NbButton onClick={auth.openAuthDialog}>Đăng nhập / Đăng ký</NbButton>}
+        />
+      </PageShell>
     );
   }
 
   return (
-    <main className="mx-auto flex max-w-[1120px] flex-col gap-8 px-4 py-10 sm:px-8">
+    <PageShell>
       <section className="flex flex-col gap-6 pb-6" style={{ borderBottom: border2 }}>
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div className="flex max-w-[760px] flex-col gap-4">
-            <h1
-              className="self-start px-4 py-2 text-[30px] font-extrabold uppercase leading-none sm:text-[38px]"
-              style={{
-                fontFamily: FONT,
-                letterSpacing: "-0.03em",
-                color: C.black,
-                background: C.primaryFixed,
-                border: border2,
-                boxShadow: shadow8,
-                transform: "rotate(-1deg)",
-              }}
-            >
-              Danh sách yêu thích
-            </h1>
-            <div className="max-w-[620px] pl-4" style={{ borderLeft: `6px solid ${C.primary}` }}>
-              <p className="text-[14px] leading-relaxed" style={{ color: C.onSurfaceVariant, fontFamily: FONT }}>
-                Theo dõi những đầu sách bạn quan tâm để quay lại nhanh khi cần so sánh giá và nơi bán.
+            <StampHeading title="Danh sách yêu thích" icon={<Heart size={20} style={{ color: C.primary }} />} />
+            <PageIntro>Theo dõi những đầu sách bạn quan tâm để quay lại nhanh khi cần so sánh giá và nơi bán.</PageIntro>
+            {auth.user?.email && (
+              <p className="pl-4 text-[11px] font-bold uppercase tracking-wide" style={{ color: C.outline, fontFamily: FONT }}>
+                Tài khoản: {auth.user.email}
               </p>
-              {auth.user?.email && (
-                <p className="mt-2 text-[11px] font-bold uppercase tracking-wide" style={{ color: C.outline, fontFamily: FONT }}>
-                  Tài khoản: {auth.user.email}
-                </p>
-              )}
-            </div>
+            )}
           </div>
           <div className="flex w-fit items-center gap-2 px-4 py-3" style={{ border: border2, background: C.boneWhite, boxShadow: shadow4 }}>
             <LayoutList size={16} style={{ color: C.primary }} />
@@ -117,13 +96,8 @@ export default function WishlistPage() {
         </div>
       </section>
 
-      <section className="pb-2" style={{ borderBottom: border2 }}>
-        <h2 className="text-[18px] font-extrabold uppercase tracking-tight" style={{ color: C.onSurface, fontFamily: FONT }}>
-          Đang theo dõi
-          <span className="ml-3 inline-flex px-2 py-0.5 text-[12px] align-middle" style={{ background: C.primary, color: C.white, border: border2 }}>
-            {items.length}
-          </span>
-        </h2>
+      <section className="pb-2">
+        <SectionHeader title="Đang theo dõi" count={items.length} />
       </section>
 
       {loading && <LoadingState label="Đang tải danh sách yêu thích..." />}
@@ -243,7 +217,7 @@ export default function WishlistPage() {
         ))}
       </section>
       {removePending && <p className="text-[11px] uppercase" style={{ color: C.outline, fontFamily: FONT }}>Đang cập nhật danh sách yêu thích...</p>}
-    </main>
+    </PageShell>
   );
 }
 

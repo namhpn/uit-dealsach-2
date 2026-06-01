@@ -51,6 +51,31 @@ export const border4 = `4px solid ${C.black}`;
 
 export const fmt = (n: number) => `${n.toLocaleString("vi-VN")} đ`;
 
+type PageShellVariant = "standard" | "wide" | "admin";
+type StampHeadingMode = "primaryFixed" | "white" | "primary";
+type StatusChipVariant = "primary" | "warning" | "muted" | "danger" | "success" | "neutral";
+
+const PAGE_SHELL_VARIANTS: Record<PageShellVariant, string> = {
+  standard: "max-w-[1200px] px-4 py-10 sm:px-8",
+  wide: "max-w-[1320px] px-4 py-8 sm:px-6 lg:px-8",
+  admin: "max-w-[1280px] px-4 py-10 sm:px-8",
+};
+
+const STAMP_HEADING_MODES: Record<StampHeadingMode, { bg: string; color: string }> = {
+  primaryFixed: { bg: C.primaryFixed, color: C.black },
+  white: { bg: C.white, color: C.black },
+  primary: { bg: C.primary, color: C.white },
+};
+
+const STATUS_CHIP_STYLES: Record<StatusChipVariant, { bg: string; color: string }> = {
+  primary: { bg: C.primary, color: C.white },
+  warning: { bg: "#fff4cc", color: "#5f4700" },
+  muted: { bg: C.boneWhite, color: C.onSurface },
+  danger: { bg: "#ffe2d8", color: "#7a2d00" },
+  success: { bg: C.primaryFixed, color: C.primary },
+  neutral: { bg: C.surfaceVariant, color: C.onSurfaceVariant },
+};
+
 export const dealBanners: DealBanner[] = [
   {
     id: 1,
@@ -163,24 +188,27 @@ export function NbButton({
   style: extra = {},
   small = false,
   type = "button",
+  disabled = false,
 }: {
   children: React.ReactNode;
   onClick?: (e: React.MouseEvent) => void;
-  variant?: "primary" | "secondary" | "ghost";
+  variant?: "primary" | "secondary" | "ghost" | "danger";
   className?: string;
   style?: React.CSSProperties;
   small?: boolean;
   type?: "button" | "submit";
+  disabled?: boolean;
 }) {
   const [pressed, setPressed] = useState(false);
-  const bg = variant === "primary" ? C.primary : variant === "secondary" ? C.boneWhite : C.white;
-  const color = variant === "primary" ? C.white : C.black;
+  const bg = variant === "primary" ? C.primary : variant === "secondary" ? C.boneWhite : variant === "danger" ? "#fff1f1" : C.white;
+  const color = variant === "primary" ? C.white : variant === "danger" ? C.dealRed : C.black;
 
   return (
     <button
       type={type}
       onClick={onClick}
-      onMouseDown={() => setPressed(true)}
+      disabled={disabled}
+      onMouseDown={() => !disabled && setPressed(true)}
       onMouseUp={() => setPressed(false)}
       onMouseLeave={() => setPressed(false)}
       className={className}
@@ -192,18 +220,260 @@ export function NbButton({
         fontSize: small ? 12 : 14,
         border: border2,
         padding: small ? "4px 12px" : "8px 20px",
-        cursor: "pointer",
         display: "inline-flex",
         alignItems: "center",
         gap: 6,
-        boxShadow: pressed ? "none" : shadow4,
-        transform: pressed ? "translate(4px,4px)" : "none",
+        boxShadow: pressed || disabled ? "none" : shadow4,
+        transform: pressed || disabled ? "translate(4px,4px)" : "none",
         transition: "box-shadow 80ms, transform 80ms",
+        opacity: disabled ? 0.65 : 1,
+        cursor: disabled ? "not-allowed" : "pointer",
         ...extra,
       }}
     >
       {children}
     </button>
+  );
+}
+
+export function PageShell({
+  children,
+  variant = "standard",
+  className = "",
+}: {
+  children: React.ReactNode;
+  variant?: PageShellVariant;
+  className?: string;
+}) {
+  const shellClass = PAGE_SHELL_VARIANTS[variant];
+  return (
+    <main
+      className={`mx-auto flex w-full flex-col gap-6 ${shellClass} ${className}`.trim()}
+      style={{ boxSizing: "border-box", fontFamily: FONT }}
+    >
+      {children}
+    </main>
+  );
+}
+
+export function StampHeading({
+  title,
+  icon,
+  mode = "primaryFixed",
+  className = "",
+}: {
+  title: string;
+  icon?: React.ReactNode;
+  mode?: StampHeadingMode;
+  className?: string;
+}) {
+  const colors = STAMP_HEADING_MODES[mode];
+  return (
+    <div
+      className={`inline-flex w-fit max-w-full items-center gap-2 px-4 py-2 ${className}`.trim()}
+      style={{ background: colors.bg, color: colors.color, border: border2, boxShadow: shadow8 }}
+    >
+      {icon}
+      <h1 className="text-[28px] font-black uppercase leading-none sm:text-[34px]">{title}</h1>
+    </div>
+  );
+}
+
+export function PageIntro({ children }: { children: React.ReactNode }) {
+  return (
+    <p
+      className="max-w-[900px] border-l-[6px] pl-4 text-[14px] leading-relaxed"
+      style={{ borderColor: C.primary, color: C.onSurfaceVariant, fontFamily: FONT }}
+    >
+      {children}
+    </p>
+  );
+}
+
+export function StatusChip({ label, variant = "neutral" }: { label: string; variant?: StatusChipVariant }) {
+  const colors = STATUS_CHIP_STYLES[variant];
+  return (
+    <span
+      className="inline-flex items-center px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide"
+      style={{ border: border2, background: colors.bg, color: colors.color, fontFamily: FONT }}
+    >
+      {label}
+    </span>
+  );
+}
+
+export function SectionHeader({
+  title,
+  count,
+  description,
+}: {
+  title: string;
+  count?: number | null;
+  description?: string;
+}) {
+  return (
+    <div className="pb-3" style={{ borderBottom: `4px solid ${C.black}` }}>
+      <div className="flex flex-wrap items-center gap-2">
+        <h2 className="text-[18px] font-extrabold uppercase">{title}</h2>
+        {typeof count === "number" && <StatusChip label={String(count)} variant="primary" />}
+      </div>
+      {description && (
+        <p className="mt-1 text-[13px] leading-relaxed" style={{ color: C.onSurfaceVariant }}>
+          {description}
+        </p>
+      )}
+    </div>
+  );
+}
+
+export function PromptCard({
+  icon,
+  title,
+  description,
+  cta,
+  secondaryCta,
+}: {
+  icon?: React.ReactNode;
+  title: string;
+  description: string;
+  cta: React.ReactNode;
+  secondaryCta?: React.ReactNode;
+}) {
+  return (
+    <section className="flex flex-col gap-4 p-6" style={{ background: C.white, border: border2, boxShadow: shadow8, fontFamily: FONT }}>
+      <div className="flex items-center gap-3">
+        {icon && (
+          <span className="flex h-10 w-10 items-center justify-center" style={{ background: C.primaryFixed, border: border2, boxShadow: shadow4 }}>
+            {icon}
+          </span>
+        )}
+        <h2 className="text-[22px] font-extrabold uppercase">{title}</h2>
+      </div>
+      <p className="text-[14px] leading-relaxed" style={{ color: C.onSurfaceVariant }}>
+        {description}
+      </p>
+      <div className="flex flex-wrap items-center gap-3">
+        {cta}
+        {secondaryCta}
+      </div>
+    </section>
+  );
+}
+
+export function NbIconButton({
+  icon,
+  label,
+  onClick,
+  active = false,
+  className = "",
+}: {
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+  active?: boolean;
+  className?: string;
+}) {
+  const [pressed, setPressed] = useState(false);
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      onClick={onClick}
+      onMouseDown={() => setPressed(true)}
+      onMouseUp={() => setPressed(false)}
+      onMouseLeave={() => setPressed(false)}
+      className={`flex h-11 w-11 items-center justify-center ${className}`.trim()}
+      style={{
+        color: active ? C.primary : C.onSurface,
+        border: border2,
+        background: active ? C.primaryFixed : C.white,
+        boxShadow: pressed ? "none" : shadow4,
+        transform: pressed ? "translate(4px,4px)" : "none",
+      }}
+    >
+      {icon}
+    </button>
+  );
+}
+
+export function NbInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <input
+      {...props}
+      className={`${props.className ?? ""} h-10 w-full px-3 text-[14px] normal-case outline-none`.trim()}
+      style={{ border: border3, background: C.white, color: C.onSurface, fontFamily: FONT, ...(props.style ?? {}) }}
+    />
+  );
+}
+
+export function NbDenseInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <input
+      {...props}
+      className={`${props.className ?? ""} h-9 w-full px-2 text-[12px] normal-case outline-none`.trim()}
+      style={{ border: border2, background: C.boneWhite, color: C.onSurface, fontFamily: FONT, ...(props.style ?? {}) }}
+    />
+  );
+}
+
+export function NbSelect(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
+  return (
+    <select
+      {...props}
+      className={`${props.className ?? ""} h-9 w-full px-2 text-[12px] outline-none`.trim()}
+      style={{ border: border2, background: C.boneWhite, color: C.onSurface, fontFamily: FONT, ...(props.style ?? {}) }}
+    />
+  );
+}
+
+export function AdminHeader({
+  title,
+  description,
+  icon,
+  actions,
+  backLink,
+}: {
+  title: string;
+  description?: string;
+  icon?: React.ReactNode;
+  actions?: React.ReactNode;
+  backLink?: React.ReactNode;
+}) {
+  return (
+    <section className="p-5" style={{ background: C.primary, color: C.white, border: border2, boxShadow: shadow8, fontFamily: FONT }}>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2">
+            {icon}
+            <h1 className="text-[28px] font-extrabold uppercase leading-none">{title}</h1>
+          </div>
+          {description && (
+            <p className="mt-2 max-w-[900px] text-[13px] leading-relaxed" style={{ color: C.primaryFixed }}>
+              {description}
+            </p>
+          )}
+          {backLink && <div className="mt-3">{backLink}</div>}
+        </div>
+        {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
+      </div>
+    </section>
+  );
+}
+
+export function AdminTableShell({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="overflow-x-auto" style={{ background: C.white, border: border2, boxShadow: shadow4 }}>
+      {children}
+    </div>
+  );
+}
+
+export function AdminBackLink({ to = "/admin", label = "Về Admin" }: { to?: string; label?: string }) {
+  return (
+    <Link to={to} className="inline-flex items-center px-3 py-1 text-[11px] font-extrabold uppercase" style={{ border: border2, background: C.white, color: C.primary, boxShadow: shadow4, fontFamily: FONT }}>
+      {label}
+    </Link>
   );
 }
 

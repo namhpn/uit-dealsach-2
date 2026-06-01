@@ -1,8 +1,28 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router";
 import { AdminAlertDto, apiErrorMessage, disableAdminAlert, fetchAdminAlerts, formatDateTime, formatVnd } from "../api";
-import { C, ErrorState, LoadingState, NbButton, border2, shadow4 } from "../shared";
+import { AdminBackLink, AdminHeader, AdminTableShell, C, ErrorState, LoadingState, NbButton, PageShell, border2 } from "../shared";
 import { AdminGate } from "./AdminPage";
+
+const ADMIN_ALERT_STATUS_LABELS: Record<string, string> = {
+  Active: "Đang theo dõi",
+  Paused: "Tạm dừng",
+  "Auto-paused": "Tự tạm dừng",
+  Expired: "Hết hạn",
+  Disabled: "Đã tắt",
+};
+
+const ADMIN_ALERT_EVENT_LABELS: Record<string, string> = {
+  created: "Đã tạo",
+  target_price_updated: "Cập nhật giá mục tiêu",
+  paused: "Đã tạm dừng",
+  reactivated: "Đã tiếp tục",
+  renewed: "Đã gia hạn",
+  tracking_restarted: "Theo dõi lại",
+  disabled: "Đã tắt",
+  email_sent: "Đã gửi email",
+  suppressed: "Tạm chưa gửi email",
+  expired: "Đã hết hạn",
+};
 
 export default function AdminAlertsPage() {
   const [items, setItems] = useState<AdminAlertDto[]>([]);
@@ -25,11 +45,12 @@ export default function AdminAlertsPage() {
 
   return (
     <AdminGate>
-      <main className="mx-auto flex min-w-[768px] max-w-[1200px] flex-col gap-5 px-8 py-10">
-        <div className="flex items-center justify-between"><h1 className="text-[28px] font-extrabold uppercase">Hoạt động cảnh báo</h1><Link className="text-[13px] font-bold underline" to="/admin">Về Admin</Link></div>
+      <PageShell variant="admin" className="min-w-[768px] max-w-[1200px] gap-5">
+        <AdminHeader title="Hoạt động cảnh báo" description="Theo dõi trạng thái cảnh báo và tắt cảnh báo có vấn đề khi cần." backLink={<AdminBackLink />} />
         {error && <ErrorState message={error} />}
         {loading ? <LoadingState label="Đang tải cảnh báo..." /> : (
-          <table className="w-full border-collapse text-[13px]" style={{ background: C.white, border: border2, boxShadow: shadow4 }}>
+          <AdminTableShell>
+          <table className="w-full border-collapse text-[13px]">
             <thead style={{ background: C.boneWhite }}>
               <tr>{["Người dùng", "Sách", "Loại", "Trạng thái", "Email", "Sự kiện gần nhất", "Thao tác"].map((h) => <th key={h} className="p-3 text-left uppercase" style={{ border: border2 }}>{h}</th>)}</tr>
             </thead>
@@ -39,16 +60,17 @@ export default function AdminAlertsPage() {
                   <td className="p-3" style={{ border: border2 }}>{alert.user_email}</td>
                   <td className="p-3 font-bold" style={{ border: border2 }}>{alert.book_title}</td>
                   <td className="p-3" style={{ border: border2 }}>{alert.alert_type === "target_price" ? `Giá mục tiêu ${alert.target_price ? formatVnd(alert.target_price) : ""}` : "Giá thấp mới"}</td>
-                  <td className="p-3" style={{ border: border2 }}>{alert.status}</td>
+                  <td className="p-3" style={{ border: border2 }}>{ADMIN_ALERT_STATUS_LABELS[alert.status] ?? alert.status}</td>
                   <td className="p-3" style={{ border: border2 }}>{alert.notification_count}</td>
-                  <td className="p-3" style={{ border: border2 }}>{alert.recent_events[0] ? `${alert.recent_events[0].event_type} - ${formatDateTime(alert.recent_events[0].created_at)}` : "Chưa có"}</td>
+                  <td className="p-3" style={{ border: border2 }}>{alert.recent_events[0] ? `${ADMIN_ALERT_EVENT_LABELS[alert.recent_events[0].event_type] ?? alert.recent_events[0].event_type} - ${formatDateTime(alert.recent_events[0].created_at)}` : "Chưa có"}</td>
                   <td className="p-3" style={{ border: border2 }}>{alert.status !== "Disabled" && <NbButton small variant="secondary" onClick={() => disable(alert)}>Tắt</NbButton>}</td>
                 </tr>
               ))}
             </tbody>
           </table>
+          </AdminTableShell>
         )}
-      </main>
+      </PageShell>
     </AdminGate>
   );
 }

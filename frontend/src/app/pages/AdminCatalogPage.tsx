@@ -1,5 +1,4 @@
 import { ReactNode, useEffect, useState } from "react";
-import { Link } from "react-router";
 import { Plus, RotateCcw, Archive, Save } from "lucide-react";
 import {
   AdminBookDto,
@@ -34,7 +33,7 @@ import {
   updateAdminOffer,
   updateAdminRetailer,
 } from "../api";
-import { C, ErrorState, LoadingState, NbButton, border2, shadow4 } from "../shared";
+import { AdminBackLink, AdminHeader, AdminTableShell, C, ErrorState, LoadingState, NbButton, NbDenseInput, PageShell, border2, shadow4 } from "../shared";
 import { AdminGate } from "./AdminPage";
 
 type Kind = "categories" | "books" | "retailers" | "merchants" | "offers";
@@ -109,11 +108,8 @@ export default function AdminCatalogPage({ kind }: { kind: Kind }) {
 
   return (
     <AdminGate>
-      <main className="mx-auto flex min-w-[768px] max-w-[1240px] flex-col gap-5 px-8 py-10">
-        <div className="flex items-center justify-between">
-          <h1 className="text-[28px] font-extrabold uppercase">{TITLES[kind]}</h1>
-          <Link className="text-[13px] font-bold underline" to="/admin">Về Admin</Link>
-        </div>
+      <PageShell variant="admin" className="min-w-[768px] max-w-[1240px] gap-5">
+        <AdminHeader title={TITLES[kind]} description="Quản trị dữ liệu catalog, trạng thái vòng đời và cập nhật nhanh tại chỗ." backLink={<AdminBackLink />} />
         <section className="grid grid-cols-[1fr_auto] gap-3 p-4" style={{ background: C.white, border: border2, boxShadow: shadow4 }}>
           <div className="grid grid-cols-4 gap-3">{fields(kind).map((field) => <Input key={field.name} field={field} value={form[field.name] ?? ""} onChange={(value) => setForm((current) => ({ ...current, [field.name]: value }))} />)}</div>
           <button type="button" onClick={submit} title="Tạo bản ghi" aria-label="Tạo bản ghi" className="flex h-11 w-11 items-center justify-center self-end" style={{ background: C.primary, color: C.white, border: border2 }}><Plus size={18} /></button>
@@ -121,14 +117,16 @@ export default function AdminCatalogPage({ kind }: { kind: Kind }) {
         {message && <p className="p-3 text-[13px] font-bold" style={{ background: C.primaryFixed, border: border2, color: C.primary }}>{message}</p>}
         {error && <ErrorState message={error} />}
         {loading ? <LoadingState label={`Đang tải ${TITLES[kind].toLowerCase()}...`} /> : (
-          <table className="w-full border-collapse text-[13px]" style={{ background: C.white, border: border2, boxShadow: shadow4 }}>
+          <AdminTableShell>
+          <table className="w-full border-collapse text-[13px]">
             <thead style={{ background: C.boneWhite }}><tr>{headers(kind).map((h) => <th key={h} className="p-3 text-left uppercase" style={{ border: border2 }}>{h}</th>)}</tr></thead>
             <tbody>
               {items.map((item) => <Row key={item.id} kind={kind} item={item} onLifecycle={() => lifecycle(item)} onSave={(patch) => quickSave(item, patch)} />)}
             </tbody>
           </table>
+          </AdminTableShell>
         )}
-      </main>
+      </PageShell>
     </AdminGate>
   );
 }
@@ -190,39 +188,35 @@ function BookRow({ book, onLifecycle, onSave }: { book: AdminBookDto; onLifecycl
     <div className="grid grid-cols-1 gap-2 xl:grid-cols-2">
       <label className="text-[11px] font-bold uppercase">
         Ngày phát hành
-        <input
+        <NbDenseInput
           type="date"
           value={releaseDate}
           onChange={(event) => setReleaseDate(event.target.value)}
-          className="mt-1 h-9 w-full px-2 text-[12px] normal-case"
-          style={{ border: border2, background: C.boneWhite }}
+          className="mt-1"
         />
       </label>
       <label className="text-[11px] font-bold uppercase">
         Số trang
-        <input
+        <NbDenseInput
           value={pageCount}
           onChange={(event) => setPageCount(event.target.value.replace(/\D/g, ""))}
-          className="mt-1 h-9 w-full px-2 text-[12px] normal-case"
-          style={{ border: border2, background: C.boneWhite }}
+          className="mt-1"
         />
       </label>
       <label className="text-[11px] font-bold uppercase">
         Kích thước
-        <input
+        <NbDenseInput
           value={dimensions}
           onChange={(event) => setDimensions(event.target.value)}
-          className="mt-1 h-9 w-full px-2 text-[12px] normal-case"
-          style={{ border: border2, background: C.boneWhite }}
+          className="mt-1"
         />
       </label>
       <label className="text-[11px] font-bold uppercase">
         Định dạng
-        <input
+        <NbDenseInput
           value={format}
           onChange={(event) => setFormat(event.target.value)}
-          className="mt-1 h-9 w-full px-2 text-[12px] normal-case"
-          style={{ border: border2, background: C.boneWhite }}
+          className="mt-1"
         />
       </label>
     </div>
@@ -255,7 +249,7 @@ function LifeButton({ status, onClick }: { status: string; onClick: () => void }
 }
 
 function Input({ field, value, onChange }: { field: { name: string; label: string }; value: string; onChange: (value: string) => void }) {
-  return <label className="flex flex-col gap-1 text-[12px] font-bold uppercase">{field.label}<input className="h-10 px-3 text-[13px] normal-case" style={{ border: border2, background: C.boneWhite }} value={value} onChange={(event) => onChange(event.target.value)} /></label>;
+  return <label className="flex flex-col gap-1 text-[12px] font-bold uppercase">{field.label}<NbDenseInput className="h-10 px-3 text-[13px]" value={value} onChange={(event) => onChange(event.target.value)} /></label>;
 }
 
 function listApi(kind: Kind) {

@@ -4,7 +4,6 @@ Last updated: 2026-06-01
 
 ## Current Branch
 
-`feature/t0027-alertpage-buyer-dashboard-refinement`
 `main`
 
 Baseline source for T0007: local `main` after T0006 merge.
@@ -41,6 +40,7 @@ Baseline source for T0007: local `main` after T0006 merge.
 | T0025 | 2026-05-29 | Fixed ProductDetail purchasable-offer ordering so API detail `offers.purchasable` sorts by current eligible price ascending and keeps summary lowest-price consistency. |
 | T0026 | 2026-06-01 | Refined WishlistPage visual rhythm to the original-reference direction with API-backed grid cards, tactile remove pending state, archived/non-archived behavior preservation, and a wishlist fallback payload compatibility fix. |
 | T0027 | 2026-06-01 | Refined `/alerts` into a buyer-first grouped dashboard (`Đang theo dõi`, `Cần chú ý`, `Đã tắt`) and upgraded the shared email-code auth dialog into a split DealSach login prompt while preserving existing alert/auth API behavior. |
+| T0028 | 2026-06-01 | Unified frontend shared page/admin primitives (shell/header/prompt/button/input/table), standardized Root header icon controls and auth-dialog shared tokens, and aligned public/user/admin page styling without backend/API changes. |
 | T0025 | 2026-06-01 | Fixed backend ProductDetail purchasable-offer ordering to sort by current eligible `latest_price` (tie-breaker `offer id`), added seeded regression coverage for `Cho tôi xin một vé đi tuổi thơ`, and aligned manual verification/process docs. |
 
 ## Current Folder Structure
@@ -380,6 +380,31 @@ docs/implementation_logs/T0027.md
 docs/Repo_Current_State.md
 ```
 
+T0028 changed:
+
+```text
+frontend/src/app/shared.tsx
+frontend/src/app/Root.tsx
+frontend/src/app/auth/AuthContext.tsx
+frontend/src/app/pages/AccountPage.tsx
+frontend/src/app/pages/WishlistPage.tsx
+frontend/src/app/pages/AlertsPage.tsx
+frontend/src/app/pages/HomePage.tsx
+frontend/src/app/pages/SearchPage.tsx
+frontend/src/app/pages/ProductDetailPage.tsx
+frontend/src/app/pages/AdminPage.tsx
+frontend/src/app/pages/AdminDashboardPage.tsx
+frontend/src/app/pages/AdminUsersPage.tsx
+frontend/src/app/pages/AdminAlertsPage.tsx
+frontend/src/app/pages/AdminAuditPage.tsx
+frontend/src/app/pages/AdminCatalogPage.tsx
+frontend/src/app/pages/AdminCategoriesPage.tsx
+frontend/src/app/pages/AdminBookDetailPage.tsx
+docs/Manual_Verification_Guide.md
+docs/implementation_logs/T0028.md
+docs/Repo_Current_State.md
+```
+
 T0008 changed:
 
 ```text
@@ -497,6 +522,7 @@ docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit --filte
 
 | Area | Command | Last Result | Notes |
 |---|---|---|---|
+| Frontend | `rtk docker compose run --rm frontend npm run build` | Passed for T0028 | Vite production build passed after frontend-wide style unification; existing chunk-size warning remains. |
 | Frontend | `rtk docker compose run --rm frontend npm run build` | Passed for T0027 | Vite production build passed after AlertPage/Auth dialog refinement; existing chunk-size warning remains. |
 | Backend/Docker DB | `rtk docker compose run --rm app sh -lc 'cd backend && php spark migrate && php spark db:seed DealSachDemoSeeder'` | Passed for T0026 | Migration + seed completed before wishlist/frontend verification. |
 | Frontend | `rtk docker compose run --rm frontend npm run build` | Passed for T0026 | Vite production build passed; existing chunk-size warning remains. |

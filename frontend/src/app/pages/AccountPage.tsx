@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Bell, LogOut, Mail, ShieldCheck, User } from "lucide-react";
 import { AlertPreferenceDto, apiErrorMessage, fetchAlertPreferences, updateAlertPreferences } from "../api";
 import { useAuth } from "../auth";
-import { C, ErrorState, FONT, LoadingState, NbButton, border2, shadow8 } from "../shared";
+import { C, ErrorState, LoadingState, NbButton, PageIntro, PageShell, PromptCard, StampHeading, StatusChip, border2, shadow8 } from "../shared";
 
 const ROLE_LABELS: Record<string, string> = {
   registered: "Người dùng",
@@ -81,43 +81,43 @@ export default function AccountPage() {
 
   if (!auth.authenticated) {
     return (
-      <main className="mx-auto flex max-w-[900px] flex-col gap-6 px-4 py-10 sm:px-8">
-        <section className="p-6" style={{ background: C.white, border: border2, boxShadow: shadow8, fontFamily: FONT }}>
-          <div className="mb-4 flex items-center gap-3">
-            <User size={24} style={{ color: C.primary }} />
-            <h1 className="text-[24px] font-extrabold uppercase">Tài khoản</h1>
-          </div>
-          <p className="mb-5 text-[14px] leading-relaxed" style={{ color: C.onSurfaceVariant }}>
-            Vui lòng đăng nhập bằng email để xem thông tin tài khoản và cài đặt email cảnh báo giá.
-          </p>
-          <NbButton onClick={auth.openAuthDialog}>Đăng nhập / Đăng ký</NbButton>
-        </section>
-      </main>
+      <PageShell>
+        <PromptCard
+          icon={<User size={20} style={{ color: C.primary }} />}
+          title="Tài khoản"
+          description="Vui lòng đăng nhập bằng email để xem thông tin tài khoản và cài đặt email cảnh báo giá."
+          cta={<NbButton onClick={auth.openAuthDialog}>Đăng nhập / Đăng ký</NbButton>}
+        />
+      </PageShell>
     );
   }
 
   const enabled = preference?.alert_emails_enabled ?? true;
 
   return (
-    <main className="mx-auto flex max-w-[980px] flex-col gap-7 px-4 py-10 sm:px-8">
-      <section className="flex flex-col gap-2">
-        <h1 className="text-[30px] font-extrabold uppercase leading-tight" style={{ fontFamily: FONT }}>Tài khoản</h1>
-        <p className="text-[13px]" style={{ color: C.onSurfaceVariant, fontFamily: FONT }}>
-          Quản lý phiên đăng nhập và email cảnh báo giá DealSach.
-        </p>
+    <PageShell>
+      <section className="flex flex-col gap-3">
+        <StampHeading title="Tài khoản" icon={<User size={20} style={{ color: C.primary }} />} />
+        <PageIntro>Quản lý phiên đăng nhập, địa chỉ email xác minh và trạng thái email cảnh báo giá cho tài khoản DealSach.</PageIntro>
+        <div className="flex flex-wrap gap-2">
+          {auth.user?.email && <StatusChip label={auth.user.email} variant="primary" />}
+          <StatusChip label={`Vai trò: ${ROLE_LABELS[auth.user?.role ?? ""] ?? auth.user?.role ?? "-"}`} />
+          <StatusChip label={`Trạng thái: ${STATUS_LABELS[auth.user?.status ?? ""] ?? auth.user?.status ?? "-"}`} variant={auth.user?.status === "active" ? "success" : "warning"} />
+          <StatusChip label={enabled ? "Email cảnh báo: Bật" : "Email cảnh báo: Tắt"} variant={enabled ? "success" : "muted"} />
+        </div>
       </section>
 
       {loading && <LoadingState label="Đang tải cài đặt tài khoản..." />}
       {error && <ErrorState message={error} />}
-      {success && <p className="px-4 py-3 text-[13px] font-bold" style={{ border: border2, background: C.primaryFixed, color: C.primary, fontFamily: FONT }}>{success}</p>}
+      {success && <p className="px-4 py-3 text-[13px] font-bold" style={{ border: border2, background: C.primaryFixed, color: C.primary }}>{success}</p>}
 
       <section className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_280px]">
         <div className="p-5" style={{ background: C.white, border: border2, boxShadow: shadow8 }}>
           <div className="mb-5 flex items-center gap-3">
             <ShieldCheck size={22} style={{ color: C.primary }} />
-            <h2 className="text-[16px] font-extrabold uppercase" style={{ fontFamily: FONT }}>Thông tin đăng nhập</h2>
+            <h2 className="text-[16px] font-extrabold uppercase">Thông tin đăng nhập</h2>
           </div>
-          <dl className="grid grid-cols-1 gap-3 text-[13px] sm:grid-cols-2" style={{ fontFamily: FONT }}>
+          <dl className="grid grid-cols-1 gap-3 text-[13px] sm:grid-cols-2">
             <div>
               <dt className="font-extrabold uppercase" style={{ color: C.onSurfaceVariant }}>Email</dt>
               <dd className="mt-1 break-words font-bold">{auth.user?.email}</dd>
@@ -135,11 +135,9 @@ export default function AccountPage() {
 
         <div className="flex flex-col gap-3 p-5" style={{ background: C.white, border: border2, boxShadow: shadow8 }}>
           <LogOut size={22} style={{ color: C.dealRed }} />
-          <h2 className="text-[16px] font-extrabold uppercase" style={{ fontFamily: FONT }}>Phiên đăng nhập</h2>
-          <p className="text-[13px] leading-relaxed" style={{ color: C.onSurfaceVariant, fontFamily: FONT }}>Đăng xuất khỏi trình duyệt hiện tại.</p>
-          <button type="button" onClick={logout} className="mt-auto px-4 py-2.5 text-[12px] font-extrabold uppercase" style={{ background: C.boneWhite, color: C.onSurface, border: border2, fontFamily: FONT }}>
-            Đăng xuất
-          </button>
+          <h2 className="text-[16px] font-extrabold uppercase">Phiên đăng nhập</h2>
+          <p className="text-[13px] leading-relaxed" style={{ color: C.onSurfaceVariant }}>Đăng xuất khỏi trình duyệt hiện tại.</p>
+          <NbButton type="button" onClick={logout} variant="danger" className="mt-auto">Đăng xuất</NbButton>
         </div>
       </section>
 
@@ -147,22 +145,22 @@ export default function AccountPage() {
         <div className="flex min-w-0 gap-3">
           {enabled ? <Mail size={22} style={{ color: C.primary }} /> : <Bell size={22} style={{ color: C.dealRed }} />}
           <div>
-            <h2 className="text-[15px] font-extrabold uppercase" style={{ fontFamily: FONT }}>Email cảnh báo giá</h2>
-            <p className="mt-1 text-[13px] leading-relaxed" style={{ color: C.onSurfaceVariant, fontFamily: FONT }}>
+            <h2 className="text-[15px] font-extrabold uppercase">Email cảnh báo giá</h2>
+            <p className="mt-1 text-[13px] leading-relaxed" style={{ color: C.onSurfaceVariant }}>
               Khi tắt email cảnh báo, DealSach không gửi email mới nhưng trạng thái từng cảnh báo vẫn giữ nguyên. Bạn có thể bật lại để theo dõi từ chu kỳ giá sau.
             </p>
           </div>
         </div>
-        <button
+        <NbButton
           type="button"
           onClick={togglePreference}
           disabled={!preference || saving}
-          className="shrink-0 px-4 py-2.5 text-[12px] font-extrabold uppercase disabled:opacity-50"
-          style={{ background: enabled ? C.primary : C.boneWhite, color: enabled ? C.white : C.onSurface, border: border2, fontFamily: FONT }}
+          variant={enabled ? "primary" : "secondary"}
+          className="shrink-0"
         >
           {saving ? "Đang lưu..." : enabled ? "Email đang bật" : "Email đang tắt"}
-        </button>
+        </NbButton>
       </section>
-    </main>
+    </PageShell>
   );
 }

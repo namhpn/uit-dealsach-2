@@ -39,4 +39,5 @@
 | T0024 | SearchResultPage Original-Reference Visual Rhythm Refinement | Done | T0023 | Public frontend |
 | T0025 | ProductDetail Offer Cheapest Ordering Fix | Done | T0024 | Backend/API |
 | T0026 | WishlistPage Original-Reference Visual Refinement | Done | T0025 | Frontend / Wishlist |
-| T0027 | AlertPage Buyer Dashboard and Login Prompt Card Refinement | In Progress | T0026 | Frontend UX |
+| T0027 | AlertPage Buyer Dashboard and Login Prompt Card Refinement | Done | T0026 | Frontend UX |
+| T0028 | Frontend-Wide DealSach Style Unification Pass | In Progress | T0027 | Frontend UX |

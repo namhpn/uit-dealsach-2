@@ -1,5 +1,4 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router";
 import { Archive, Plus, RotateCcw, Save } from "lucide-react";
 import {
   AdminCategoryDto,
@@ -11,7 +10,7 @@ import {
   restoreAdminCategory,
   updateAdminCategory,
 } from "../api";
-import { C, ErrorState, LoadingState, NbButton, border2, shadow4 } from "../shared";
+import { AdminBackLink, AdminHeader, AdminTableShell, C, ErrorState, LoadingState, NbButton, NbDenseInput, PageShell, border2, shadow4 } from "../shared";
 import { AdminGate } from "./AdminPage";
 
 type CategoryFormState = {
@@ -141,14 +140,8 @@ export default function AdminCategoriesPage() {
 
   return (
     <AdminGate>
-      <main className="mx-auto flex min-w-[768px] max-w-[1280px] flex-col gap-5 px-8 py-10">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <h1 className="text-[28px] font-extrabold uppercase">Danh mục</h1>
-            <p className="mt-1 text-[12px] font-bold" style={{ color: C.onSurfaceVariant }}>{categoryCountLabel}</p>
-          </div>
-          <Link className="text-[13px] font-bold underline" to="/admin">Về Admin</Link>
-        </div>
+      <PageShell variant="admin" className="min-w-[768px] max-w-[1280px] gap-5">
+        <AdminHeader title="Danh mục" description={`Quản trị metadata hiển thị danh mục công khai. Hiện có ${categoryCountLabel}.`} backLink={<AdminBackLink />} />
 
         <section className="p-4" style={{ background: C.white, border: border2, boxShadow: shadow4 }}>
           <h2 className="mb-3 text-[14px] font-extrabold uppercase">Tạo danh mục mới</h2>
@@ -171,7 +164,7 @@ export default function AdminCategoriesPage() {
         {loading ? (
           <LoadingState label="Đang tải danh mục..." />
         ) : (
-          <div className="overflow-x-auto" style={{ background: C.white, border: border2, boxShadow: shadow4 }}>
+          <AdminTableShell>
             <table className="w-full min-w-[1120px] border-collapse text-[13px]">
               <thead style={{ background: C.boneWhite }}>
                 <tr>
@@ -192,27 +185,21 @@ export default function AdminCategoriesPage() {
                   return (
                     <tr key={category.id}>
                       <td className="p-3 align-top" style={{ border: border2 }}>
-                        <input
+                        <NbDenseInput
                           value={draft?.name ?? category.name}
                           onChange={(event) => updateDraft(category.id, "name", event.target.value)}
-                          className="h-9 w-full px-2"
-                          style={{ border: border2, background: C.boneWhite }}
                         />
                       </td>
                       <td className="p-3 align-top" style={{ border: border2 }}>
-                        <input
+                        <NbDenseInput
                           value={draft?.slug ?? category.slug}
                           onChange={(event) => updateDraft(category.id, "slug", event.target.value)}
-                          className="h-9 w-full px-2"
-                          style={{ border: border2, background: C.boneWhite }}
                         />
                       </td>
                       <td className="p-3 align-top" style={{ border: border2 }}>
-                        <input
+                        <NbDenseInput
                           value={draft?.display_label ?? category.display_label ?? ""}
                           onChange={(event) => updateDraft(category.id, "display_label", event.target.value)}
-                          className="h-9 w-full px-2"
-                          style={{ border: border2, background: C.boneWhite }}
                         />
                       </td>
                       <td className="p-3 align-top" style={{ border: border2 }}>
@@ -224,12 +211,10 @@ export default function AdminCategoriesPage() {
                         />
                       </td>
                       <td className="p-3 align-top" style={{ border: border2 }}>
-                        <input
+                        <NbDenseInput
                           value={draft?.display_order ?? String(category.display_order)}
                           onChange={(event) => updateDraft(category.id, "display_order", event.target.value)}
                           inputMode="numeric"
-                          className="h-9 w-full px-2"
-                          style={{ border: border2, background: C.boneWhite }}
                         />
                       </td>
                       <td className="p-3 align-top font-bold" style={{ border: border2 }}>
@@ -258,9 +243,9 @@ export default function AdminCategoriesPage() {
                 })}
               </tbody>
             </table>
-          </div>
+          </AdminTableShell>
         )}
-      </main>
+      </PageShell>
     </AdminGate>
   );
 }
@@ -286,12 +271,11 @@ function TextInput({ label, value, onChange, inputMode }: { label: string; value
   return (
     <label className="flex flex-col gap-1 text-[12px] font-bold uppercase">
       {label}
-      <input
+      <NbDenseInput
         value={value}
         onChange={(event) => onChange(event.target.value)}
         inputMode={inputMode}
-        className="h-10 px-3 text-[13px] normal-case"
-        style={{ border: border2, background: C.boneWhite }}
+        className="h-10 px-3 text-[13px]"
       />
     </label>
   );

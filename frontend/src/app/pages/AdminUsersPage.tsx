@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router";
 import { apiErrorMessage, AdminUserDto, deactivateAdminUser, fetchAdminUsers, reactivateAdminUser } from "../api";
-import { C, ErrorState, LoadingState, NbButton, border2, shadow4 } from "../shared";
+import { AdminBackLink, AdminHeader, AdminTableShell, C, ErrorState, LoadingState, NbButton, PageShell, border2 } from "../shared";
 import { AdminGate } from "./AdminPage";
 
 export default function AdminUsersPage() {
@@ -40,12 +39,13 @@ export default function AdminUsersPage() {
 
   return (
     <AdminGate>
-      <main className="mx-auto flex min-w-[768px] max-w-[1200px] flex-col gap-5 px-8 py-10">
-        <Header title="Người dùng" />
+      <PageShell variant="admin" className="min-w-[768px] max-w-[1200px] gap-5">
+        <AdminHeader title="Người dùng" description="Quản lý trạng thái tài khoản và chỉ số cá nhân hóa của người dùng." backLink={<AdminBackLink />} />
         {message && <p className="p-3 text-[13px] font-bold" style={{ background: C.primaryFixed, border: border2, color: C.primary }}>{message}</p>}
         {error && <ErrorState message={error} />}
         {loading ? <LoadingState label="Đang tải người dùng..." /> : (
-          <table className="w-full border-collapse text-[13px]" style={{ background: C.white, border: border2, boxShadow: shadow4 }}>
+          <AdminTableShell>
+          <table className="w-full border-collapse text-[13px]">
             <thead style={{ background: C.boneWhite }}>
               <tr>{["Email", "Vai trò", "Trạng thái", "Email cảnh báo", "Yêu thích", "Cảnh báo", "Thao tác"].map((h) => <th key={h} className="p-3 text-left uppercase" style={{ border: border2 }}>{h}</th>)}</tr>
             </thead>
@@ -67,12 +67,9 @@ export default function AdminUsersPage() {
               ))}
             </tbody>
           </table>
+          </AdminTableShell>
         )}
-      </main>
+      </PageShell>
     </AdminGate>
   );
-}
-
-function Header({ title }: { title: string }) {
-  return <div className="flex items-center justify-between"><h1 className="text-[28px] font-extrabold uppercase">{title}</h1><Link className="text-[13px] font-bold underline" to="/admin">Về Admin</Link></div>;
 }

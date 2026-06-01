@@ -3,7 +3,7 @@ import { Outlet, useLocation, useNavigate } from "react-router";
 import { Search, Heart, User, BookOpen, Menu, X, LogOut, Bell, ShieldCheck } from "lucide-react";
 import { apiErrorMessage, BookSearchSuggestionDto, fetchBookSuggestions, fetchFilters, FiltersResponse, formatVnd } from "./api";
 import { AuthProvider, useAuth } from "./auth";
-import { C, FONT, border2, border3, shadow4, CategoryChip } from "./shared";
+import { C, FONT, NbIconButton, border2, border3, shadow4, CategoryChip } from "./shared";
 
 function Header() {
   const navigate = useNavigate();
@@ -184,28 +184,8 @@ function Header() {
 
         {/* Icon buttons */}
         <div className="hidden md:flex order-3 items-center gap-2 shrink-0 self-start">
-          <button
-            aria-label="Danh sách yêu thích"
-            title="Danh sách yêu thích"
-            className="w-12 h-12 flex items-center justify-center"
-            style={{ color: C.onSurface, border: border2, background: C.white }}
-            onClick={() => auth.authenticated ? navigate("/wishlist") : auth.openAuthDialog()}
-            onMouseEnter={e => (e.currentTarget.style.background = C.boneWhite)}
-            onMouseLeave={e => (e.currentTarget.style.background = C.white)}
-          >
-            <Heart size={18} />
-          </button>
-          <button
-            aria-label="Cảnh báo giá"
-            title="Cảnh báo giá"
-            className="w-12 h-12 flex items-center justify-center"
-            style={{ color: C.onSurface, border: border2, background: C.white }}
-            onClick={() => auth.authenticated ? navigate("/alerts") : auth.openAuthDialog()}
-            onMouseEnter={e => (e.currentTarget.style.background = C.boneWhite)}
-            onMouseLeave={e => (e.currentTarget.style.background = C.white)}
-          >
-            <Bell size={18} />
-          </button>
+          <NbIconButton icon={<Heart size={18} />} label="Danh sách yêu thích" onClick={() => auth.authenticated ? navigate("/wishlist") : auth.openAuthDialog()} />
+          <NbIconButton icon={<Bell size={18} />} label="Cảnh báo giá" onClick={() => auth.authenticated ? navigate("/alerts") : auth.openAuthDialog()} />
           {auth.authenticated ? (
             <div className="flex items-center gap-2 px-3 h-12" style={{ border: border2, background: C.white, fontFamily: FONT }}>
               <User size={16} />
@@ -215,28 +195,10 @@ function Header() {
               </button>
             </div>
           ) : (
-            <button
-              aria-label="Tài khoản"
-              title="Tài khoản"
-              className="w-12 h-12 flex items-center justify-center"
-              style={{ color: C.onSurface, border: border2, background: C.white }}
-              onClick={auth.openAuthDialog}
-              onMouseEnter={e => (e.currentTarget.style.background = C.boneWhite)}
-              onMouseLeave={e => (e.currentTarget.style.background = C.white)}
-            >
-              <User size={18} />
-            </button>
+            <NbIconButton icon={<User size={18} />} label="Tài khoản" onClick={auth.openAuthDialog} />
           )}
           {auth.user?.role === "admin" && (
-            <button
-              aria-label="Quản trị"
-              title="Quản trị"
-              className="w-12 h-12 flex items-center justify-center"
-              style={{ color: C.primary, border: border2, background: C.primaryFixed }}
-              onClick={() => navigate("/admin")}
-            >
-              <ShieldCheck size={18} />
-            </button>
+            <NbIconButton icon={<ShieldCheck size={18} />} label="Quản trị" active onClick={() => navigate("/admin")} />
           )}
         </div>
 

@@ -1,6 +1,7 @@
 import { createContext, FormEvent, useContext, useEffect, useMemo, useState } from "react";
 import { BookmarkCheck, BellRing, CircleDollarSign, X } from "lucide-react";
 import { apiErrorMessage, AuthStateDto, CurrentUserDto, fetchCurrentUser, logoutCurrentUser, requestEmailCode, verifyEmailCode } from "../api";
+import { border2, border3, C, FONT, NbButton, NbIconButton, NbInput, shadow4, shadow8 } from "../shared";
 
 interface AuthContextValue {
   authenticated: boolean;
@@ -13,22 +14,6 @@ interface AuthContextValue {
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
-
-const C = {
-  primary: "#003527",
-  white: "#ffffff",
-  black: "#000000",
-  surface: "#fcf9f8",
-  boneWhite: "#ECE9E2",
-  secondary: "#ba1a1a",
-  text: "#1b1c1c",
-  muted: "#404944",
-};
-
-const FONT = "'Be Vietnam Pro', sans-serif";
-const border2 = `2px solid ${C.black}`;
-const shadow4 = "4px 4px 0 #000000";
-const shadow8 = "8px 8px 0 #000000";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AuthStateDto>({ authenticated: false, user: null });
@@ -135,15 +120,7 @@ function AuthDialog({ onClose, onVerified }: { onClose: () => void; onVerified: 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center px-4 py-6" style={{ background: "rgba(0,0,0,0.55)", fontFamily: FONT }}>
       <div className="relative w-full max-w-[820px]" style={{ background: C.surface, border: border2, boxShadow: shadow8 }}>
-        <button
-          type="button"
-          onClick={onClose}
-          className="absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center"
-          style={{ background: C.white, color: C.black, border: border2, boxShadow: shadow4 }}
-          aria-label="Đóng"
-        >
-          <X size={16} />
-        </button>
+        <NbIconButton icon={<X size={16} />} label="Đóng" onClick={onClose} className="absolute right-3 top-3 z-10 h-9 w-9" />
 
         <div className="grid grid-cols-1 lg:grid-cols-[1.15fr_0.85fr]">
           <section className="flex flex-col gap-4 p-6" style={{ borderRight: border2 }}>
@@ -151,10 +128,10 @@ function AuthDialog({ onClose, onVerified }: { onClose: () => void; onVerified: 
               <p className="text-[24px] font-black leading-tight" style={{ color: C.primary }}>
                 Xin chào,
               </p>
-              <h2 className="mt-1 text-[20px] font-black leading-tight" style={{ color: C.text }}>
+              <h2 className="mt-1 text-[20px] font-black leading-tight" style={{ color: C.onSurface }}>
                 Đăng nhập để lưu sách và theo dõi giá
               </h2>
-              <p className="mt-2 text-[13px] leading-relaxed" style={{ color: C.muted }}>
+              <p className="mt-2 text-[13px] leading-relaxed" style={{ color: C.onSurfaceVariant }}>
                 DealSach gửi mã xác minh qua email. Không cần mật khẩu.
               </p>
             </div>
@@ -162,40 +139,39 @@ function AuthDialog({ onClose, onVerified }: { onClose: () => void; onVerified: 
             <form onSubmit={step === "email" ? submitEmail : submitCode} className="flex flex-col gap-3">
               {step === "code" && (
                 <p className="text-[12px] font-bold" style={{ color: C.primary }}>
-                  Mã đã gửi đến <span style={{ color: C.text }}>{email}</span>
+                  Mã đã gửi đến <span style={{ color: C.onSurface }}>{email}</span>
                 </p>
               )}
 
-              <label className="flex flex-col gap-1 text-[11px] font-extrabold uppercase" style={{ color: C.muted }}>
+              <label className="flex flex-col gap-1 text-[11px] font-extrabold uppercase" style={{ color: C.onSurfaceVariant }}>
                 Email nhận mã xác minh
-                <input
+                <NbInput
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
                   type="email"
                   required
                   disabled={step === "code"}
-                  className="px-3 py-2 text-sm normal-case outline-none disabled:opacity-70"
-                  style={{ border: `3px solid ${C.black}`, color: C.text, background: C.white }}
+                  className="disabled:opacity-70"
+                  style={{ border: border3 }}
                 />
               </label>
 
               {step === "code" && (
-                <label className="flex flex-col gap-1 text-[11px] font-extrabold uppercase" style={{ color: C.muted }}>
+                <label className="flex flex-col gap-1 text-[11px] font-extrabold uppercase" style={{ color: C.onSurfaceVariant }}>
                   Nhập mã 6 số
-                  <input
+                  <NbInput
                     value={code}
                     onChange={(event) => setCode(event.target.value.replace(/\D/g, ""))}
                     inputMode="numeric"
                     pattern="[0-9]{6}"
                     maxLength={6}
                     required
-                    className="px-3 py-2 text-sm normal-case outline-none"
-                    style={{ border: `3px solid ${C.black}`, color: C.text, background: C.white }}
+                    style={{ border: border3 }}
                   />
                 </label>
               )}
 
-              <p className="text-[12px] leading-relaxed" style={{ color: C.muted }}>
+              <p className="text-[12px] leading-relaxed" style={{ color: C.onSurfaceVariant }}>
                 {message}
               </p>
               {error && (
@@ -205,37 +181,33 @@ function AuthDialog({ onClose, onVerified }: { onClose: () => void; onVerified: 
               )}
 
               <div className="flex flex-wrap items-center gap-2">
-                <button
-                  disabled={submitting || (step === "email" && cooldown > 0)}
-                  className="px-4 py-2.5 text-[12px] font-extrabold uppercase disabled:opacity-50"
-                  style={{ background: C.primary, color: C.white, border: border2, boxShadow: shadow4 }}
-                >
+                <NbButton disabled={submitting || (step === "email" && cooldown > 0)} small={false} style={{ padding: "10px 16px", fontSize: 12 }}>
                   {submitting ? "Đang xử lý..." : step === "email" ? "Tiếp tục" : "Xác minh & đăng nhập"}
-                </button>
+                </NbButton>
 
                 {step === "code" && (
                   <>
-                    <button
+                    <NbButton
                       type="button"
                       disabled={cooldown > 0 || submitting}
                       onClick={resendCode}
-                      className="px-4 py-2.5 text-[12px] font-extrabold uppercase disabled:opacity-50"
-                      style={{ background: C.boneWhite, color: C.text, border: border2 }}
+                      variant="secondary"
+                      style={{ padding: "10px 16px", fontSize: 12 }}
                     >
                       {cooldown > 0 ? `Gửi lại sau ${cooldown}s` : "Gửi lại mã"}
-                    </button>
-                    <button
+                    </NbButton>
+                    <NbButton
                       type="button"
                       onClick={() => {
                         setStep("email");
                         setCode("");
                         setError(null);
                       }}
-                      className="px-4 py-2.5 text-[12px] font-extrabold uppercase"
-                      style={{ background: C.white, color: C.text, border: border2 }}
+                      variant="ghost"
+                      style={{ padding: "10px 16px", fontSize: 12 }}
                     >
                       Đổi email
-                    </button>
+                    </NbButton>
                   </>
                 )}
               </div>

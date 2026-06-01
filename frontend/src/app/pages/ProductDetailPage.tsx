@@ -26,6 +26,9 @@ import {
   ErrorState,
   FONT,
   LoadingState,
+  NbButton,
+  NbInput,
+  PageShell,
   PriceDisclaimer,
   border2,
   border3,
@@ -127,15 +130,16 @@ function HeroSection({
             </div>
 
             <div className="flex flex-col gap-2">
-              <button
-                className="flex h-12 w-full items-center justify-center gap-2 px-4 py-3 text-[11px] font-extrabold uppercase"
+              <NbButton
+                className="h-12 w-full justify-center text-[11px] uppercase"
                 title={wishlisted ? "Bỏ khỏi danh sách yêu thích" : "Thêm vào Wishlist"}
                 onClick={onToggleWishlist}
-                style={{ border: border2, background: wishlisted ? C.primaryFixed : C.white, color: wishlisted ? C.primary : C.onSurface, fontFamily: FONT, boxShadow: shadow4, cursor: "pointer" }}
+                variant={wishlisted ? "secondary" : "ghost"}
+                style={{ background: wishlisted ? C.primaryFixed : C.white }}
               >
                 <Heart size={16} fill={wishlisted ? C.primary : "none"} />
                 {wishlisted ? "Đã lưu" : "Thêm vào Wishlist"}
-              </button>
+              </NbButton>
               <a
                 href="#price-alerts"
                 className="flex h-12 w-full items-center justify-center gap-2 px-4 py-3 text-[11px] font-extrabold uppercase"
@@ -431,24 +435,22 @@ function PriceHistoryAndAlerts({ data }: { data: BookDetailResponse }) {
             <form onSubmit={createTargetAlert} className="flex flex-col gap-3">
               <label className="flex flex-col gap-1 text-[11px] font-extrabold uppercase" style={{ color: C.onSurfaceVariant, fontFamily: FONT }}>
                 Giá mục tiêu VND
-                <input
+                <NbInput
                   value={targetPrice}
                   onChange={(event) => setTargetPrice(event.target.value.replace(/\D/g, ""))}
                   placeholder="Ví dụ: 90000"
                   inputMode="numeric"
-                  className="px-3 py-2 text-sm normal-case outline-none focus-visible:ring-2"
-                  style={{ border: border3, color: C.onSurface, fontFamily: FONT }}
+                  style={{ border: border3 }}
                 />
               </label>
-              <button
+              <NbButton
                 type="submit"
                 disabled={busy !== null}
-                className="flex items-center justify-center gap-2 px-4 py-2.5 text-[12px] font-extrabold uppercase"
-                style={{ background: C.primary, color: C.white, border: border2, boxShadow: shadow4, fontFamily: FONT, cursor: busy !== null ? "not-allowed" : "pointer" }}
+                className="justify-center gap-2 text-[12px] uppercase"
               >
                 <Bell size={13} />
                 {busy === "target" ? "Đang tạo..." : "THEO DÕI GIẢM GIÁ"}
-              </button>
+              </NbButton>
             </form>
           </div>
 
@@ -459,16 +461,16 @@ function PriceHistoryAndAlerts({ data }: { data: BookDetailResponse }) {
             <p className="text-[12px] leading-relaxed" style={{ color: C.onSurfaceVariant, fontFamily: FONT }}>
               Không cần nhập giá mục tiêu. DealSach sẽ báo khi có nhịp giảm giá mới trong dữ liệu đủ điều kiện.
             </p>
-            <button
+            <NbButton
               type="button"
               disabled={busy !== null}
               onClick={createNewLowestAlert}
-              className="flex items-center justify-center gap-2 px-4 py-2.5 text-[12px] font-extrabold uppercase"
-              style={{ background: C.white, color: C.onSurface, border: border2, boxShadow: shadow4, fontFamily: FONT, cursor: busy !== null ? "not-allowed" : "pointer" }}
+              variant="secondary"
+              className="justify-center gap-2 text-[12px] uppercase"
             >
               <TrendingDown size={13} />
               {busy === "lowest" ? "Đang tạo..." : "Thông báo khi giảm giá"}
-            </button>
+            </NbButton>
           </div>
 
           {(targetError || success) && (
@@ -662,28 +664,28 @@ export default function ProductDetailPage() {
 
   if (loading) {
     return (
-      <main className="mx-auto max-w-[1200px] px-4 py-10 sm:px-8">
+      <PageShell>
         <LoadingState label="Đang tải chi tiết sách..." />
-      </main>
+      </PageShell>
     );
   }
 
   if (error || !data) {
     return (
-      <main className="mx-auto max-w-[1200px] px-4 py-10 sm:px-8">
+      <PageShell>
         <ErrorState message={error ?? "Không tìm thấy sách công khai phù hợp."} />
-      </main>
+      </PageShell>
     );
   }
 
   return (
-    <main className="mx-auto flex max-w-[1200px] flex-col gap-10 px-4 py-10 sm:px-8">
+    <PageShell className="gap-10">
       <HeroSection data={data} wishlisted={wishlisted} wishlistError={wishlistError} onToggleWishlist={toggleWishlist} />
       {hasAnyOffers ? <MarketPriceList data={data} /> : <EmptyState message="Sách này chưa có ưu đãi công khai để so sánh." />}
       <PriceHistoryAndAlerts data={data} />
       <TechnicalDetails data={data} />
       <RelatedBooks books={related} />
       <DisclaimerBlock />
-    </main>
+    </PageShell>
   );
 }

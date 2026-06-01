@@ -12,6 +12,7 @@ import {
   HowItWorks,
   LoadingState,
   NbButton,
+  PageShell,
   border2,
   dealBanners,
   shadow8,
@@ -133,7 +134,7 @@ export default function HomePage() {
   }
 
   return (
-    <main className="mx-auto flex max-w-[1200px] flex-col gap-12 pb-10 pt-10" style={{ width: "min(1200px, calc(100vw - 32px))", boxSizing: "border-box" }}>
+    <PageShell className="max-w-[1200px] gap-12 pb-10 pt-10" >
       <DealBannerCarousel onCtaClick={handleBannerCta} />
 
       {loading && <LoadingState label="Đang tải trang khám phá..." />}
@@ -175,6 +176,6 @@ export default function HomePage() {
       <section id="how-it-works">
         <HowItWorks />
       </section>
-    </main>
+    </PageShell>
   );
 }

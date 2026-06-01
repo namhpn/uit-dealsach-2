@@ -196,6 +196,35 @@ final class PublicCatalogApiTest extends CIUnitTestCase
         $this->assertArrayHasKey('highest_eligible_price', $nhaGiaKimResponse['summary']);
     }
 
+    public function testBookDetailPurchasableOffersAreSortedByCurrentEligiblePriceAndMatchSummaryLowestPrice(): void
+    {
+        $body = $this->json($this->get('/api/public/books/' . $this->bookIdByIsbn('9786041000016')))['data'];
+        $purchasable = $body['offers']['purchasable'];
+
+        $this->assertNotEmpty($purchasable);
+        $this->assertSame('Fahasa', $purchasable[0]['retailer']['name']);
+        $this->assertSame(82000, $purchasable[0]['latest_price']);
+        $this->assertSame($body['summary']['lowest_eligible_price'], $purchasable[0]['latest_price']);
+
+        $tikiIndex = null;
+        for ($index = 1; $index < count($purchasable); $index++) {
+            $previous = $purchasable[$index - 1];
+            $current = $purchasable[$index];
+            $this->assertGreaterThanOrEqual($previous['latest_price'], $current['latest_price']);
+        }
+
+        foreach ($purchasable as $index => $offer) {
+            if ($offer['retailer']['name'] === 'Tiki') {
+                $tikiIndex = $index;
+                $this->assertSame(141000, $offer['latest_price']);
+                break;
+            }
+        }
+
+        $this->assertNotNull($tikiIndex);
+        $this->assertGreaterThan(0, $tikiIndex);
+    }
+
     public function testBookDetailReturnsTechnicalMetadataAndEligiblePriceReferenceSummary(): void
     {
         $body = $this->json($this->get('/api/public/books/' . $this->bookIdByIsbn('9786041000001')));

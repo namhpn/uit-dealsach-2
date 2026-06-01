@@ -37,4 +37,5 @@
 | T0022 | Homepage Visual Rhythm Refinement | Done | T0021 | Frontend Homepage |
 | T0023 | ProductDetailPage Visual Rhythm Refinement | Done | T0022 | Frontend |
 | T0024 | SearchResultPage Original-Reference Visual Rhythm Refinement | Done | T0023 | Public frontend |
-| T0025 | ProductDetail Offer Cheapest Ordering Fix | In Progress | T0024 | Backend/API |
+| T0025 | ProductDetail Offer Cheapest Ordering Fix | Done | T0024 | Backend/API |
+| T0026 | WishlistPage Original-Reference Visual Refinement | In Progress | T0025 | Frontend / Wishlist |

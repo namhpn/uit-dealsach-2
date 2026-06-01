@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 import { Link } from "react-router";
-import { Ban, Bell, Mail, Pause, Play, RefreshCw, RotateCcw, Save } from "lucide-react";
+import { Ban, Bell, Clock3, Mail, Pause, Pencil, Play, RefreshCw, RotateCcw, Save } from "lucide-react";
 import {
   AlertPreferenceDto,
   apiErrorMessage,
@@ -12,6 +12,7 @@ import {
   formatVnd,
   pausePriceAlert,
   PriceAlertDto,
+  PriceAlertEventDto,
   PriceAlertStatus,
   reactivatePriceAlert,
   renewPriceAlert,
@@ -20,7 +21,7 @@ import {
   updatePriceAlertTarget,
 } from "../api";
 import { useAuth } from "../auth";
-import { C, CoverImage, EmptyState, ErrorState, FONT, LoadingState, NbButton, border2, shadow4, shadow8 } from "../shared";
+import { C, CoverImage, ErrorState, FONT, LoadingState, NbButton, border2, shadow4, shadow8 } from "../shared";
 
 const ALERT_TYPE_LABELS: Record<PriceAlertDto["alert_type"], string> = {
   target_price: "Giá mục tiêu",
@@ -35,12 +36,60 @@ const STATUS_LABELS: Record<PriceAlertStatus, string> = {
   Disabled: "Đã tắt",
 };
 
-const STATUS_STYLES: Record<PriceAlertStatus, { bg: string; color: string }> = {
-  Active: { bg: C.primaryFixed, color: C.primary },
+const STATUS_BADGE_STYLES: Record<PriceAlertStatus, { bg: string; color: string }> = {
+  Active: { bg: C.primary, color: C.white },
   Paused: { bg: C.boneWhite, color: C.onSurface },
-  "Auto-paused": { bg: "#fff4cc", color: "#6b4b00" },
-  Expired: { bg: C.surfaceVariant, color: C.onSurfaceVariant },
-  Disabled: { bg: "#fff1f1", color: C.dealRed },
+  "Auto-paused": { bg: "#fff4cc", color: "#5f4700" },
+  Expired: { bg: "#ffe2d8", color: "#7a2d00" },
+  Disabled: { bg: "#f1f2f1", color: C.outline },
+};
+
+type AlertGroupKey = "tracking" | "attention" | "disabled";
+
+const GROUP_META: Record<
+  AlertGroupKey,
+  {
+    title: string;
+    description: string;
+    statuses: PriceAlertStatus[];
+    countBg: string;
+    divider: string;
+  }
+> = {
+  tracking: {
+    title: "Đang theo dõi",
+    description: "Những cảnh báo đang chờ mức giá phù hợp để bạn quyết định mua.",
+    statuses: ["Active"],
+    countBg: C.primary,
+    divider: `4px solid ${C.black}`,
+  },
+  attention: {
+    title: "Cần chú ý",
+    description: "Các cảnh báo này cần bạn xem lại trạng thái hoặc gia hạn để tiếp tục theo dõi.",
+    statuses: ["Paused", "Auto-paused", "Expired"],
+    countBg: "#fff4cc",
+    divider: `3px solid ${C.black}`,
+  },
+  disabled: {
+    title: "Đã tắt",
+    description: "Lịch sử cảnh báo đã dừng theo dõi.",
+    statuses: ["Disabled"],
+    countBg: C.boneWhite,
+    divider: `2px dashed ${C.outline}`,
+  },
+};
+
+const EVENT_LABELS: Record<string, string> = {
+  created: "Đã tạo cảnh báo",
+  target_price_updated: "Đã cập nhật giá mục tiêu",
+  paused: "Đã tạm dừng",
+  reactivated: "Đã tiếp tục theo dõi",
+  renewed: "Đã gia hạn cảnh báo",
+  tracking_restarted: "Đã theo dõi lại từ mốc mới",
+  disabled: "Đã tắt cảnh báo",
+  email_sent: "Đã gửi email thông báo",
+  suppressed: "Tạm chưa gửi email",
+  expired: "Cảnh báo đã hết hạn",
 };
 
 export default function AlertsPage() {
@@ -50,17 +99,14 @@ export default function AlertsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!auth.loading && !auth.authenticated) {
-      auth.openAuthDialog();
-    }
-  }, [auth]);
+  const [preferenceBusy, setPreferenceBusy] = useState(false);
+  const [busyActions, setBusyActions] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (!auth.authenticated) {
       setAlerts([]);
       setPreference(null);
+      setBusyActions({});
       return;
     }
 
@@ -69,15 +115,21 @@ export default function AlertsPage() {
     setError(null);
     Promise.all([fetchPriceAlerts(), fetchAlertPreferences()])
       .then(([list, pref]) => {
-        if (!alive) return;
+        if (!alive) {
+          return;
+        }
         setAlerts(list.items);
         setPreference(pref);
       })
       .catch((err) => {
-        if (alive) setError(apiErrorMessage(err));
+        if (alive) {
+          setError(apiErrorMessage(err));
+        }
       })
       .finally(() => {
-        if (alive) setLoading(false);
+        if (alive) {
+          setLoading(false);
+        }
       });
 
     return () => {
@@ -86,144 +138,366 @@ export default function AlertsPage() {
   }, [auth.authenticated]);
 
   function replaceAlert(next: PriceAlertDto) {
-    setAlerts((current) => current.map((alert) => alert.id === next.id ? next : alert));
+    setAlerts((current) => current.map((alert) => (alert.id === next.id ? next : alert)));
   }
 
-  async function runAction(label: string, action: () => Promise<PriceAlertDto>) {
+  function setActionBusy(actionKey: string, value: boolean) {
+    setBusyActions((current) => {
+      if (value) {
+        return { ...current, [actionKey]: true };
+      }
+      const { [actionKey]: _removed, ...rest } = current;
+      return rest;
+    });
+  }
+
+  async function runAction(actionKey: string, label: string, action: () => Promise<PriceAlertDto>) {
+    if (busyActions[actionKey]) {
+      return;
+    }
     setError(null);
     setSuccess(null);
+    setActionBusy(actionKey, true);
     try {
       const updated = await action();
       replaceAlert(updated);
       setSuccess(label);
     } catch (err) {
       setError(apiErrorMessage(err));
+    } finally {
+      setActionBusy(actionKey, false);
     }
   }
 
   async function togglePreference() {
-    if (!preference) return;
+    if (!preference || preferenceBusy) {
+      return;
+    }
+    setPreferenceBusy(true);
     setError(null);
     setSuccess(null);
     try {
       const next = await updateAlertPreferences(!preference.alert_emails_enabled);
       setPreference(next);
       setAlerts((current) => current.map((alert) => ({ ...alert, alert_emails_enabled: next.alert_emails_enabled })));
-      setSuccess(next.alert_emails_enabled ? "Đã bật email cảnh báo giá." : "Đã tắt email cảnh báo giá cho tài khoản.");
+      setSuccess(next.alert_emails_enabled ? "Đã bật email cảnh báo giá." : "Đã tắt email cảnh báo giá toàn tài khoản.");
     } catch (err) {
       setError(apiErrorMessage(err));
+    } finally {
+      setPreferenceBusy(false);
     }
   }
 
-  const grouped = useMemo(() => {
-    const order: PriceAlertStatus[] = ["Active", "Paused", "Auto-paused", "Expired", "Disabled"];
-    return order
-      .map((status) => ({ status, items: alerts.filter((alert) => alert.status === status) }))
-      .filter((group) => group.items.length > 0);
+  const groups = useMemo(() => {
+    return {
+      tracking: alerts.filter((alert) => GROUP_META.tracking.statuses.includes(alert.status)),
+      attention: alerts.filter((alert) => GROUP_META.attention.statuses.includes(alert.status)),
+      disabled: alerts.filter((alert) => GROUP_META.disabled.statuses.includes(alert.status)),
+    };
   }, [alerts]);
+
+  const activeCount = groups.tracking.length;
+  const attentionCount = groups.attention.length;
+  const disabledCount = groups.disabled.length;
 
   if (!auth.authenticated) {
     return (
-      <main className="mx-auto flex max-w-[900px] flex-col gap-6 px-4 py-10 sm:px-8">
-        <section className="p-6" style={{ background: C.white, border: border2, boxShadow: shadow8, fontFamily: FONT }}>
-          <div className="mb-4 flex items-center gap-3">
-            <Bell size={24} style={{ color: C.primary }} />
-            <h1 className="text-[24px] font-extrabold uppercase">Cảnh báo giá</h1>
+      <main className="mx-auto flex max-w-[980px] flex-col gap-6 px-4 py-10 sm:px-8">
+        <section className="flex flex-col gap-4 p-6" style={{ background: C.white, border: border2, boxShadow: shadow8, fontFamily: FONT }}>
+          <div className="inline-flex w-fit items-center gap-2 px-3 py-2" style={{ border: border2, background: C.primary, color: C.white, boxShadow: shadow4 }}>
+            <Bell size={18} />
+            <h1 className="text-[20px] font-black uppercase">Cảnh báo giá</h1>
           </div>
-          <p className="mb-5 text-[14px] leading-relaxed" style={{ color: C.onSurfaceVariant }}>
-            Vui lòng đăng nhập bằng email để xem, tạo và quản lý cảnh báo giá cho sách bạn quan tâm.
+          <p className="border-l-4 pl-3 text-[14px] leading-relaxed" style={{ borderColor: C.primary, color: C.onSurfaceVariant }}>
+            Đăng nhập để lưu sách bạn quan tâm, đặt mốc giá phù hợp và nhận email khi giá thuận lợi trước khi mua.
           </p>
-          <NbButton onClick={auth.openAuthDialog}>Đăng nhập / Đăng ký</NbButton>
+          <div className="flex flex-wrap items-center gap-3">
+            <NbButton onClick={auth.openAuthDialog}>Đăng nhập để theo dõi giá</NbButton>
+            <Link
+              to="/search"
+              className="px-4 py-2.5 text-[12px] font-extrabold uppercase"
+              style={{ background: C.boneWhite, color: C.onSurface, border: border2, boxShadow: shadow4, fontFamily: FONT }}
+            >
+              Tìm sách để theo dõi
+            </Link>
+          </div>
         </section>
       </main>
     );
   }
 
   return (
-    <main className="mx-auto flex max-w-[1120px] flex-col gap-7 px-4 py-10 sm:px-8">
-      <section className="flex flex-col gap-2">
-        <h1 className="text-[30px] font-extrabold uppercase leading-tight" style={{ fontFamily: FONT }}>Cảnh báo giá</h1>
-        <p className="text-[13px]" style={{ color: C.onSurfaceVariant, fontFamily: FONT }}>
-          Theo dõi bằng tài khoản {auth.user?.email}
+    <main className="mx-auto flex max-w-[1160px] flex-col gap-6 px-4 py-10 sm:px-8">
+      <section className="flex flex-col gap-4">
+        <div
+          className="inline-flex w-fit max-w-full items-center gap-2 px-4 py-3"
+          style={{ background: C.white, border: border2, boxShadow: shadow8, transform: "rotate(-1deg)", fontFamily: FONT }}
+        >
+          <Bell size={20} style={{ color: C.primary }} />
+          <h1 className="text-[28px] font-black uppercase leading-none">Cảnh báo giá</h1>
+        </div>
+        <p className="max-w-[900px] border-l-4 pl-3 text-[14px] leading-relaxed" style={{ borderColor: C.primary, color: C.onSurfaceVariant, fontFamily: FONT }}>
+          Theo dõi sách đã lưu, kiểm soát mốc giá mục tiêu và nhận email khi giá tham khảo đạt điều kiện phù hợp để bạn ra quyết định nhanh hơn.
         </p>
+        <div className="flex flex-wrap gap-2" style={{ fontFamily: FONT }}>
+          <HeaderChip label="Đang theo dõi" value={activeCount} bg={C.primary} color={C.white} />
+          <HeaderChip label="Cần chú ý" value={attentionCount} bg="#fff4cc" color="#5f4700" />
+          <HeaderChip label="Đã tắt" value={disabledCount} bg={C.boneWhite} color={C.onSurface} />
+          <HeaderTextChip label={preference?.alert_emails_enabled ?? true ? "Email đang bật" : "Email đang tắt"} />
+          <HeaderTextChip label={auth.user?.email ?? "Chưa có email"} />
+        </div>
       </section>
 
-      <PreferencePanel preference={preference} onToggle={togglePreference} />
+      <PreferencePanel preference={preference} onToggle={togglePreference} busy={preferenceBusy} />
 
-      {success && <p className="px-4 py-3 text-[13px] font-bold" style={{ border: border2, background: C.primaryFixed, color: C.primary, fontFamily: FONT }}>{success}</p>}
+      {success && (
+        <p className="px-4 py-3 text-[13px] font-bold" style={{ border: border2, background: C.primaryFixed, color: C.primary, fontFamily: FONT }}>
+          {success}
+        </p>
+      )}
       {loading && <LoadingState label="Đang tải cảnh báo giá..." />}
       {error && <ErrorState message={error} />}
-      {!loading && alerts.length === 0 && <EmptyState message="Bạn chưa có cảnh báo giá nào. Mở trang chi tiết sách để tạo cảnh báo giá mục tiêu hoặc giá thấp mới." />}
+      {!loading && alerts.length === 0 && <EmptyAlertsState />}
 
-      <div className="flex flex-col gap-8">
-        {grouped.map((group) => (
-          <section key={group.status} className="flex flex-col gap-4">
-            <div className="flex items-center justify-between gap-3 pb-3" style={{ borderBottom: `4px solid ${C.black}` }}>
-              <h2 className="text-[18px] font-extrabold uppercase" style={{ fontFamily: FONT }}>{STATUS_LABELS[group.status]}</h2>
-              <span className="px-2 py-1 text-[11px] font-bold uppercase" style={{ border: border2, background: C.white, fontFamily: FONT }}>{group.items.length} cảnh báo</span>
-            </div>
-            <div className="grid grid-cols-1 gap-4">
-              {group.items.map((alert) => (
-                <AlertCard
-                  key={alert.id}
-                  alert={alert}
-                  onAction={runAction}
-                  onUpdated={replaceAlert}
-                />
-              ))}
-            </div>
-          </section>
-        ))}
-      </div>
+      {!loading && alerts.length > 0 && (
+        <div className="flex flex-col gap-8">
+          <AlertSection
+            sectionKey="tracking"
+            alerts={groups.tracking}
+            busyActions={busyActions}
+            onAction={runAction}
+            onUpdated={replaceAlert}
+          />
+          <AlertSection
+            sectionKey="attention"
+            alerts={groups.attention}
+            busyActions={busyActions}
+            onAction={runAction}
+            onUpdated={replaceAlert}
+          />
+          <AlertSection
+            sectionKey="disabled"
+            alerts={groups.disabled}
+            busyActions={busyActions}
+            onAction={runAction}
+            onUpdated={replaceAlert}
+          />
+        </div>
+      )}
     </main>
   );
 }
 
-function PreferencePanel({ preference, onToggle }: { preference: AlertPreferenceDto | null; onToggle: () => void }) {
+function HeaderChip({ label, value, bg, color }: { label: string; value: number; bg: string; color: string }) {
+  return (
+    <span className="inline-flex items-center gap-2 px-2.5 py-1 text-[10px] font-extrabold uppercase" style={{ border: border2, background: bg, color }}>
+      {label}
+      <strong className="text-[11px]">{value}</strong>
+    </span>
+  );
+}
+
+function HeaderTextChip({ label }: { label: string }) {
+  return (
+    <span className="px-2.5 py-1 text-[10px] font-extrabold uppercase" style={{ border: border2, background: C.white, color: C.onSurface }}>
+      {label}
+    </span>
+  );
+}
+
+function PreferencePanel({
+  preference,
+  onToggle,
+  busy,
+}: {
+  preference: AlertPreferenceDto | null;
+  onToggle: () => void;
+  busy: boolean;
+}) {
   const enabled = preference?.alert_emails_enabled ?? true;
 
   return (
-    <section className="flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between" style={{ background: C.white, border: border2, boxShadow: shadow8 }}>
-      <div className="flex min-w-0 gap-3">
-        <Mail size={22} style={{ color: C.primary }} />
+    <section
+      className="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between"
+      style={{ background: C.boneWhite, border: border2, boxShadow: shadow4 }}
+    >
+      <div className="flex min-w-0 items-start gap-3">
+        <Mail size={20} style={{ color: C.primary }} />
         <div>
-          <h2 className="text-[15px] font-extrabold uppercase" style={{ fontFamily: FONT }}>Email cảnh báo toàn tài khoản</h2>
-          <p className="mt-1 text-[13px] leading-relaxed" style={{ color: C.onSurfaceVariant, fontFamily: FONT }}>
-            Tùy chọn này chỉ chặn email cảnh báo. Trạng thái từng cảnh báo vẫn giữ nguyên để bạn có thể bật email lại sau.
+          <h2 className="text-[14px] font-extrabold uppercase" style={{ fontFamily: FONT }}>
+            Email cảnh báo toàn tài khoản
+          </h2>
+          <p className="mt-1 text-[12px] leading-relaxed" style={{ color: C.onSurfaceVariant, fontFamily: FONT }}>
+            Bật hoặc tắt email chung cho mọi cảnh báo. Trạng thái theo dõi từng cảnh báo vẫn được giữ nguyên.
           </p>
         </div>
       </div>
       <button
         type="button"
         onClick={onToggle}
-        disabled={!preference}
-        className="shrink-0 px-4 py-2.5 text-[12px] font-extrabold uppercase disabled:opacity-50"
-        style={{ background: enabled ? C.primary : C.boneWhite, color: enabled ? C.white : C.onSurface, border: border2, boxShadow: shadow4, fontFamily: FONT }}
+        disabled={!preference || busy}
+        className="shrink-0 px-4 py-2 text-[11px] font-extrabold uppercase disabled:opacity-50"
+        style={{
+          background: enabled ? C.primary : C.white,
+          color: enabled ? C.white : C.onSurface,
+          border: border2,
+          boxShadow: shadow4,
+          fontFamily: FONT,
+        }}
       >
-        {enabled ? "Email đang bật" : "Email đang tắt"}
+        {busy ? "Đang cập nhật..." : enabled ? "Email đang bật" : "Email đang tắt"}
       </button>
     </section>
   );
 }
 
+function EmptyAlertsState() {
+  return (
+    <section className="flex flex-col gap-4 p-6" style={{ background: C.white, border: border2, boxShadow: shadow4, fontFamily: FONT }}>
+      <p className="text-[15px] font-extrabold uppercase" style={{ color: C.onSurface }}>
+        Bạn chưa có cảnh báo giá nào
+      </p>
+      <p className="text-[13px] leading-relaxed" style={{ color: C.onSurfaceVariant }}>
+        Mở trang chi tiết sách để đặt cảnh báo Giá mục tiêu hoặc Giá thấp mới.
+      </p>
+      <div>
+        <Link
+          to="/search"
+          className="inline-flex px-4 py-2 text-[11px] font-extrabold uppercase"
+          style={{ background: C.primary, color: C.white, border: border2, boxShadow: shadow4 }}
+        >
+          Tìm sách để theo dõi
+        </Link>
+      </div>
+    </section>
+  );
+}
+
+function AlertSection({
+  sectionKey,
+  alerts,
+  busyActions,
+  onAction,
+  onUpdated,
+}: {
+  sectionKey: AlertGroupKey;
+  alerts: PriceAlertDto[];
+  busyActions: Record<string, boolean>;
+  onAction: (actionKey: string, label: string, action: () => Promise<PriceAlertDto>) => Promise<void>;
+  onUpdated: (alert: PriceAlertDto) => void;
+}) {
+  if (alerts.length === 0) {
+    return null;
+  }
+
+  const meta = GROUP_META[sectionKey];
+
+  return (
+    <section className="flex flex-col gap-4">
+      <div className="flex flex-col gap-2 pb-3" style={{ borderBottom: meta.divider }}>
+        <div className="flex items-center gap-3">
+          <h2 className="text-[20px] font-black uppercase leading-none" style={{ fontFamily: FONT }}>
+            {meta.title}
+          </h2>
+          <span
+            className="px-2 py-1 text-[10px] font-extrabold uppercase"
+            style={{ border: border2, background: meta.countBg, color: sectionKey === "tracking" ? C.white : C.onSurface, fontFamily: FONT }}
+          >
+            {alerts.length} cảnh báo
+          </span>
+        </div>
+        <p className="text-[12px]" style={{ color: C.onSurfaceVariant, fontFamily: FONT }}>
+          {meta.description}
+        </p>
+      </div>
+      {sectionKey === "disabled" ? (
+        <div className="flex flex-col gap-2">
+          {alerts.map((alert) => (
+            <DisabledAlertRow key={alert.id} alert={alert} />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4">
+          {alerts.map((alert) => (
+            <AlertCard key={alert.id} alert={alert} busyActions={busyActions} onAction={onAction} onUpdated={onUpdated} />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function DisabledAlertRow({ alert }: { alert: PriceAlertDto }) {
+  const bookTitle = alert.book?.title ?? "Sách không còn khả dụng";
+  const latestEvent = alert.recent_events[0] ?? null;
+
+  return (
+    <article
+      className="flex flex-col gap-2 p-3 md:flex-row md:items-center md:justify-between"
+      style={{
+        background: C.surface,
+        border: `2px dashed ${C.outlineVariant}`,
+        boxShadow: shadow4,
+        fontFamily: FONT,
+      }}
+    >
+      <div className="min-w-0">
+        <p className="line-clamp-1 text-[14px] font-extrabold" style={{ color: C.onSurface }}>
+          {bookTitle}
+        </p>
+        <p className="mt-1 text-[11px]" style={{ color: C.outline }}>
+          {(alert.book?.author || "Chưa rõ tác giả") + " · " + (alert.book?.category_name || "Chưa rõ danh mục")}
+        </p>
+      </div>
+      <div className="flex flex-wrap items-center gap-2 text-[10px] font-extrabold uppercase">
+        <span className="px-2 py-1" style={{ border: `1px solid ${C.black}`, background: C.white }}>
+          {ALERT_TYPE_LABELS[alert.alert_type]}
+        </span>
+        <span className="px-2 py-1" style={{ border: `1px solid ${C.black}`, background: "#f1f2f1", color: C.outline }}>
+          Đã tắt
+        </span>
+        <span className="px-2 py-1" style={{ border: `1px solid ${C.outlineVariant}`, color: C.outline }}>
+          {latestEvent ? `${describeEvent(latestEvent)} · ${formatDateTime(latestEvent.created_at)}` : `Cập nhật ${formatDateTime(alert.updated_at)}`}
+        </span>
+        <span className="px-2 py-1" style={{ border: `1px solid ${C.outlineVariant}`, color: C.outline }}>
+          Chỉ xem lịch sử
+        </span>
+      </div>
+    </article>
+  );
+}
+
 function AlertCard({
   alert,
+  busyActions,
   onAction,
   onUpdated,
 }: {
   alert: PriceAlertDto;
-  onAction: (label: string, action: () => Promise<PriceAlertDto>) => Promise<void>;
+  busyActions: Record<string, boolean>;
+  onAction: (actionKey: string, label: string, action: () => Promise<PriceAlertDto>) => Promise<void>;
   onUpdated: (alert: PriceAlertDto) => void;
 }) {
+  const [editingTarget, setEditingTarget] = useState(false);
+  const [savingTarget, setSavingTarget] = useState(false);
   const [target, setTarget] = useState(alert.target_price?.toString() ?? "");
   const [targetError, setTargetError] = useState<string | null>(null);
-  const statusStyle = STATUS_STYLES[alert.status];
+
+  const bookTitle = alert.book?.title ?? "Sách không còn khả dụng";
+  const statusStyle = STATUS_BADGE_STYLES[alert.status];
 
   useEffect(() => {
     setTarget(alert.target_price?.toString() ?? "");
   }, [alert.target_price]);
 
-  async function updateTarget(event: FormEvent) {
+  const canEditTarget = alert.alert_type === "target_price" && ["Active", "Paused"].includes(alert.status);
+  const canPause = alert.status === "Active";
+  const canReactivate = alert.status === "Paused" || alert.status === "Auto-paused";
+  const canRenew = alert.status === "Expired";
+  const canRestart = alert.alert_type === "new_lowest_price" && (alert.status === "Active" || alert.status === "Paused");
+  const canDisable = alert.status !== "Disabled";
+
+  async function submitTargetUpdate(event: FormEvent) {
     event.preventDefault();
     setTargetError(null);
     if (!/^[0-9]+$/.test(target) || Number(target) <= 0) {
@@ -231,125 +505,330 @@ function AlertCard({
       return;
     }
 
+    setSavingTarget(true);
     try {
       const updated = await updatePriceAlertTarget(alert.id, Number(target));
       onUpdated(updated);
+      setEditingTarget(false);
     } catch (err) {
       setTargetError(apiErrorMessage(err));
+    } finally {
+      setSavingTarget(false);
     }
   }
 
-  const canUpdateTarget = alert.alert_type === "target_price" && ["Active", "Paused"].includes(alert.status);
-  const canPause = alert.status === "Active";
-  const canReactivate = alert.status === "Paused" || alert.status === "Auto-paused";
-  const canRenew = alert.status === "Expired";
-  const canRestart = alert.alert_type === "new_lowest_price" && (alert.status === "Active" || alert.status === "Paused");
-  const canDisable = alert.status !== "Disabled";
-  const bookTitle = alert.book?.title ?? "Sách không còn khả dụng";
+  const currentPrice = alert.current_lowest_eligible_price?.price ?? null;
+  const comparisonPrice = alert.comparison_price;
+  const lastNotifiedPrice = alert.last_notified_price;
 
   return (
-    <article className="grid grid-cols-1 overflow-hidden md:grid-cols-[132px_1fr]" style={{ background: C.white, border: border2, boxShadow: shadow4 }}>
-      <Link to={`/book/${alert.book_id}`} className="block min-h-[180px]" style={{ background: C.surfaceContainer, borderRight: border2 }}>
-        <CoverImage title={bookTitle} src={alert.book?.cover_image ?? null} />
-      </Link>
+    <article className="grid grid-cols-1 md:grid-cols-[136px_1fr]" style={{ background: C.white, border: border2, boxShadow: shadow4 }}>
+      <div className="relative" style={{ background: C.surfaceContainer, borderRight: border2 }}>
+        <Link to={`/book/${alert.book_id}`} className="block aspect-[3/4] min-h-[168px]">
+          <CoverImage title={bookTitle} src={alert.book?.cover_image ?? null} />
+        </Link>
+        <div className="absolute left-2 top-2 px-2 py-1 text-[9px] font-extrabold uppercase" style={{ border: `1px solid ${C.black}`, background: statusStyle.bg, color: statusStyle.color, fontFamily: FONT }}>
+          {STATUS_LABELS[alert.status]}
+        </div>
+      </div>
 
       <div className="flex min-w-0 flex-col gap-4 p-4">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
           <div className="min-w-0">
-            <div className="mb-2 flex flex-wrap gap-2">
-              <span className="px-2 py-1 text-[10px] font-extrabold uppercase" style={{ background: statusStyle.bg, color: statusStyle.color, border: `1px solid ${C.black}`, fontFamily: FONT }}>
-                {STATUS_LABELS[alert.status]}
-              </span>
-              <span className="px-2 py-1 text-[10px] font-extrabold uppercase" style={{ background: C.boneWhite, border: `1px solid ${C.black}`, fontFamily: FONT }}>
+            <div className="mb-2 flex flex-wrap items-center gap-2">
+              <span className="px-2 py-1 text-[9px] font-extrabold uppercase" style={{ border: `1px solid ${C.black}`, background: C.boneWhite, fontFamily: FONT }}>
                 {ALERT_TYPE_LABELS[alert.alert_type]}
               </span>
               {!alert.alert_emails_enabled && (
-                <span className="px-2 py-1 text-[10px] font-extrabold uppercase" style={{ background: "#fff1f1", color: C.dealRed, border: `1px solid ${C.black}`, fontFamily: FONT }}>
+                <span className="px-2 py-1 text-[9px] font-extrabold uppercase" style={{ border: `1px solid ${C.black}`, background: "#fff1f1", color: C.dealRed, fontFamily: FONT }}>
                   Email đang tắt
                 </span>
               )}
             </div>
-            <Link to={`/book/${alert.book_id}`} className="line-clamp-2 text-[17px] font-extrabold" style={{ color: C.onSurface, fontFamily: FONT }}>{bookTitle}</Link>
+            <Link to={`/book/${alert.book_id}`} className="line-clamp-2 text-[18px] font-black" style={{ color: C.onSurface, fontFamily: FONT }}>
+              {bookTitle}
+            </Link>
             <p className="mt-1 text-[12px]" style={{ color: C.onSurfaceVariant, fontFamily: FONT }}>
-              {alert.book?.author ?? "Chưa rõ tác giả"} / {alert.book?.category_name ?? "Chưa rõ danh mục"}
+              {alert.book?.author ?? "Chưa rõ tác giả"}
+              {alert.book?.publisher ? ` · ${alert.book.publisher}` : ""}
+            </p>
+            <p className="text-[11px]" style={{ color: C.outline, fontFamily: FONT }}>
+              {alert.book?.category_name ?? "Chưa rõ danh mục"}
             </p>
           </div>
-          <p className="text-[12px] font-bold" style={{ color: C.onSurfaceVariant, fontFamily: FONT }}>
-            Hết hạn: {formatDateTime(alert.expires_at)}
-          </p>
+          <div className="text-right text-[11px] font-bold" style={{ color: C.outline, fontFamily: FONT }}>
+            <p>Tạo: {formatDateTime(alert.created_at)}</p>
+            <p>Hết hạn: {formatDateTime(alert.expires_at)}</p>
+          </div>
         </div>
 
-        <dl className="grid grid-cols-2 gap-2 lg:grid-cols-4">
-          <Metric label="Giá mục tiêu" value={alert.target_price !== null ? formatVnd(alert.target_price) : "Không áp dụng"} />
-          <Metric label="Mốc theo dõi" value={alert.baseline_pending ? "Chờ giá đủ điều kiện" : alert.baseline_price !== null ? formatVnd(alert.baseline_price) : "Không áp dụng"} />
-          <Metric label="Giá so sánh" value={alert.comparison_price !== null ? formatVnd(alert.comparison_price) : "Chưa có"} />
-          <Metric label="Giá hiện tại" value={alert.current_lowest_eligible_price ? `${formatVnd(alert.current_lowest_eligible_price.price)} / ${alert.current_lowest_eligible_price.offer_count} ưu đãi` : "Chưa có giá đủ điều kiện"} />
-          <Metric label="Đã gửi" value={`${alert.notification_count}/3 lần`} />
-          <Metric label="Giá đã báo" value={alert.last_notified_price !== null ? formatVnd(alert.last_notified_price) : "Chưa có"} />
-        </dl>
+        {alert.alert_type === "target_price" ? (
+          <TargetPriceBlocks alert={alert} />
+        ) : (
+          <NewLowestBlocks alert={alert} />
+        )}
 
-        {canUpdateTarget && (
-          <form onSubmit={updateTarget} className="flex flex-col gap-2 sm:flex-row sm:items-start">
-            <label className="flex min-w-0 flex-1 flex-col gap-1 text-[11px] font-extrabold uppercase" style={{ color: C.onSurfaceVariant, fontFamily: FONT }}>
-              Cập nhật giá mục tiêu
+        {editingTarget && canEditTarget && (
+          <form onSubmit={submitTargetUpdate} className="flex flex-col gap-2 sm:flex-row sm:items-end" style={{ fontFamily: FONT }}>
+            <label className="flex min-w-0 flex-1 flex-col gap-1 text-[11px] font-extrabold uppercase" style={{ color: C.outline }}>
+              Giá mục tiêu VND
               <input
                 value={target}
                 onChange={(event) => setTarget(event.target.value.replace(/\D/g, ""))}
                 inputMode="numeric"
                 className="px-3 py-2 text-sm normal-case outline-none"
-                style={{ border: border2, color: C.onSurface, fontFamily: FONT }}
+                style={{ border: border2, color: C.onSurface }}
               />
             </label>
-            <button type="submit" className="flex items-center justify-center gap-2 px-3 py-2 text-[11px] font-extrabold uppercase sm:mt-[19px]" style={{ background: C.primary, color: C.white, border: border2, boxShadow: shadow4, fontFamily: FONT }}>
-              <Save size={13} /> Lưu giá
+            <button
+              type="submit"
+              disabled={savingTarget}
+              className="flex items-center justify-center gap-1.5 px-3 py-2 text-[11px] font-extrabold uppercase disabled:opacity-50"
+              style={{ background: C.primary, color: C.white, border: border2, boxShadow: shadow4 }}
+            >
+              <Save size={13} />
+              {savingTarget ? "Đang lưu..." : "Lưu giá"}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setEditingTarget(false);
+                setTargetError(null);
+                setTarget(alert.target_price?.toString() ?? "");
+              }}
+              className="px-3 py-2 text-[11px] font-extrabold uppercase"
+              style={{ background: C.boneWhite, color: C.onSurface, border: border2 }}
+            >
+              Hủy
             </button>
           </form>
         )}
-        {targetError && <p role="alert" className="text-[12px] font-bold" style={{ color: C.dealRed, fontFamily: FONT }}>{targetError}</p>}
+
+        {targetError && (
+          <p role="alert" className="text-[12px] font-bold" style={{ color: C.dealRed, fontFamily: FONT }}>
+            {targetError}
+          </p>
+        )}
 
         <div className="flex flex-wrap gap-2">
-          {canPause && <ActionButton icon={<Pause size={13} />} label="Tạm dừng" onClick={() => onAction("Đã tạm dừng cảnh báo.", () => pausePriceAlert(alert.id))} />}
-          {canReactivate && <ActionButton icon={<Play size={13} />} label="Kích hoạt lại" onClick={() => onAction("Đã kích hoạt lại cảnh báo.", () => reactivatePriceAlert(alert.id))} />}
-          {canRenew && <ActionButton icon={<RefreshCw size={13} />} label="Gia hạn" onClick={() => onAction("Đã gia hạn cảnh báo.", () => renewPriceAlert(alert.id))} />}
-          {canRestart && <ActionButton icon={<RotateCcw size={13} />} label="Theo dõi lại" onClick={() => onAction("Đã bắt đầu theo dõi lại từ giá hiện tại.", () => restartPriceAlertTracking(alert.id))} />}
-          {canDisable && <ActionButton icon={<Ban size={13} />} label="Tắt cảnh báo" danger onClick={() => onAction("Đã tắt cảnh báo.", () => disablePriceAlert(alert.id))} />}
-          {alert.status === "Disabled" && <span className="px-3 py-2 text-[11px] font-extrabold uppercase" style={{ border: `1px solid ${C.outlineVariant}`, color: C.outline, fontFamily: FONT }}>Chỉ xem lịch sử</span>}
-          {alert.status === "Expired" && <Link to={`/book/${alert.book_id}`} className="px-3 py-2 text-[11px] font-extrabold uppercase" style={{ border: border2, background: C.boneWhite, color: C.onSurface, fontFamily: FONT }}>Tạo cảnh báo mới</Link>}
+          {canEditTarget && !editingTarget && (
+            <ActionButton icon={<Pencil size={13} />} label="Sửa" onClick={() => setEditingTarget(true)} />
+          )}
+          {canPause && (
+            <ActionButton
+              icon={<Pause size={13} />}
+              label="Tạm dừng"
+              disabled={Boolean(busyActions[`${alert.id}:pause`])}
+              onClick={() => onAction(`${alert.id}:pause`, "Đã tạm dừng cảnh báo.", () => pausePriceAlert(alert.id))}
+            />
+          )}
+          {canReactivate && (
+            <ActionButton
+              icon={<Play size={13} />}
+              label="Tiếp tục"
+              disabled={Boolean(busyActions[`${alert.id}:reactivate`])}
+              onClick={() => onAction(`${alert.id}:reactivate`, "Đã tiếp tục theo dõi cảnh báo.", () => reactivatePriceAlert(alert.id))}
+            />
+          )}
+          {canRenew && (
+            <ActionButton
+              icon={<RefreshCw size={13} />}
+              label="Gia hạn"
+              disabled={Boolean(busyActions[`${alert.id}:renew`])}
+              onClick={() => onAction(`${alert.id}:renew`, "Đã gia hạn cảnh báo.", () => renewPriceAlert(alert.id))}
+            />
+          )}
+          {canRestart && (
+            <ActionButton
+              icon={<RotateCcw size={13} />}
+              label="Theo dõi lại"
+              disabled={Boolean(busyActions[`${alert.id}:restart`])}
+              onClick={() =>
+                onAction(`${alert.id}:restart`, "Đã bắt đầu theo dõi lại từ giá hiện tại.", () => restartPriceAlertTracking(alert.id))
+              }
+            />
+          )}
+          {canDisable && (
+            <ActionButton
+              icon={<Ban size={13} />}
+              label="Tắt"
+              danger
+              disabled={Boolean(busyActions[`${alert.id}:disable`])}
+              onClick={() => onAction(`${alert.id}:disable`, "Đã tắt cảnh báo.", () => disablePriceAlert(alert.id))}
+            />
+          )}
+          {alert.status === "Expired" && (
+            <Link
+              to={`/book/${alert.book_id}`}
+              className="px-3 py-2 text-[11px] font-extrabold uppercase"
+              style={{ border: border2, background: C.white, color: C.onSurface, fontFamily: FONT }}
+            >
+              Xem sách
+            </Link>
+          )}
         </div>
 
-        {alert.recent_events.length > 0 && (
-          <div className="pt-3" style={{ borderTop: `1px solid ${C.outlineVariant}` }}>
-            <p className="mb-2 text-[10px] font-extrabold uppercase" style={{ color: C.outline, fontFamily: FONT }}>Lịch sử gần đây</p>
-            <div className="flex flex-wrap gap-2">
-              {alert.recent_events.slice(0, 3).map((event) => (
-                <span key={event.id} className="px-2 py-1 text-[10px] font-bold" style={{ background: C.surfaceLow, border: `1px solid ${C.outlineVariant}`, color: C.onSurfaceVariant, fontFamily: FONT }}>
-                  {event.event_type} / {formatDateTime(event.created_at)}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
+        <SecondaryDetails alert={alert} comparisonPrice={comparisonPrice} lastNotifiedPrice={lastNotifiedPrice} currentPrice={currentPrice} />
       </div>
     </article>
   );
 }
 
-function Metric({ label, value }: { label: string; value: string }) {
+function TargetPriceBlocks({ alert }: { alert: PriceAlertDto }) {
+  const targetPrice = alert.target_price;
+  const currentPrice = alert.current_lowest_eligible_price?.price ?? null;
+
+  let condition = "Đang chờ giá";
+  if (targetPrice !== null && currentPrice !== null) {
+    if (currentPrice <= targetPrice) {
+      condition = "Đã chạm mục tiêu";
+    } else {
+      condition = `Còn ${formatVnd(currentPrice - targetPrice)}`;
+    }
+  }
+
   return (
-    <div className="min-w-0 p-3" style={{ background: C.surfaceLow, border: `1px solid ${C.outlineVariant}` }}>
-      <dt className="text-[10px] font-extrabold uppercase" style={{ color: C.outline, fontFamily: FONT }}>{label}</dt>
-      <dd className="mt-1 text-[12px] font-bold leading-snug" style={{ color: C.onSurface, fontFamily: FONT, overflowWrap: "anywhere" }}>{value}</dd>
+    <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
+      <PriceBlock label="Giá mục tiêu" value={targetPrice !== null ? formatVnd(targetPrice) : "Chưa đặt"} bg={C.primary} color={C.white} />
+      <PriceBlock
+        label="Giá hiện tại"
+        value={currentPrice !== null ? `${formatVnd(currentPrice)} / ${alert.current_lowest_eligible_price?.offer_count ?? 0} ưu đãi` : "Chưa có giá đủ điều kiện"}
+        bg={C.boneWhite}
+        color={C.onSurface}
+      />
+      <PriceBlock label="Điều kiện mua" value={condition} bg={C.white} color={C.onSurface} />
     </div>
   );
 }
 
-function ActionButton({ icon, label, danger = false, onClick }: { icon: ReactNode; label: string; danger?: boolean; onClick: () => void }) {
+function NewLowestBlocks({ alert }: { alert: PriceAlertDto }) {
+  const baselinePrice = alert.baseline_price;
+  const currentPrice = alert.current_lowest_eligible_price?.price ?? null;
+
+  let condition = "Chưa thấp hơn mốc";
+  if (alert.baseline_pending) {
+    condition = "Đang chờ mốc";
+  } else if (baselinePrice !== null && currentPrice !== null && currentPrice < baselinePrice) {
+    condition = `Giảm ${formatVnd(baselinePrice - currentPrice)}`;
+  }
+
+  return (
+    <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
+      <PriceBlock
+        label="Mốc theo dõi"
+        value={alert.baseline_pending ? "Chờ giá đủ điều kiện" : baselinePrice !== null ? formatVnd(baselinePrice) : "Chờ giá đủ điều kiện"}
+        bg={C.primary}
+        color={C.white}
+      />
+      <PriceBlock
+        label="Giá hiện tại"
+        value={currentPrice !== null ? `${formatVnd(currentPrice)} / ${alert.current_lowest_eligible_price?.offer_count ?? 0} ưu đãi` : "Chưa có giá đủ điều kiện"}
+        bg={C.boneWhite}
+        color={C.onSurface}
+      />
+      <PriceBlock label="Điều kiện mua" value={condition} bg={C.white} color={C.onSurface} />
+    </div>
+  );
+}
+
+function PriceBlock({ label, value, bg, color }: { label: string; value: string; bg: string; color: string }) {
+  return (
+    <div className="min-w-0 p-3" style={{ background: bg, border: `1px solid ${C.black}`, fontFamily: FONT }}>
+      <p className="text-[10px] font-extrabold uppercase" style={{ color }}>
+        {label}
+      </p>
+      <p className="mt-1 text-[14px] font-black leading-snug" style={{ color, overflowWrap: "anywhere" }}>
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function SecondaryDetails({
+  alert,
+  comparisonPrice,
+  lastNotifiedPrice,
+  currentPrice,
+}: {
+  alert: PriceAlertDto;
+  comparisonPrice: number | null;
+  lastNotifiedPrice: number | null;
+  currentPrice: number | null;
+}) {
+  return (
+    <div className="flex flex-col gap-2 pt-3" style={{ borderTop: `1px solid ${C.outlineVariant}`, fontFamily: FONT }}>
+      <div className="flex flex-wrap gap-2 text-[10px] font-bold" style={{ color: C.outline }}>
+        <SecondaryChip label="Giá so sánh" value={comparisonPrice !== null ? formatVnd(comparisonPrice) : "Chưa có"} />
+        <SecondaryChip label="Giá đã báo" value={lastNotifiedPrice !== null ? formatVnd(lastNotifiedPrice) : "Chưa có"} />
+        <SecondaryChip label="Số lần gửi" value={`${alert.notification_count}/3`} />
+        <SecondaryChip label="Mốc hiện tại" value={currentPrice !== null ? formatVnd(currentPrice) : "Chưa có"} />
+      </div>
+
+      {alert.recent_events.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {alert.recent_events.slice(0, 3).map((event) => (
+            <span
+              key={event.id}
+              className="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-bold"
+              style={{ background: C.surfaceLow, border: `1px solid ${C.outlineVariant}`, color: C.onSurfaceVariant }}
+            >
+              <Clock3 size={11} />
+              {describeEvent(event)} · {formatDateTime(event.created_at)}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SecondaryChip({ label, value }: { label: string; value: string }) {
+  return (
+    <span className="px-2 py-1" style={{ border: `1px solid ${C.outlineVariant}`, background: C.surfaceLow }}>
+      {label}: {value}
+    </span>
+  );
+}
+
+function describeEvent(event: PriceAlertEventDto): string {
+  const mapped = EVENT_LABELS[event.event_type];
+  if (mapped) {
+    return mapped;
+  }
+
+  if (event.new_status) {
+    return `Chuyển trạng thái ${STATUS_LABELS[event.new_status]}`;
+  }
+
+  return "Đã cập nhật cảnh báo";
+}
+
+function ActionButton({
+  icon,
+  label,
+  danger = false,
+  disabled = false,
+  onClick,
+}: {
+  icon: ReactNode;
+  label: string;
+  danger?: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+}) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="flex items-center gap-1.5 px-3 py-2 text-[11px] font-extrabold uppercase"
-      style={{ background: danger ? "#fff1f1" : C.boneWhite, color: danger ? C.dealRed : C.onSurface, border: border2, fontFamily: FONT }}
+      disabled={disabled}
+      className="flex items-center gap-1.5 px-3 py-2 text-[11px] font-extrabold uppercase disabled:opacity-50"
+      style={{
+        background: danger ? "#fff1f1" : C.boneWhite,
+        color: danger ? C.dealRed : C.onSurface,
+        border: border2,
+        boxShadow: shadow4,
+        fontFamily: FONT,
+      }}
     >
       {icon}
       {label}

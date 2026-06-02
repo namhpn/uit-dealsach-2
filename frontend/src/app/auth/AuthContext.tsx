@@ -67,7 +67,7 @@ function AuthDialog({ onClose, onVerified }: { onClose: () => void; onVerified: 
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [step, setStep] = useState<"email" | "code">("email");
-  const [message, setMessage] = useState("DealSach gửi mã xác minh qua email. Không cần mật khẩu.");
+  const [message, setMessage] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [cooldown, setCooldown] = useState(0);
@@ -171,9 +171,11 @@ function AuthDialog({ onClose, onVerified }: { onClose: () => void; onVerified: 
                 </label>
               )}
 
-              <p className="text-[12px] leading-relaxed" style={{ color: C.onSurfaceVariant }}>
-                {message}
-              </p>
+              {message && (
+                <p className="text-[12px] leading-relaxed" style={{ color: C.onSurfaceVariant }}>
+                  {message}
+                </p>
+              )}
               {error && (
                 <p className="text-[12px] font-bold leading-relaxed" style={{ color: C.secondary }}>
                   {error}
@@ -181,7 +183,7 @@ function AuthDialog({ onClose, onVerified }: { onClose: () => void; onVerified: 
               )}
 
               <div className="flex flex-wrap items-center gap-2">
-                <NbButton disabled={submitting || (step === "email" && cooldown > 0)} small={false} style={{ padding: "10px 16px", fontSize: 12 }}>
+                <NbButton type="submit" disabled={submitting || (step === "email" && cooldown > 0)} small={false} style={{ padding: "10px 16px", fontSize: 12 }}>
                   {submitting ? "Đang xử lý..." : step === "email" ? "Tiếp tục" : "Xác minh & đăng nhập"}
                 </NbButton>
 

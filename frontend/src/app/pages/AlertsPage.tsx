@@ -21,7 +21,7 @@ import {
   updatePriceAlertTarget,
 } from "../api";
 import { useAuth } from "../auth";
-import { C, CoverImage, ErrorState, FONT, LoadingState, NbButton, PageIntro, PageShell, PromptCard, StampHeading, StatusChip, border2, shadow4, shadow8 } from "../shared";
+import { C, CoverImage, ErrorState, FONT, LoadingState, NbButton, PageIntro, PageShell, PromptCard, StampHeading, border2, shadow4, shadow8 } from "../shared";
 
 const ALERT_TYPE_LABELS: Record<PriceAlertDto["alert_type"], string> = {
   target_price: "Giá mục tiêu",
@@ -196,10 +196,6 @@ export default function AlertsPage() {
     };
   }, [alerts]);
 
-  const activeCount = groups.tracking.length;
-  const attentionCount = groups.attention.length;
-  const disabledCount = groups.disabled.length;
-
   if (!auth.authenticated) {
     return (
       <PageShell>
@@ -219,13 +215,6 @@ export default function AlertsPage() {
       <section className="flex flex-col gap-4">
         <StampHeading title="Cảnh báo giá" icon={<Bell size={20} style={{ color: C.primary }} />} />
         <PageIntro>Theo dõi sách đã lưu, kiểm soát mốc giá mục tiêu và nhận email khi giá tham khảo đạt điều kiện phù hợp để bạn ra quyết định nhanh hơn.</PageIntro>
-        <div className="flex flex-wrap gap-2" style={{ fontFamily: FONT }}>
-          <StatusChip label={`Đang theo dõi: ${activeCount}`} variant="primary" />
-          <StatusChip label={`Cần chú ý: ${attentionCount}`} variant="warning" />
-          <StatusChip label={`Đã tắt: ${disabledCount}`} variant="muted" />
-          <StatusChip label={preference?.alert_emails_enabled ?? true ? "Email đang bật" : "Email đang tắt"} variant={(preference?.alert_emails_enabled ?? true) ? "success" : "muted"} />
-          <StatusChip label={auth.user?.email ?? "Chưa có email"} />
-        </div>
       </section>
 
       <PreferencePanel preference={preference} onToggle={togglePreference} busy={preferenceBusy} />
@@ -288,10 +277,10 @@ function PreferencePanel({
         <Mail size={20} style={{ color: C.primary }} />
         <div>
           <h2 className="text-[14px] font-extrabold uppercase" style={{ fontFamily: FONT }}>
-            Email cảnh báo toàn tài khoản
+            Email cảnh báo giá từ DealSach
           </h2>
           <p className="mt-1 text-[12px] leading-relaxed" style={{ color: C.onSurfaceVariant, fontFamily: FONT }}>
-            Bật hoặc tắt email chung cho mọi cảnh báo. Trạng thái theo dõi từng cảnh báo vẫn được giữ nguyên.
+            Bạn có thể bật hoặc tắt email cảnh báo giá từ DealSach.
           </p>
         </div>
       </div>
@@ -480,9 +469,7 @@ function AlertCard({
     }
   }
 
-  const currentPrice = alert.current_lowest_eligible_price?.price ?? null;
-  const comparisonPrice = alert.comparison_price;
-  const lastNotifiedPrice = alert.last_notified_price;
+  const latestEvent = alert.recent_events[0] ?? null;
 
   return (
     <article className="grid grid-cols-1 md:grid-cols-[136px_1fr]" style={{ background: C.white, border: border2, boxShadow: shadow4 }}>
@@ -529,6 +516,13 @@ function AlertCard({
           <TargetPriceBlocks alert={alert} />
         ) : (
           <NewLowestBlocks alert={alert} />
+        )}
+
+        {latestEvent && (
+          <p className="inline-flex w-fit items-center gap-1.5 text-[11px] font-bold" style={{ color: C.onSurfaceVariant, fontFamily: FONT }}>
+            <Clock3 size={12} />
+            Cập nhật gần nhất: {describeEvent(latestEvent)} · {formatDateTime(latestEvent.created_at)}
+          </p>
         )}
 
         {editingTarget && canEditTarget && (
@@ -631,7 +625,6 @@ function AlertCard({
           )}
         </div>
 
-        <SecondaryDetails alert={alert} comparisonPrice={comparisonPrice} lastNotifiedPrice={lastNotifiedPrice} currentPrice={currentPrice} />
       </div>
     </article>
   );
@@ -704,52 +697,6 @@ function PriceBlock({ label, value, bg, color }: { label: string; value: string;
         {value}
       </p>
     </div>
-  );
-}
-
-function SecondaryDetails({
-  alert,
-  comparisonPrice,
-  lastNotifiedPrice,
-  currentPrice,
-}: {
-  alert: PriceAlertDto;
-  comparisonPrice: number | null;
-  lastNotifiedPrice: number | null;
-  currentPrice: number | null;
-}) {
-  return (
-    <div className="flex flex-col gap-2 pt-3" style={{ borderTop: `1px solid ${C.outlineVariant}`, fontFamily: FONT }}>
-      <div className="flex flex-wrap gap-2 text-[10px] font-bold" style={{ color: C.outline }}>
-        <SecondaryChip label="Giá so sánh" value={comparisonPrice !== null ? formatVnd(comparisonPrice) : "Chưa có"} />
-        <SecondaryChip label="Giá đã báo" value={lastNotifiedPrice !== null ? formatVnd(lastNotifiedPrice) : "Chưa có"} />
-        <SecondaryChip label="Số lần gửi" value={`${alert.notification_count}/3`} />
-        <SecondaryChip label="Mốc hiện tại" value={currentPrice !== null ? formatVnd(currentPrice) : "Chưa có"} />
-      </div>
-
-      {alert.recent_events.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {alert.recent_events.slice(0, 3).map((event) => (
-            <span
-              key={event.id}
-              className="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-bold"
-              style={{ background: C.surfaceLow, border: `1px solid ${C.outlineVariant}`, color: C.onSurfaceVariant }}
-            >
-              <Clock3 size={11} />
-              {describeEvent(event)} · {formatDateTime(event.created_at)}
-            </span>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function SecondaryChip({ label, value }: { label: string; value: string }) {
-  return (
-    <span className="px-2 py-1" style={{ border: `1px solid ${C.outlineVariant}`, background: C.surfaceLow }}>
-      {label}: {value}
-    </span>
   );
 }
 

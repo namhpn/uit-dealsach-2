@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
-import { ArrowRight, Heart, LayoutList, Trash2 } from "lucide-react";
+import { ArrowRight, Heart, Trash2 } from "lucide-react";
 import { apiErrorMessage, BookCardDto, fetchWishlist, formatVnd, removeWishlistBook } from "../api";
 import { useAuth } from "../auth";
 import { C, CoverImage, EmptyState, ErrorState, FONT, LoadingState, NbButton, PageIntro, PageShell, PriceDisclaimer, PromptCard, SectionHeader, StampHeading, border2, shadow4 } from "../shared";
@@ -76,28 +76,22 @@ export default function WishlistPage() {
 
   return (
     <PageShell>
-      <section className="flex flex-col gap-6 pb-6" style={{ borderBottom: border2 }}>
+      <section className="flex flex-col gap-4">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div className="flex max-w-[760px] flex-col gap-4">
             <StampHeading title="Danh sách yêu thích" icon={<Heart size={20} style={{ color: C.primary }} />} />
             <PageIntro>Theo dõi những đầu sách bạn quan tâm để quay lại nhanh khi cần so sánh giá và nơi bán.</PageIntro>
-            {auth.user?.email && (
-              <p className="pl-4 text-[11px] font-bold uppercase tracking-wide" style={{ color: C.outline, fontFamily: FONT }}>
-                Tài khoản: {auth.user.email}
-              </p>
-            )}
-          </div>
-          <div className="flex w-fit items-center gap-2 px-4 py-3" style={{ border: border2, background: C.boneWhite, boxShadow: shadow4 }}>
-            <LayoutList size={16} style={{ color: C.primary }} />
-            <span className="text-[13px] font-extrabold uppercase tracking-wide" style={{ fontFamily: FONT }}>
-              {items.length} cuốn đã lưu
-            </span>
           </div>
         </div>
       </section>
 
       <section className="pb-2">
-        <SectionHeader title="Đang theo dõi" count={items.length} />
+        <SectionHeader
+          title="Đang theo dõi"
+          count={items.length}
+          countLabel={`${items.length} cuốn đã lưu`}
+          description="Theo dõi những đầu sách bạn quan tâm để mua nhanh khi giá và nơi bán phù hợp."
+        />
       </section>
 
       {loading && <LoadingState label="Đang tải danh sách yêu thích..." />}

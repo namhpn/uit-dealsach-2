@@ -305,17 +305,19 @@ export function StatusChip({ label, variant = "neutral" }: { label: string; vari
 export function SectionHeader({
   title,
   count,
+  countLabel,
   description,
 }: {
   title: string;
   count?: number | null;
+  countLabel?: string;
   description?: string;
 }) {
   return (
     <div className="pb-3" style={{ borderBottom: `4px solid ${C.black}` }}>
       <div className="flex flex-wrap items-center gap-2">
         <h2 className="text-[18px] font-extrabold uppercase">{title}</h2>
-        {typeof count === "number" && <StatusChip label={String(count)} variant="primary" />}
+        {typeof count === "number" && <StatusChip label={countLabel ?? String(count)} variant="primary" />}
       </div>
       {description && (
         <p className="mt-1 text-[13px] leading-relaxed" style={{ color: C.onSurfaceVariant }}>

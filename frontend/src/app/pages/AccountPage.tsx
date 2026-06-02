@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Bell, LogOut, Mail, ShieldCheck, User } from "lucide-react";
 import { AlertPreferenceDto, apiErrorMessage, fetchAlertPreferences, updateAlertPreferences } from "../api";
 import { useAuth } from "../auth";
-import { C, ErrorState, LoadingState, NbButton, PageIntro, PageShell, PromptCard, StampHeading, StatusChip, border2, shadow8 } from "../shared";
+import { C, ErrorState, LoadingState, NbButton, PageIntro, PageShell, PromptCard, StampHeading, border2, shadow8 } from "../shared";
 
 const ROLE_LABELS: Record<string, string> = {
   registered: "Người dùng",
@@ -99,12 +99,6 @@ export default function AccountPage() {
       <section className="flex flex-col gap-3">
         <StampHeading title="Tài khoản" icon={<User size={20} style={{ color: C.primary }} />} />
         <PageIntro>Quản lý phiên đăng nhập, địa chỉ email xác minh và trạng thái email cảnh báo giá cho tài khoản DealSach.</PageIntro>
-        <div className="flex flex-wrap gap-2">
-          {auth.user?.email && <StatusChip label={auth.user.email} variant="primary" />}
-          <StatusChip label={`Vai trò: ${ROLE_LABELS[auth.user?.role ?? ""] ?? auth.user?.role ?? "-"}`} />
-          <StatusChip label={`Trạng thái: ${STATUS_LABELS[auth.user?.status ?? ""] ?? auth.user?.status ?? "-"}`} variant={auth.user?.status === "active" ? "success" : "warning"} />
-          <StatusChip label={enabled ? "Email cảnh báo: Bật" : "Email cảnh báo: Tắt"} variant={enabled ? "success" : "muted"} />
-        </div>
       </section>
 
       {loading && <LoadingState label="Đang tải cài đặt tài khoản..." />}
@@ -145,9 +139,9 @@ export default function AccountPage() {
         <div className="flex min-w-0 gap-3">
           {enabled ? <Mail size={22} style={{ color: C.primary }} /> : <Bell size={22} style={{ color: C.dealRed }} />}
           <div>
-            <h2 className="text-[15px] font-extrabold uppercase">Email cảnh báo giá</h2>
+            <h2 className="text-[15px] font-extrabold uppercase">Email cảnh báo giá từ DealSach</h2>
             <p className="mt-1 text-[13px] leading-relaxed" style={{ color: C.onSurfaceVariant }}>
-              Khi tắt email cảnh báo, DealSach không gửi email mới nhưng trạng thái từng cảnh báo vẫn giữ nguyên. Bạn có thể bật lại để theo dõi từ chu kỳ giá sau.
+              Bạn có thể bật hoặc tắt email cảnh báo giá từ DealSach.
             </p>
           </div>
         </div>

@@ -47,18 +47,18 @@ export default function AdminUsersPage() {
           <AdminTableShell>
           <table className="w-full border-collapse text-[13px]">
             <thead style={{ background: C.boneWhite }}>
-              <tr>{["Email", "Vai trò", "Trạng thái", "Email cảnh báo", "Yêu thích", "Cảnh báo", "Thao tác"].map((h) => <th key={h} className="p-3 text-left uppercase" style={{ border: border2 }}>{h}</th>)}</tr>
+              <tr>{["Email", "Vai trò", "Trạng thái", "Email Preference", "Yêu thích", "Số cảnh báo giá", "Thao tác"].map((h) => <th key={h} className="p-3 text-left uppercase" style={{ borderBottom: border2 }}>{h}</th>)}</tr>
             </thead>
             <tbody>
               {items.map((user) => (
                 <tr key={user.id}>
-                  <td className="p-3 font-bold" style={{ border: border2 }}>{user.email}</td>
-                  <td className="p-3" style={{ border: border2 }}>{user.role === "admin" ? "Admin" : "Đã đăng ký"}</td>
-                  <td className="p-3" style={{ border: border2 }}>{user.status === "active" ? "Hoạt động" : "Vô hiệu hóa"}</td>
-                  <td className="p-3" style={{ border: border2 }}>{user.alert_email_enabled ? "Bật" : "Tắt"}</td>
-                  <td className="p-3" style={{ border: border2 }}>{user.wishlist_count}</td>
-                  <td className="p-3" style={{ border: border2 }}>{user.active_alert_count}/{user.alert_count}</td>
-                  <td className="p-3" style={{ border: border2 }}>
+                  <td className="p-3 font-bold" style={{ borderTop: `1px solid ${C.outlineVariant}` }}>{user.email}</td>
+                  <td className="p-3" style={{ borderTop: `1px solid ${C.outlineVariant}` }}>{user.role === "admin" ? "Quản trị viên" : "Người dùng"}</td>
+                  <td className="p-3" style={{ borderTop: `1px solid ${C.outlineVariant}` }}>{user.status === "active" ? "Hoạt động" : "Vô hiệu hóa"}</td>
+                  <td className="p-3" style={{ borderTop: `1px solid ${C.outlineVariant}` }}>{user.alert_email_enabled ? "Bật" : "Tắt"}</td>
+                  <td className="p-3" style={{ borderTop: `1px solid ${C.outlineVariant}` }}>{user.wishlist_count}</td>
+                  <td className="p-3" style={{ borderTop: `1px solid ${C.outlineVariant}` }}>{user.active_alert_count} đang theo dõi / {user.alert_count} tổng</td>
+                  <td className="p-3" style={{ borderTop: `1px solid ${C.outlineVariant}` }}>
                     <NbButton small variant={user.status === "active" ? "secondary" : "primary"} onClick={() => change(user)}>
                       {user.status === "active" ? "Vô hiệu hóa" : "Kích hoạt"}
                     </NbButton>

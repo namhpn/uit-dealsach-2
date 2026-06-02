@@ -52,18 +52,18 @@ export default function AdminAlertsPage() {
           <AdminTableShell>
           <table className="w-full border-collapse text-[13px]">
             <thead style={{ background: C.boneWhite }}>
-              <tr>{["Người dùng", "Sách", "Loại", "Trạng thái", "Email", "Sự kiện gần nhất", "Thao tác"].map((h) => <th key={h} className="p-3 text-left uppercase" style={{ border: border2 }}>{h}</th>)}</tr>
+              <tr>{["Người dùng", "Sách", "Loại", "Trạng thái", "Số email đã gửi", "Logs", "Thao tác"].map((h) => <th key={h} className="p-3 text-left uppercase" style={{ borderBottom: border2 }}>{h}</th>)}</tr>
             </thead>
             <tbody>
               {items.map((alert) => (
                 <tr key={alert.id}>
-                  <td className="p-3" style={{ border: border2 }}>{alert.user_email}</td>
-                  <td className="p-3 font-bold" style={{ border: border2 }}>{alert.book_title}</td>
-                  <td className="p-3" style={{ border: border2 }}>{alert.alert_type === "target_price" ? `Giá mục tiêu ${alert.target_price ? formatVnd(alert.target_price) : ""}` : "Giá thấp mới"}</td>
-                  <td className="p-3" style={{ border: border2 }}>{ADMIN_ALERT_STATUS_LABELS[alert.status] ?? alert.status}</td>
-                  <td className="p-3" style={{ border: border2 }}>{alert.notification_count}</td>
-                  <td className="p-3" style={{ border: border2 }}>{alert.recent_events[0] ? `${ADMIN_ALERT_EVENT_LABELS[alert.recent_events[0].event_type] ?? alert.recent_events[0].event_type} - ${formatDateTime(alert.recent_events[0].created_at)}` : "Chưa có"}</td>
-                  <td className="p-3" style={{ border: border2 }}>{alert.status !== "Disabled" && <NbButton small variant="secondary" onClick={() => disable(alert)}>Tắt</NbButton>}</td>
+                  <td className="p-3" style={{ borderTop: `1px solid ${C.outlineVariant}` }}>{alert.user_email}</td>
+                  <td className="p-3 font-bold" style={{ borderTop: `1px solid ${C.outlineVariant}` }}>{alert.book_title}</td>
+                  <td className="p-3" style={{ borderTop: `1px solid ${C.outlineVariant}` }}>{alert.alert_type === "target_price" ? `Giá mục tiêu ${alert.target_price ? formatVnd(alert.target_price) : ""}` : "Giá thấp mới"}</td>
+                  <td className="p-3" style={{ borderTop: `1px solid ${C.outlineVariant}` }}>{ADMIN_ALERT_STATUS_LABELS[alert.status] ?? alert.status}</td>
+                  <td className="p-3" style={{ borderTop: `1px solid ${C.outlineVariant}` }}>{alert.notification_count}</td>
+                  <td className="p-3" style={{ borderTop: `1px solid ${C.outlineVariant}` }}>{alert.recent_events[0] ? `${ADMIN_ALERT_EVENT_LABELS[alert.recent_events[0].event_type] ?? alert.recent_events[0].event_type} - ${formatDateTime(alert.recent_events[0].created_at)}` : "Chưa có"}</td>
+                  <td className="p-3" style={{ borderTop: `1px solid ${C.outlineVariant}` }}>{alert.status !== "Disabled" && <NbButton small variant="secondary" onClick={() => disable(alert)}>Tắt cảnh báo</NbButton>}</td>
                 </tr>
               ))}
             </tbody>

@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { Archive, Plus, RotateCcw, Save } from "lucide-react";
+import { Archive, RotateCcw, Save } from "lucide-react";
 import {
   AdminCategoryDto,
   apiErrorMessage,
@@ -152,9 +152,7 @@ export default function AdminCategoriesPage() {
             <TextAreaInput label="Mô tả hiển thị" value={createForm.display_description} onChange={(value) => setCreateForm((current) => ({ ...current, display_description: value }))} />
             <TextInput label="Thứ tự hiển thị" value={createForm.display_order} inputMode="numeric" onChange={(value) => setCreateForm((current) => ({ ...current, display_order: value }))} />
             <div className="flex items-end justify-end">
-              <button type="submit" className="flex h-11 w-11 items-center justify-center" style={{ background: C.primary, color: C.white, border: border2 }} title="Tạo danh mục" aria-label="Tạo danh mục">
-                <Plus size={18} />
-              </button>
+              <NbButton type="submit">Tạo danh mục</NbButton>
             </div>
           </form>
         </section>
@@ -168,15 +166,15 @@ export default function AdminCategoriesPage() {
             <table className="w-full min-w-[1120px] border-collapse text-[13px]">
               <thead style={{ background: C.boneWhite }}>
                 <tr>
-                  <th className="p-3 text-left uppercase" style={{ border: border2 }}>Tên</th>
-                  <th className="p-3 text-left uppercase" style={{ border: border2 }}>Slug</th>
-                  <th className="p-3 text-left uppercase" style={{ border: border2 }}>Nhãn hiển thị</th>
-                  <th className="p-3 text-left uppercase" style={{ border: border2 }}>Mô tả hiển thị</th>
-                  <th className="p-3 text-left uppercase" style={{ border: border2 }}>Thứ tự</th>
-                  <th className="p-3 text-left uppercase" style={{ border: border2 }}>Trạng thái</th>
-                  <th className="p-3 text-left uppercase" style={{ border: border2 }}>Sách</th>
-                  <th className="p-3 text-left uppercase" style={{ border: border2 }}>Cập nhật</th>
-                  <th className="p-3 text-left uppercase" style={{ border: border2 }}>Thao tác</th>
+                  <th className="p-3 text-left uppercase" style={{ borderBottom: border2 }}>Tên</th>
+                  <th className="p-3 text-left uppercase" style={{ borderBottom: border2 }}>Slug</th>
+                  <th className="p-3 text-left uppercase" style={{ borderBottom: border2 }}>Nhãn hiển thị</th>
+                  <th className="p-3 text-left uppercase" style={{ borderBottom: border2 }}>Mô tả hiển thị</th>
+                  <th className="p-3 text-left uppercase" style={{ borderBottom: border2 }}>Thứ tự</th>
+                  <th className="p-3 text-left uppercase" style={{ borderBottom: border2 }}>Trạng thái</th>
+                  <th className="p-3 text-left uppercase" style={{ borderBottom: border2 }}>Sách</th>
+                  <th className="p-3 text-left uppercase" style={{ borderBottom: border2 }}>Cập nhật</th>
+                  <th className="p-3 text-left uppercase" style={{ borderBottom: border2 }}>Thao tác</th>
                 </tr>
               </thead>
               <tbody>
@@ -184,25 +182,25 @@ export default function AdminCategoriesPage() {
                   const draft = drafts[category.id];
                   return (
                     <tr key={category.id}>
-                      <td className="p-3 align-top" style={{ border: border2 }}>
+                      <td className="p-3 align-top" style={{ borderTop: `1px solid ${C.outlineVariant}` }}>
                         <NbDenseInput
                           value={draft?.name ?? category.name}
                           onChange={(event) => updateDraft(category.id, "name", event.target.value)}
                         />
                       </td>
-                      <td className="p-3 align-top" style={{ border: border2 }}>
+                      <td className="p-3 align-top" style={{ borderTop: `1px solid ${C.outlineVariant}` }}>
                         <NbDenseInput
                           value={draft?.slug ?? category.slug}
                           onChange={(event) => updateDraft(category.id, "slug", event.target.value)}
                         />
                       </td>
-                      <td className="p-3 align-top" style={{ border: border2 }}>
+                      <td className="p-3 align-top" style={{ borderTop: `1px solid ${C.outlineVariant}` }}>
                         <NbDenseInput
                           value={draft?.display_label ?? category.display_label ?? ""}
                           onChange={(event) => updateDraft(category.id, "display_label", event.target.value)}
                         />
                       </td>
-                      <td className="p-3 align-top" style={{ border: border2 }}>
+                      <td className="p-3 align-top" style={{ borderTop: `1px solid ${C.outlineVariant}` }}>
                         <textarea
                           value={draft?.display_description ?? category.display_description ?? ""}
                           onChange={(event) => updateDraft(category.id, "display_description", event.target.value)}
@@ -210,19 +208,19 @@ export default function AdminCategoriesPage() {
                           style={{ border: border2, background: C.boneWhite }}
                         />
                       </td>
-                      <td className="p-3 align-top" style={{ border: border2 }}>
+                      <td className="p-3 align-top" style={{ borderTop: `1px solid ${C.outlineVariant}` }}>
                         <NbDenseInput
                           value={draft?.display_order ?? String(category.display_order)}
                           onChange={(event) => updateDraft(category.id, "display_order", event.target.value)}
                           inputMode="numeric"
                         />
                       </td>
-                      <td className="p-3 align-top font-bold" style={{ border: border2 }}>
+                      <td className="p-3 align-top font-bold" style={{ borderTop: `1px solid ${C.outlineVariant}` }}>
                         {category.status === "active" ? "Hoạt động" : "Lưu trữ"}
                       </td>
-                      <td className="p-3 align-top font-bold" style={{ border: border2 }}>{category.book_count ?? 0}</td>
-                      <td className="p-3 align-top font-bold" style={{ border: border2 }}>{formatDateTime(category.updated_at)}</td>
-                      <td className="p-3 align-top" style={{ border: border2 }}>
+                      <td className="p-3 align-top font-bold" style={{ borderTop: `1px solid ${C.outlineVariant}` }}>{category.book_count ?? 0}</td>
+                      <td className="p-3 align-top font-bold" style={{ borderTop: `1px solid ${C.outlineVariant}` }}>{formatDateTime(category.updated_at)}</td>
+                      <td className="p-3 align-top" style={{ borderTop: `1px solid ${C.outlineVariant}` }}>
                         <div className="flex flex-wrap items-center gap-2">
                           <NbButton small onClick={() => saveCategory(category.id)}>
                             <Save size={13} /> Lưu

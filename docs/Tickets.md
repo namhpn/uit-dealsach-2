@@ -40,4 +40,5 @@
 | T0025 | ProductDetail Offer Cheapest Ordering Fix | Done | T0024 | Backend/API |
 | T0026 | WishlistPage Original-Reference Visual Refinement | Done | T0025 | Frontend / Wishlist |
 | T0027 | AlertPage Buyer Dashboard and Login Prompt Card Refinement | Done | T0026 | Frontend UX |
-| T0028 | Frontend-Wide DealSach Style Unification Pass | In Progress | T0027 | Frontend UX |
+| T0028 | Frontend-Wide DealSach Style Unification Pass | Done | T0027 | Frontend UX |
+| T0029 | Admin Pages UI/UX Cleanup | In Progress | T0028 | Frontend/Admin UX |

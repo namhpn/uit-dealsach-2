@@ -15,24 +15,21 @@ export default function AdminAuditPage() {
   return (
     <AdminGate>
       <PageShell variant="admin" className="min-w-[768px] max-w-[1200px] gap-5">
-        <AdminHeader title="Nhật ký kiểm toán" description="Theo dõi toàn bộ thao tác quản trị và dữ liệu before/after dạng audit." backLink={<AdminBackLink />} />
+        <AdminHeader title="Quản trị logs" description="Theo dõi thao tác quản trị đã ghi nhận. Giá trị action_type và entity_type được giữ nguyên để đối chiếu kỹ thuật." backLink={<AdminBackLink />} />
         {error && <ErrorState message={error} />}
         {loading ? <LoadingState label="Đang tải nhật ký..." /> : (
           <AdminTableShell>
           <table className="w-full border-collapse text-[12px]">
             <thead style={{ background: C.boneWhite }}>
-              <tr>{["Thời gian", "Admin", "Hành động", "Đối tượng", "Tóm tắt", "Trước", "Sau"].map((h) => <th key={h} className="p-3 text-left uppercase" style={{ border: border2 }}>{h}</th>)}</tr>
+              <tr>{["Thời gian", "Admin", "Hành động", "Đối tượng"].map((h) => <th key={h} className="p-3 text-left uppercase" style={{ borderBottom: border2 }}>{h}</th>)}</tr>
             </thead>
             <tbody>
               {items.map((log) => (
                 <tr key={log.id}>
-                  <td className="p-3 whitespace-nowrap" style={{ border: border2 }}>{formatDateTime(log.created_at)}</td>
-                  <td className="p-3" style={{ border: border2 }}>{log.actor_email}</td>
-                  <td className="p-3 font-bold" style={{ border: border2 }}>{log.action_type}</td>
-                  <td className="p-3" style={{ border: border2 }}>{log.entity_type} #{log.entity_id}</td>
-                  <td className="p-3" style={{ border: border2 }}>{log.summary}</td>
-                  <td className="p-3 max-w-[220px] break-words font-mono text-[11px]" style={{ border: border2, color: C.onSurfaceVariant }}>{log.before ? JSON.stringify(log.before) : "-"}</td>
-                  <td className="p-3 max-w-[220px] break-words font-mono text-[11px]" style={{ border: border2, color: C.onSurfaceVariant }}>{log.after ? JSON.stringify(log.after) : "-"}</td>
+                  <td className="p-3 whitespace-nowrap" style={{ borderTop: `1px solid ${C.outlineVariant}` }}>{formatDateTime(log.created_at)}</td>
+                  <td className="p-3" style={{ borderTop: `1px solid ${C.outlineVariant}` }}>{log.actor_email}</td>
+                  <td className="p-3 font-bold" style={{ borderTop: `1px solid ${C.outlineVariant}` }}>{log.action_type}</td>
+                  <td className="p-3" style={{ borderTop: `1px solid ${C.outlineVariant}` }}>{log.entity_type} #{log.entity_id}</td>
                 </tr>
               ))}
             </tbody>

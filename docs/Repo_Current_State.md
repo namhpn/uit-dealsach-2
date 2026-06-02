@@ -1045,3 +1045,14 @@ Prioritize a small backend test-data stabilization ticket for KI-0015, then remo
 ## Next Recommended Ticket
 
 Prioritize a small backend baseline-stability ticket for KI-0015, then remove fixed `container_name` usage from Docker Compose (KI-0014), then follow with KI-0009 demo cover asset alignment.
+
+## T0029 Current State — 2026-06-02
+
+* Current branch: `feature/t0029-admin-ui-cleanup`.
+* Completed ticket: T0029 — Admin Pages UI/UX Cleanup.
+* Relevant folder structure changes: removed unused `frontend/src/app/pages/AdminReportsPage.tsx`; Admin route table no longer includes `/admin/menu` or `/admin/reports`.
+* Installed dependency changes: none.
+* Available script changes: none.
+* Build/test status: `docker compose run --rm frontend npm run build` passed with the existing Vite chunk-size warning; `git diff --check` passed.
+* Known issues: no new out-of-scope issues discovered; KI-0009, KI-0014, and KI-0015 remain open.
+* Next recommended ticket: perform browser-based manual QA for the T0029 Admin checklist, then address KI-0015 backend baseline stability.

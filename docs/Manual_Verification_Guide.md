@@ -1170,6 +1170,48 @@ Use this section for tickets that change backend ordering of `GET /api/public/bo
 
    Expected result: `offers.purchasable` is ascending by `latest_price` (tie-breaker `id`), FAHASA `82000` is first, and `summary.lowest_eligible_price` equals `offers.purchasable[0].latest_price`.
 
+## T0029 Admin Pages UI/UX Cleanup Verification
+
+Use this section for T0029 or later Admin UI cleanup tickets that do not change backend APIs.
+
+1. Run the frontend build:
+
+   ```bash
+   docker compose run --rm frontend npm run build
+   ```
+
+   Expected result: build exits 0. Existing Vite chunk-size warning may remain.
+
+2. Run whitespace and changed-file scope checks:
+
+   ```bash
+   git diff --check
+   git diff --name-only
+   git status --short
+   ```
+
+   Expected result: no whitespace errors; changed files stay within the ticket’s allowed Admin frontend files plus required docs.
+
+3. Open `/admin` as a Quản trị viên.
+
+   Expected result: dashboard loads as the Admin landing page, title is `Dashboard quản trị`, compact navigation shows `Dashboard quản trị`, `Sách`, `Ưu đãi`, `Người dùng`, `Cảnh báo`, and `Quản trị logs`, and no `Về Admin` link appears.
+
+4. Check removed routes/navigation:
+
+   ```text
+   Open /admin/menu and /admin/reports.
+   ```
+
+   Expected result: neither route appears in visible Admin navigation, and the old duplicate menu/report page is not rendered.
+
+5. Open `/admin/users`, `/admin/alerts`, and `/admin/audit`.
+
+   Expected result: users show `Quản trị viên` / `Người dùng`, `Email Preference`, and readable alert counts; alerts show `Số email đã gửi`, `Logs`, Vietnamese statuses, and `Tắt cảnh báo`; audit shows only `Thời gian`, `Admin`, `Hành động`, and `Đối tượng`.
+
+6. Open `/admin/books`, `/admin/categories`, `/admin/retailers`, `/admin/merchants`, `/admin/offers`, and one `/admin/offers/{id}` page.
+
+   Expected result: create flows and lifecycle/update/disable/observation actions remain functional; books use category select and featured labels; merchants/offers use selects where practical; retailer domains render clearer than comma-only text; offer observation status triplets render as labeled Vietnamese chips.
+
 ## DealSach Product Verification Checklist
 
 Use relevant items only:

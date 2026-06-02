@@ -471,7 +471,7 @@ export function AdminTableShell({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function AdminBackLink({ to = "/admin", label = "Về Admin" }: { to?: string; label?: string }) {
+export function AdminBackLink({ to = "/admin", label = "Về Dashboard quản trị" }: { to?: string; label?: string }) {
   return (
     <Link to={to} className="inline-flex items-center px-3 py-1 text-[11px] font-extrabold uppercase" style={{ border: border2, background: C.white, color: C.primary, boxShadow: shadow4, fontFamily: FONT }}>
       {label}

@@ -16,29 +16,35 @@ import AdminCategoriesPage from "./pages/AdminCategoriesPage";
 import AdminMerchantsPage from "./pages/AdminMerchantsPage";
 import AdminOffersPage from "./pages/AdminOffersPage";
 import AdminRetailersPage from "./pages/AdminRetailersPage";
+import NotFoundPage from "./pages/NotFoundPage";
+import RouteErrorPage from "./pages/RouteErrorPage";
+
+const routeErrorElement = <RouteErrorPage />;
 
 export const router = createBrowserRouter([
   {
     path: "/",
     Component: Root,
+    errorElement: routeErrorElement,
     children: [
-      { index: true, Component: HomePage },
-      { path: "search", Component: SearchPage },
-      { path: "book/:id", Component: ProductDetailPage },
-      { path: "wishlist", Component: WishlistPage },
-      { path: "alerts", Component: AlertsPage },
-      { path: "account", Component: AccountPage },
-      { path: "admin", Component: AdminDashboardPage },
-      { path: "admin/dashboard", Component: AdminDashboardPage },
-      { path: "admin/users", Component: AdminUsersPage },
-      { path: "admin/books", Component: AdminBooksPage },
-      { path: "admin/categories", Component: AdminCategoriesPage },
-      { path: "admin/retailers", Component: AdminRetailersPage },
-      { path: "admin/merchants", Component: AdminMerchantsPage },
-      { path: "admin/offers", Component: AdminOffersPage },
-      { path: "admin/offers/:id", Component: AdminBookDetailPage },
-      { path: "admin/alerts", Component: AdminAlertsPage },
-      { path: "admin/audit", Component: AdminAuditPage },
+      { index: true, Component: HomePage, errorElement: routeErrorElement },
+      { path: "search", Component: SearchPage, errorElement: routeErrorElement },
+      { path: "book/:id", Component: ProductDetailPage, errorElement: routeErrorElement },
+      { path: "wishlist", Component: WishlistPage, errorElement: routeErrorElement },
+      { path: "alerts", Component: AlertsPage, errorElement: routeErrorElement },
+      { path: "account", Component: AccountPage, errorElement: routeErrorElement },
+      { path: "admin", Component: AdminDashboardPage, errorElement: routeErrorElement },
+      { path: "admin/dashboard", Component: AdminDashboardPage, errorElement: routeErrorElement },
+      { path: "admin/users", Component: AdminUsersPage, errorElement: routeErrorElement },
+      { path: "admin/books", Component: AdminBooksPage, errorElement: routeErrorElement },
+      { path: "admin/categories", Component: AdminCategoriesPage, errorElement: routeErrorElement },
+      { path: "admin/retailers", Component: AdminRetailersPage, errorElement: routeErrorElement },
+      { path: "admin/merchants", Component: AdminMerchantsPage, errorElement: routeErrorElement },
+      { path: "admin/offers", Component: AdminOffersPage, errorElement: routeErrorElement },
+      { path: "admin/offers/:id", Component: AdminBookDetailPage, errorElement: routeErrorElement },
+      { path: "admin/alerts", Component: AdminAlertsPage, errorElement: routeErrorElement },
+      { path: "admin/audit", Component: AdminAuditPage, errorElement: routeErrorElement },
+      { path: "*", Component: NotFoundPage, errorElement: routeErrorElement },
     ],
   },
 ]);

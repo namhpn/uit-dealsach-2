@@ -1068,3 +1068,14 @@ Prioritize a focused backend route-compatibility cleanup for KI-0016, then remov
 * Build/test status: full backend PHPUnit passed with 86 tests and 895 assertions.
 * Known issues: KI-0015 closed; KI-0016 added for the `GET /api/admin/reports` compatibility alias; KI-0009 and KI-0014 remain open.
 * Next recommended ticket: decide whether to keep or remove the backend `api/admin/reports` alias, then address KI-0014 and KI-0009.
+
+## T0030 Current State — 2026-06-03
+
+* Current branch: `feature/t0030-branded-route-errors`.
+* Completed ticket: T0030 — Branded 404 and Route Error UX.
+* Relevant folder structure changes: added `frontend/src/app/pages/NotFoundPage.tsx` and `frontend/src/app/pages/RouteErrorPage.tsx`.
+* Installed dependency changes: none.
+* Available script changes: none.
+* Build/test status: `docker compose run --rm frontend npm run build` passed with the existing Vite chunk-size warning; `git diff --check` passed; Vite served SPA HTML with HTTP `200 OK` for T0030 unknown-route paths from inside the Compose network; backend tests were not run because no backend files changed.
+* Known issues: no new out-of-scope issues discovered; KI-0009, KI-0014, and KI-0016 remain open.
+* Next recommended ticket: perform browser-based manual QA for the T0030 route-fallback checklist, then address KI-0016, KI-0014, and KI-0009.

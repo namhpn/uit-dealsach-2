@@ -1212,6 +1212,50 @@ Use this section for T0029 or later Admin UI cleanup tickets that do not change 
 
    Expected result: create flows and lifecycle/update/disable/observation actions remain functional; books use category select and featured labels; merchants/offers use selects where practical; retailer domains render clearer than comma-only text; offer observation status triplets render as labeled Vietnamese chips.
 
+## T0030 Branded 404 and Route Error UX Verification
+
+Use this section for frontend route-fallback tickets that do not change backend APIs.
+
+1. Run frontend build:
+
+   ```bash
+   docker compose run --rm frontend npm run build
+   ```
+
+   Expected result: build exits 0. Existing Vite chunk-size warning may remain.
+
+2. Run whitespace and changed-file scope checks:
+
+   ```bash
+   git diff --check
+   git diff --name-only
+   git status --short
+   ```
+
+   Expected result: no whitespace errors; changed files stay within T0030 allowed frontend route/page files plus required docs.
+
+3. Start the frontend dev server:
+
+   ```bash
+   docker compose run --rm --service-ports frontend npm run dev -- --host 0.0.0.0
+   ```
+
+4. Open `/does-not-exist`, `/admin/unknown-route`, and `/book/not-a-real-subroute/extra`.
+
+   Expected result: each unknown route renders a branded Vietnamese `Không tìm thấy trang` page inside the normal DealSach shell with header, search, footer, `Về trang chủ`, and `Tìm sách`. It does not show React Router default text such as `Unexpected Application Error!`, `Hey developer`, `ErrorBoundary`, or `errorElement`.
+
+5. Click `Về trang chủ`, then return to an unknown route and click `Tìm sách`.
+
+   Expected result: `Về trang chủ` navigates to `/`; `Tìm sách` navigates to `/search`; both valid pages load normally.
+
+6. Inspect browser console and responsive widths around 360px, 768px, and 1366px.
+
+   Expected result: the 404/error card remains readable and sharp-edged, buttons wrap cleanly on mobile, and the page does not introduce new runtime errors or horizontal layout collisions.
+
+7. Confirm route-error behavior by reviewing `frontend/src/app/routes.tsx` and `frontend/src/app/pages/RouteErrorPage.tsx`.
+
+   Expected result: existing routes keep their paths, child route errors use branded Vietnamese fallback copy, and visible error UI does not expose stack traces, component names, internal paths, or raw error dumps.
+
 ## DealSach Product Verification Checklist
 
 Use relevant items only:

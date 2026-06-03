@@ -1,10 +1,12 @@
 # Repo Current State
 
-Last updated: 2026-06-01
+Last updated: 2026-06-03
 
 ## Current Branch
 
 `main`
+
+Current no-ticket backend cleanup source: local `main` after backend PHPUnit baseline stabilization.
 
 Baseline source for T0007: local `main` after T0006 merge.
 
@@ -522,6 +524,10 @@ docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit --filte
 
 | Area | Command | Last Result | Notes |
 |---|---|---|---|
+| Backend | `rtk docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit'` | Passed for 2026-06-03 no-ticket backend cleanup | 86 tests, 895 assertions. Confirms stale-offer seeded scenario coverage, Admin catalog `observed_at` validation, Wishlist session helper stabilization, and the broader backend baseline are green. |
+| Backend | `rtk docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit --filter DealSachDomainDatabaseTest'` | Passed for 2026-06-03 no-ticket backend cleanup | 9 tests, 94 assertions. Stale-offer coverage now derives the freshness cutoff from latest seeded observation time minus 48 hours. |
+| Backend | `rtk docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit --filter AdminCatalogFeatureTest'` | Passed for 2026-06-03 no-ticket backend cleanup | 7 tests, 69 assertions. Includes invalid `observed_at` format and cycle-date mismatch rejection. |
+| Backend | `rtk docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit --filter WishlistFeatureTest'` | Passed for 2026-06-03 no-ticket backend cleanup | 6 tests, 68 assertions. Wishlist tests now use `AuthService::createSession()` instead of a hard-coded 2026-06-03 session expiry. |
 | Frontend | `rtk docker compose run --rm frontend npm run build` | Passed for T0028 | Vite production build passed after frontend-wide style unification; existing chunk-size warning remains. |
 | Frontend | `rtk docker compose run --rm frontend npm run build` | Passed for T0027 | Vite production build passed after AlertPage/Auth dialog refinement; existing chunk-size warning remains. |
 | Backend/Docker DB | `rtk docker compose run --rm app sh -lc 'cd backend && php spark migrate && php spark db:seed DealSachDemoSeeder'` | Passed for T0026 | Migration + seed completed before wishlist/frontend verification. |
@@ -1029,22 +1035,17 @@ Closed in T0006:
 
 * KI-0008 — fresh disposable long-running Docker app containers now normalize `backend/writable` ownership during startup without a manual `chown`.
 
-Open after T0026:
-Open after T0025:
+Open after 2026-06-03 no-ticket backend cleanup:
 
 * KI-0009 remains open — demo book cover paths still rely on fallback rendering because the referenced `/demo/covers/*` image files are not present.
 * KI-0011, KI-0012, and KI-0013 are closed by T0016.
 * KI-0014 added in T0018 — `frontend` uses fixed `container_name: ds_frontend`, which breaks concurrent disposable `docker compose -p ...` stacks.
-* KI-0015 added in T0026 — full backend suite baseline currently fails `DealSachDomainDatabaseTest::testSeedScenarioCoverage` because seeded stale-offer coverage no longer meets `>= 2` expectation.
+* KI-0015 is closed by the 2026-06-03 backend cleanup — full backend PHPUnit now passes.
+* KI-0016 added in 2026-06-03 backend cleanup — verify whether the stale backend `GET /api/admin/reports` dashboard alias should remain as compatibility or be removed.
 
 ## Next Recommended Ticket
 
-Prioritize a small backend test-data stabilization ticket for KI-0015, then remove fixed `container_name` usage from Docker Compose (KI-0014), followed by KI-0009 demo cover asset alignment.
-* KI-0015 added in T0025 — full backend suite baseline currently fails at `DealSachDomainDatabaseTest::testSeedScenarioCoverage` after fresh Docker migrate+seed.
-
-## Next Recommended Ticket
-
-Prioritize a small backend baseline-stability ticket for KI-0015, then remove fixed `container_name` usage from Docker Compose (KI-0014), then follow with KI-0009 demo cover asset alignment.
+Prioritize a focused backend route-compatibility cleanup for KI-0016, then remove fixed `container_name` usage from Docker Compose (KI-0014), followed by KI-0009 demo cover asset alignment.
 
 ## T0029 Current State — 2026-06-02
 
@@ -1054,5 +1055,16 @@ Prioritize a small backend baseline-stability ticket for KI-0015, then remove fi
 * Installed dependency changes: none.
 * Available script changes: none.
 * Build/test status: `docker compose run --rm frontend npm run build` passed with the existing Vite chunk-size warning; `git diff --check` passed.
-* Known issues: no new out-of-scope issues discovered; KI-0009, KI-0014, and KI-0015 remain open.
-* Next recommended ticket: perform browser-based manual QA for the T0029 Admin checklist, then address KI-0015 backend baseline stability.
+* Known issues at T0029 close: no new out-of-scope issues discovered; KI-0009, KI-0014, and KI-0015 remained open at that time. KI-0015 was closed by the 2026-06-03 no-ticket backend cleanup below.
+* Next recommended ticket at T0029 close: perform browser-based manual QA for the T0029 Admin checklist, then address KI-0015 backend baseline stability. Current recommendation is superseded by the 2026-06-03 cleanup note below.
+
+## No-ticket Backend Baseline Cleanup — 2026-06-03
+
+* Current branch: `main`.
+* Completed ticket: none; requested no-ticket backend cleanup.
+* Relevant folder structure changes: none.
+* Installed dependency changes: none.
+* Available script changes: none.
+* Build/test status: full backend PHPUnit passed with 86 tests and 895 assertions.
+* Known issues: KI-0015 closed; KI-0016 added for the `GET /api/admin/reports` compatibility alias; KI-0009 and KI-0014 remain open.
+* Next recommended ticket: decide whether to keep or remove the backend `api/admin/reports` alias, then address KI-0014 and KI-0009.

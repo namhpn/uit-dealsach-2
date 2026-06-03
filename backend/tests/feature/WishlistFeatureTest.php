@@ -146,20 +146,8 @@ final class WishlistFeatureTest extends CIUnitTestCase
             'updated_at' => '2026-05-27 09:00:00',
         ]);
         $userId = (int) $this->db->insertID();
-        $token = bin2hex(random_bytes(32));
 
-        $this->db->table('user_sessions')->insert([
-            'user_id' => $userId,
-            'token_hash' => hash('sha256', $token),
-            'status' => 'active',
-            'issued_at' => '2026-05-27 09:00:00',
-            'expires_at' => '2026-06-03 09:00:00',
-            'last_seen_at' => '2026-05-27 09:00:00',
-            'created_at' => '2026-05-27 09:00:00',
-            'updated_at' => '2026-05-27 09:00:00',
-        ]);
-
-        return $token;
+        return (new AuthService())->createSession($userId)['token'];
     }
 
     private function auth(string $token): self

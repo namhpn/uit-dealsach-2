@@ -913,7 +913,7 @@ Use this section for tickets that add or change Admin catalog APIs or pages.
    docker compose -p dealsach_t0013 run --rm --build app sh -lc 'cd backend && php vendor/bin/phpunit --filter AdminCatalog'
    ```
 
-   Expected result: Admin authorization, catalog lifecycle, audit masking, offer validation, eligibility review, and observation-time capture checks pass.
+   Expected result: Admin authorization, catalog lifecycle, audit masking, offer validation, eligibility review, observation-time capture, and strict `observed_at` validation checks pass. Admin-created price observations must use `observed_at` in `YYYY-MM-DD HH:MM:SS` format and the `observed_at` date must match `cycle_date`.
 
 3. Build the Admin catalog frontend:
 

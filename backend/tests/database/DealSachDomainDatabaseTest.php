@@ -292,14 +292,29 @@ final class DealSachDomainDatabaseTest extends CIUnitTestCase
     private function countLatestStaleOffers(): int
     {
         $count = 0;
+        $staleCutoff = $this->latestObservationFreshnessCutoff();
 
         foreach ($this->latestObservationsByOffer() as $observation) {
-            if ($observation->observed_at < '2026-05-24 00:00:00') {
+            if ($observation->observed_at < $staleCutoff) {
                 $count++;
             }
         }
 
         return $count;
+    }
+
+    private function latestObservationFreshnessCutoff(): string
+    {
+        $latest = $this->db->table('price_observations')
+            ->selectMax('observed_at', 'latest_observed_at')
+            ->get()
+            ->getFirstRow();
+
+        $latestObservedAt = (string) $latest->latest_observed_at;
+
+        return (new DateTimeImmutable($latestObservedAt, new DateTimeZone('Asia/Ho_Chi_Minh')))
+            ->modify('-48 hours')
+            ->format('Y-m-d H:i:s');
     }
 
     private function countRedirectFailureOffers(): int

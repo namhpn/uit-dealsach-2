@@ -219,6 +219,42 @@ final class AdminCatalogFeatureTest extends CIUnitTestCase
         $this->assertSame('2026-05-27 09:15:00', $observation->observed_at);
     }
 
+    public function testAdminObservationRejectsInvalidObservedAt(): void
+    {
+        $token = $this->adminToken();
+        $categoryId = $this->category();
+        $bookId = $this->book($categoryId);
+        [$retailerId, $merchantId] = $this->retailerAndMerchant();
+        $offer = $this->json($this->withHeaders($this->cookie($token))->post('/api/admin/offers', [
+            'book_id' => $bookId,
+            'retailer_platform_id' => $retailerId,
+            'merchant_id' => $merchantId,
+            'external_offer_title' => 'Ưu đãi kiểm tra ngày quan sát',
+            'affiliate_destination_url' => 'https://tiki.vn/uu-dai-ngay-quan-sat',
+            'status' => 'active',
+        ]))['data'];
+
+        $invalidFormat = $this->withHeaders($this->cookie($token))->post('/api/admin/offers/' . $offer['id'] . '/observations', [
+            'cycle_date' => '2026-05-27',
+            'observed_at' => '2026-05-27T09:15:00',
+            'availability_status' => 'available',
+            'listed_item_price' => 99000,
+        ]);
+        $invalidFormat->assertStatus(422);
+        $this->assertArrayHasKey('observed_at', $this->json($invalidFormat)['errors']);
+
+        $mismatchedCycleDate = $this->withHeaders($this->cookie($token))->post('/api/admin/offers/' . $offer['id'] . '/observations', [
+            'cycle_date' => '2026-05-27',
+            'observed_at' => '2026-05-28 09:15:00',
+            'availability_status' => 'available',
+            'listed_item_price' => 99000,
+        ]);
+        $mismatchedCycleDate->assertStatus(422);
+        $this->assertArrayHasKey('observed_at', $this->json($mismatchedCycleDate)['errors']);
+
+        $this->assertSame(0, $this->db->table('price_observations')->where('offer_id', $offer['id'])->countAllResults());
+    }
+
     private function adminToken(): string
     {
         return $this->sessionFor($this->user('admin@example.com', 'admin'));

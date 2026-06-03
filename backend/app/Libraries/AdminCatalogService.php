@@ -434,6 +434,16 @@ class AdminCatalogService
         if (! preg_match('/^\d{4}-\d{2}-\d{2}$/', $cycleDate)) {
             $errors['cycle_date'] = 'Ngày chu kỳ phải có dạng YYYY-MM-DD.';
         }
+        $parsedCycleDate = $this->parseDate($cycleDate);
+        if ($parsedCycleDate === null) {
+            $errors['cycle_date'] = 'Ngày chu kỳ phải là ngày hợp lệ theo dạng YYYY-MM-DD.';
+        }
+        $parsedObservedAt = $this->parseDateTime($observedAt);
+        if ($parsedObservedAt === null) {
+            $errors['observed_at'] = 'Thời điểm quan sát phải có dạng YYYY-MM-DD HH:MM:SS.';
+        } elseif ($parsedObservedAt->format('Y-m-d') !== $cycleDate) {
+            $errors['observed_at'] = 'Thời điểm quan sát phải cùng ngày với ngày chu kỳ.';
+        }
         if ($errors !== []) {
             return $this->error(422, 'Dữ liệu quan sát giá chưa hợp lệ.', $errors);
         }
@@ -852,6 +862,20 @@ class AdminCatalogService
             'processed_at' => $cycleDate . ' ' . $this->now->format('H:i:s'),
             'notes' => $notes,
         ]);
+    }
+
+    private function parseDate(string $value): ?DateTimeImmutable
+    {
+        $parsed = DateTimeImmutable::createFromFormat('!Y-m-d', $value, new DateTimeZone(self::TZ));
+
+        return $parsed instanceof DateTimeImmutable && $parsed->format('Y-m-d') === $value ? $parsed : null;
+    }
+
+    private function parseDateTime(string $value): ?DateTimeImmutable
+    {
+        $parsed = DateTimeImmutable::createFromFormat('!Y-m-d H:i:s', $value, new DateTimeZone(self::TZ));
+
+        return $parsed instanceof DateTimeImmutable && $parsed->format('Y-m-d H:i:s') === $value ? $parsed : null;
     }
 
     private function fresh(string $observedAt): bool

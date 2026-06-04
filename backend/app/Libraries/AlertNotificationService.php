@@ -265,8 +265,8 @@ class AlertNotificationService
      */
     private function attemptEmailWithRetry(object $alert, int $price, array $tiedOffers, array &$summary): bool
     {
-        for ($attempt = 1; $attempt <= 2; $attempt++) {
-            if ($attempt === 2) {
+        for ($attempt = 1; $attempt <= 3; $attempt++) {
+            if ($attempt > 1) {
                 $fresh = $this->alerts->find((int) $alert->id);
                 if ($fresh === null || $fresh->status !== 'Active') {
                     return false;

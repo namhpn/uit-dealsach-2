@@ -41,6 +41,7 @@ services:
   nginx:
     image: nginx:alpine
     restart: unless-stopped
+    container_name: ds_backend
     ports:
       - "80:80"
     volumes:

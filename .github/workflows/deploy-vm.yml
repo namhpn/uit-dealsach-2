@@ -1,0 +1,40 @@
+name: Deploy to VM
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-vm-main
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Deploy DealSach to VM
+    runs-on: ubuntu-latest
+
+    env:
+      VM_HOST: ${{ secrets.VM_HOST }}
+      VM_USER: ${{ secrets.VM_USER }}
+      VM_PORT: ${{ secrets.VM_PORT }}
+      DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+
+    steps:
+      - name: Configure SSH
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.VM_SSH_KEY }}" > ~/.ssh/vm_key
+          chmod 600 ~/.ssh/vm_key
+          ssh-keyscan -p "${VM_PORT:-22}" "$VM_HOST" >> ~/.ssh/known_hosts
+
+      - name: Deploy on VM
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/vm_key -p "${VM_PORT:-22}" "$VM_USER@$VM_HOST" \
+            "cd '$DEPLOY_PATH' && \
+             git fetch origin main && \
+             git reset --hard origin/main && \
+             bash scripts/deploy-vm.sh"

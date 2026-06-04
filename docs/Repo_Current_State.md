@@ -1079,3 +1079,14 @@ Prioritize a focused backend route-compatibility cleanup for KI-0016, then remov
 * Build/test status: `docker compose run --rm frontend npm run build` passed with the existing Vite chunk-size warning; `git diff --check` passed; Vite served SPA HTML with HTTP `200 OK` for T0030 unknown-route paths from inside the Compose network; backend tests were not run because no backend files changed.
 * Known issues: no new out-of-scope issues discovered; KI-0009, KI-0014, and KI-0016 remain open.
 * Next recommended ticket: perform browser-based manual QA for the T0030 route-fallback checklist, then address KI-0016, KI-0014, and KI-0009.
+
+## T0031 Current State — 2026-06-04
+
+* Current branch: `fix/t0031-productdetail-hero-actions`.
+* Completed ticket: T0031 — ProductDetail Hero Action Button Alignment Fix.
+* Relevant folder structure changes: none; only `frontend/src/app/pages/ProductDetailPage.tsx` and ticket/process docs changed.
+* Installed dependency changes: none.
+* Available script changes: none.
+* Build/test status: `docker compose run --rm frontend npm run build` passed with the existing Vite chunk-size warning; `git diff --check` passed; `git diff --name-only` stayed within T0031 allowed files after docs updates.
+* Known issues: no new out-of-scope issues discovered; KI-0009, KI-0014, and KI-0016 remain open.
+* Next recommended ticket: perform browser-based manual QA for the T0031 ProductDetail hero alignment checklist, then address KI-0016, KI-0014, and KI-0009.

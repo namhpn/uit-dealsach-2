@@ -219,6 +219,47 @@ final class AdminCatalogFeatureTest extends CIUnitTestCase
         $this->assertSame('2026-05-27 09:15:00', $observation->observed_at);
     }
 
+    public function testAdminObservationAutomaticallyEvaluatesAlertsAndWritesEmail(): void
+    {
+        $token = $this->adminToken();
+        $readerId = $this->user('admin-observation-alert@example.com', 'registered');
+        $categoryId = $this->category();
+        $bookId = $this->book($categoryId);
+        [$retailerId, $merchantId] = $this->retailerAndMerchant();
+        $alertId = $this->alert($readerId, $bookId, 'Active', 107000, 120000);
+        $offer = $this->json($this->withHeaders($this->cookie($token))->post('/api/admin/offers', [
+            'book_id' => $bookId,
+            'retailer_platform_id' => $retailerId,
+            'merchant_id' => $merchantId,
+            'external_offer_title' => 'Cà phê cùng Tony - Fahasa',
+            'affiliate_destination_url' => 'https://tiki.vn/ca-phe-cung-tony',
+            'status' => 'active',
+        ]))['data'];
+        $observedAt = (new \DateTimeImmutable('now', new \DateTimeZone('Asia/Ho_Chi_Minh')))->format('Y-m-d H:i:s');
+
+        $response = $this->withHeaders($this->cookie($token))->post('/api/admin/offers/' . $offer['id'] . '/observations', [
+            'cycle_date' => substr($observedAt, 0, 10),
+            'observed_at' => $observedAt,
+            'availability_status' => 'available',
+            'listed_item_price' => 106000,
+        ]);
+        $response->assertStatus(201);
+
+        $data = $this->json($response)['data'];
+        $this->assertSame(106000, $data['latest_observation']['listed_item_price']);
+        $this->assertArrayHasKey('alert_evaluation', $data);
+        $this->assertSame(1, $data['alert_evaluation']['triggered']);
+        $this->assertSame(1, $data['alert_evaluation']['emailed']);
+        $this->assertSame(1, $this->db->table('outbound_emails')
+            ->where('email_type', 'price_alert_target_price')
+            ->where('normalized_recipient_email', 'admin-observation-alert@example.com')
+            ->countAllResults());
+        $this->assertSame(1, (int) $this->db->table('price_alerts')->where('id', $alertId)->get()->getFirstRow()->notification_count);
+
+        $publicDetail = $this->json($this->get('/api/public/books/' . $bookId))['data'];
+        $this->assertSame(106000, $publicDetail['summary']['lowest_eligible_price']);
+    }
+
     public function testAdminObservationRejectsInvalidObservedAt(): void
     {
         $token = $this->adminToken();
@@ -320,17 +361,17 @@ final class AdminCatalogFeatureTest extends CIUnitTestCase
         $this->db->table('wishlist_items')->insert(['user_id' => $userId, 'book_id' => $bookId, 'created_at' => '2026-05-27 08:00:00', 'updated_at' => '2026-05-27 08:00:00']);
     }
 
-    private function alert(int $userId, int $bookId, string $status): int
+    private function alert(int $userId, int $bookId, string $status, int $targetPrice = 100000, int $comparisonPrice = 120000): int
     {
         $this->db->table('price_alerts')->insert([
             'user_id' => $userId,
             'book_id' => $bookId,
             'alert_type' => 'target_price',
             'status' => $status,
-            'target_price' => 100000,
+            'target_price' => $targetPrice,
             'baseline_price' => null,
             'baseline_pending' => 0,
-            'comparison_price' => 120000,
+            'comparison_price' => $comparisonPrice,
             'last_notified_price' => null,
             'notification_count' => 0,
             'expires_at' => '2026-08-27 08:00:00',

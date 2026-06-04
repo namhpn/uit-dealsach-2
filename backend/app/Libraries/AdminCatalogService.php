@@ -467,7 +467,12 @@ class AdminCatalogService
         $this->audit->record($actor, 'price_observation_created', 'price_observation', $id, 'Thêm quan sát giá mock cho ưu đãi.', null, $data);
         $this->db->transComplete();
 
-        return $this->success(201, 'Đã thêm quan sát giá.', $this->offerDetail($offerId));
+        $detail = $this->offerDetail($offerId);
+        if ($detail !== null) {
+            $detail['alert_evaluation'] = (new AlertNotificationService($this->db, $this->now))->evaluate();
+        }
+
+        return $this->success(201, 'Đã thêm quan sát giá.', $detail);
     }
 
     private function offerBuilder(): \CodeIgniter\Database\BaseBuilder

@@ -26,6 +26,16 @@ connect_container_to_network() {
   fi
 }
 
+cleanup_existing_stack() {
+  echo "Stopping existing Docker Compose stack and removing volumes..."
+  docker compose down -v --remove-orphans || true
+
+  echo "Removing stale frontend container '$FRONTEND_DEV_CONTAINER_NAME'..."
+  docker rm -f "$FRONTEND_DEV_CONTAINER_NAME" >/dev/null 2>&1 || true
+}
+
+cleanup_existing_stack
+
 echo "Installing backend dependencies..."
 docker compose run --rm app sh -lc 'cd backend && php ../composer.phar install'
 

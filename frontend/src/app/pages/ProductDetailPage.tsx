@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import type { FormEvent } from "react";
+import type { CSSProperties, FormEvent } from "react";
 import { Link, useParams } from "react-router";
 import { Bell, ExternalLink, Heart, Info, TrendingDown } from "lucide-react";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
@@ -36,6 +36,22 @@ import {
   shadow4,
   shadow8,
 } from "../shared";
+
+const HERO_ACTION_CLASS =
+  "inline-flex h-12 w-full items-center justify-center gap-2 px-4 text-[11px] font-extrabold uppercase";
+
+const heroActionStyle: CSSProperties = {
+  border: border2,
+  background: C.white,
+  color: C.onSurface,
+  fontFamily: FONT,
+  fontSize: 11,
+  fontWeight: 800,
+  minHeight: 48,
+  padding: "0 16px",
+  boxSizing: "border-box",
+  boxShadow: shadow4,
+};
 
 function HeroSection({
   data,
@@ -98,7 +114,7 @@ function HeroSection({
             </blockquote>
           )}
 
-          <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_280px] lg:items-start">
+          <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_280px] lg:items-stretch">
             <div className="flex min-w-[220px] flex-1 flex-col gap-1.5 p-4" style={{ background: C.primaryFixed, border: border4, boxShadow: shadow8 }}>
               <p className="text-[10px] font-bold uppercase" style={{ fontFamily: FONT, color: C.primary }}>
                 Giá tốt nhất hiện tại
@@ -129,21 +145,21 @@ function HeroSection({
               <PriceDisclaimer compact />
             </div>
 
-            <div className="flex flex-col gap-2">
+            <div className="flex h-full flex-col justify-center gap-2 lg:self-stretch">
               <NbButton
-                className="h-12 w-full justify-center text-[11px] uppercase"
+                className={HERO_ACTION_CLASS}
                 title={wishlisted ? "Bỏ khỏi danh sách yêu thích" : "Thêm vào Wishlist"}
                 onClick={onToggleWishlist}
                 variant={wishlisted ? "secondary" : "ghost"}
-                style={{ background: wishlisted ? C.primaryFixed : C.white }}
+                style={{ ...heroActionStyle, background: wishlisted ? C.primaryFixed : C.white }}
               >
                 <Heart size={16} fill={wishlisted ? C.primary : "none"} />
                 {wishlisted ? "Đã lưu" : "Thêm vào Wishlist"}
               </NbButton>
               <a
                 href="#price-alerts"
-                className="flex h-12 w-full items-center justify-center gap-2 px-4 py-3 text-[11px] font-extrabold uppercase"
-                style={{ border: border2, background: C.white, color: C.onSurface, fontFamily: FONT, boxShadow: shadow4, cursor: "pointer" }}
+                className={HERO_ACTION_CLASS}
+                style={{ ...heroActionStyle, cursor: "pointer" }}
               >
                 <Bell size={16} />
                 THEO DÕI GIẢM GIÁ

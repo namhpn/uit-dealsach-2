@@ -43,4 +43,4 @@
 | T0028 | Frontend-Wide DealSach Style Unification Pass | Done | T0027 | Frontend UX |
 | T0029 | Admin Pages UI/UX Cleanup | Done | T0028 | Frontend/Admin UX |
 | T0030 | Branded 404 and Route Error UX | Done | T0029 | Frontend UX |
-| T0031 | ProductDetail Hero Action Button Alignment Fix | In Progress | T0030 | Frontend UX |
+| T0031 | ProductDetail Hero Action Button Alignment Fix | Done | T0030 | Frontend UX |

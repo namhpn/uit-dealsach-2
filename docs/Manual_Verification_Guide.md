@@ -1256,6 +1256,44 @@ Use this section for frontend route-fallback tickets that do not change backend 
 
    Expected result: existing routes keep their paths, child route errors use branded Vietnamese fallback copy, and visible error UI does not expose stack traces, component names, internal paths, or raw error dumps.
 
+## T0031 ProductDetail Hero Action Alignment Verification
+
+Use this section for ProductDetail hero action-button alignment fixes that do not change backend/API behavior.
+
+1. Run frontend build:
+
+   ```bash
+   docker compose run --rm frontend npm run build
+   ```
+
+   Expected result: build exits 0. Existing Vite chunk-size warning may remain.
+
+2. Run whitespace and changed-file scope checks:
+
+   ```bash
+   git diff --check
+   git diff --name-only
+   git status --short
+   ```
+
+   Expected result: no whitespace errors; changed files stay within T0031 allowed frontend/docs files.
+
+3. Open a ProductDetail page from `/search` or directly at `/book/{id}`.
+
+   Expected result: the best-price card still shows the same current price/status, reference price behavior, and compact price disclaimer.
+
+4. Verify desktop layout around 1366px.
+
+   Expected result: the `Thêm vào Wishlist` / `Đã lưu` button and `THEO DÕI GIẢM GIÁ` link have matching height, width, font sizing, icon/text alignment, border, shadow, and horizontal padding; the action column aligns visually with the best-price card.
+
+5. Verify tablet/mobile layout around 768px and 360px.
+
+   Expected result: the price card and both hero action controls stack at full width without horizontal overflow, clipped shadows, or unreadable Vietnamese labels.
+
+6. Verify behavior.
+
+   Expected result: guest wishlist click still opens the auth prompt, logged-in wishlist click still toggles saved state, and `THEO DÕI GIẢM GIÁ` remains an internal anchor to `#price-alerts`.
+
 ## DealSach Product Verification Checklist
 
 Use relevant items only:

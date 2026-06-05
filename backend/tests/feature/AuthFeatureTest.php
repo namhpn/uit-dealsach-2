@@ -4,6 +4,7 @@ use App\Libraries\AuthService;
 use CodeIgniter\Test\CIUnitTestCase;
 use CodeIgniter\Test\DatabaseTestTrait;
 use CodeIgniter\Test\FeatureTestTrait;
+use Config\Email as EmailConfig;
 
 /**
  * @internal
@@ -32,6 +33,17 @@ final class AuthFeatureTest extends CIUnitTestCase
         $this->assertStringNotContainsString($this->latestOutboxCode('tester@example.com'), $result->getJSON());
         $this->assertSame(1, $this->db->table('outbound_emails')->where('normalized_recipient_email', 'tester@example.com')->countAllResults());
         $this->assertSame(1, $this->db->table('email_verification_codes')->where('normalized_email', 'tester@example.com')->where('status', 'active')->countAllResults());
+
+        $email = $this->db->table('outbound_emails')
+            ->where('normalized_recipient_email', 'tester@example.com')
+            ->get()
+            ->getFirstRow();
+        $this->assertNotNull($email);
+        $this->assertMatchesRegularExpression('/^Mã xác minh DealSach của bạn là \d{6}\. Mã có hiệu lực trong 10 phút\.$/', (string) $email->body_text);
+
+        $config = config('Email');
+        $this->assertInstanceOf(EmailConfig::class, $config);
+        $this->assertFalse($config->wordWrap);
     }
 
     public function testRequestCooldownAndHourlyAndDailyLimitsAreEnforced(): void

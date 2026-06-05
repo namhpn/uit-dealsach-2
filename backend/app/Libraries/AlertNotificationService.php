@@ -12,6 +12,7 @@ use CodeIgniter\Config\Services;
 use CodeIgniter\Database\BaseConnection;
 use CodeIgniter\Database\ConnectionInterface;
 use CodeIgniter\I18n\Time;
+use Config\App as AppConfig;
 use Config\Database;
 use Config\Email as EmailConfig;
 use DateTimeImmutable;
@@ -183,7 +184,11 @@ class AlertNotificationService
             'user_agent' => $userAgent === null ? null : mb_substr($userAgent, 0, 255),
         ]);
 
-        return ['statusCode' => 302, 'message' => 'Đã ghi nhận lượt mở liên kết email.', 'redirect' => (string) $link->landing_path];
+        return [
+            'statusCode' => 302,
+            'message' => 'Đã ghi nhận lượt mở liên kết email.',
+            'redirect' => $this->absoluteUrl($this->normalizedBookLandingPath((string) $link->landing_path, (int) $link->book_id)),
+        ];
     }
 
     /**
@@ -294,7 +299,7 @@ class AlertNotificationService
     {
         $dealToken = bin2hex(random_bytes(24));
         $disableToken = bin2hex(random_bytes(24));
-        $landingPath = '/book/' . (int) $alert->book_id . '#offers';
+        $landingPath = '/book/' . (int) $alert->book_id;
         $dealLinkPath = '/email/deals/' . $dealToken;
         $disablePath = '/alerts/disable/' . $disableToken;
         $emailType = $alert->alert_type === self::TARGET_PRICE ? 'price_alert_target_price' : 'price_alert_new_lowest';
@@ -308,7 +313,7 @@ class AlertNotificationService
             'display_recipient_email' => (string) $alert->display_email,
             'email_type' => $emailType,
             'subject' => $subject,
-            'body_text' => $this->emailBody($alert, $price, $tiedOffers, $dealLinkPath, $disablePath),
+            'body_text' => $this->emailBody($alert, $price, $tiedOffers, $this->absoluteUrl($dealLinkPath), $this->absoluteUrl($disablePath)),
             'metadata_json' => json_encode([
                 'price_alert_id' => (int) $alert->id,
                 'book_id' => (int) $alert->book_id,
@@ -455,6 +460,26 @@ class AlertNotificationService
     private function hash(string $token): string
     {
         return hash('sha256', $token);
+    }
+
+    private function absoluteUrl(string $path): string
+    {
+        $config = config('App');
+        $baseUrl = $config instanceof AppConfig ? $config->baseURL : 'http://localhost:8080/';
+
+        return rtrim($baseUrl, '/') . '/' . ltrim($path, '/');
+    }
+
+    private function normalizedBookLandingPath(string $landingPath, int $bookId): string
+    {
+        $path = parse_url($landingPath, PHP_URL_PATH);
+        $path = is_string($path) ? $path : '';
+
+        if (preg_match('#^/book/[1-9][0-9]*$#', $path) === 1) {
+            return $path;
+        }
+
+        return '/book/' . $bookId;
     }
 
     private function formatVnd(int $value): string

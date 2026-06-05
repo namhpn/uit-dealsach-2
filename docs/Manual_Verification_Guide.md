@@ -1323,6 +1323,64 @@ Use this section for ProductDetail hero action-button alignment fixes that do no
 
    Expected result: guest wishlist click still opens the auth prompt, logged-in wishlist click still toggles saved state, and `THEO DÕI GIẢM GIÁ` remains an internal anchor to `#price-alerts`.
 
+## T0033 Alert Email URL and Redirect Verification
+
+Use this section for backend tickets that change alert-email URL formatting, email word wrapping, or email deal-link redirects.
+
+1. Reset the local Docker state if stale containers may interfere:
+
+   ```bash
+   docker compose down -v
+   docker rm -f ds_frontend
+   docker compose down -v
+   ```
+
+   Expected result: project containers, volumes, and the leftover frontend container are removed before testing.
+
+2. Trace the email and redirect paths:
+
+   ```bash
+   rtk rg -n "wordWrap|wrapChars|setMessage|body_text|emailBody|dealLinkPath|disablePath|landingPath|recordDealLinkClick|redirect\\(\\)->to" backend/app backend/tests
+   ```
+
+   Expected result: email wrapping is configured in `backend/app/Config/Email.php`, OTP email text is created in `EmailVerificationService`, alert email body/link metadata are created in `AlertNotificationService`, and deal-link redirects pass through `AlertEmailLinkController`.
+
+3. Run focused backend tests:
+
+   ```bash
+   docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit --filter PriceAlertFeatureTest'
+   docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit --filter AuthFeatureTest'
+   ```
+
+   Expected result: tests pass and assert disabled CI4 word wrapping, single-sentence OTP body text, absolute alert email links derived from `app.baseURL`, `/book/{bookId}` landing paths without `#offers`, legacy `#offers` normalization, click tracking, and disable-link behavior.
+
+4. Run the full backend suite:
+
+   ```bash
+   docker compose run --rm app sh -lc 'cd backend && php vendor/bin/phpunit'
+   ```
+
+   Expected result: full PHPUnit exits 0.
+
+5. For production or staging, verify a generated deal token with:
+
+   ```bash
+   curl -I https://dealsach.eu.cc/email/deals/{token}
+   curl -I https://dealsach.eu.cc/alerts/disable/{token}
+   ```
+
+   Expected result: the deal-link response redirects to `https://dealsach.eu.cc/book/{bookId}` without `http://localhost`, `index.php`, or `#offers`; the disable-link endpoint keeps the existing disable-confirmation behavior and does not route to the frontend 404.
+
+6. Run final file-scope checks:
+
+   ```bash
+   git diff --check
+   git diff --name-only
+   git status --short
+   ```
+
+   Expected result: no whitespace/conflict-marker issues, no `.env` or secret files changed, and changed files stay within the ticket’s allowed areas plus required process docs.
+
 ## DealSach Product Verification Checklist
 
 Use relevant items only:

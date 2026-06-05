@@ -1,10 +1,10 @@
 # Repo Current State
 
-Last updated: 2026-06-03
+Last updated: 2026-06-04
 
 ## Current Branch
 
-`main`
+`feature/t0032-alert-evaluation-footer-cleanup`
 
 Current no-ticket backend cleanup source: local `main` after backend PHPUnit baseline stabilization.
 
@@ -44,6 +44,7 @@ Baseline source for T0007: local `main` after T0006 merge.
 | T0027 | 2026-06-01 | Refined `/alerts` into a buyer-first grouped dashboard (`Đang theo dõi`, `Cần chú ý`, `Đã tắt`) and upgraded the shared email-code auth dialog into a split DealSach login prompt while preserving existing alert/auth API behavior. |
 | T0028 | 2026-06-01 | Unified frontend shared page/admin primitives (shell/header/prompt/button/input/table), standardized Root header icon controls and auth-dialog shared tokens, and aligned public/user/admin page styling without backend/API changes. |
 | T0025 | 2026-06-01 | Fixed backend ProductDetail purchasable-offer ordering to sort by current eligible `latest_price` (tie-breaker `offer id`), added seeded regression coverage for `Cho tôi xin một vé đi tuổi thơ`, and aligned manual verification/process docs. |
+| T0032 | 2026-06-04 | Added Admin observation-triggered alert evaluation, raised alert email retry to 3 attempts, wired footer links to existing routes/auth dialog behavior, and closed KI-0009/KI-0014 by reviewer confirmation while keeping KI-0016 open. |
 
 ## Current Folder Structure
 
@@ -1035,17 +1036,16 @@ Closed in T0006:
 
 * KI-0008 — fresh disposable long-running Docker app containers now normalize `backend/writable` ownership during startup without a manual `chown`.
 
-Open after 2026-06-03 no-ticket backend cleanup:
+Open after T0032:
 
-* KI-0009 remains open — demo book cover paths still rely on fallback rendering because the referenced `/demo/covers/*` image files are not present.
 * KI-0011, KI-0012, and KI-0013 are closed by T0016.
-* KI-0014 added in T0018 — `frontend` uses fixed `container_name: ds_frontend`, which breaks concurrent disposable `docker compose -p ...` stacks.
 * KI-0015 is closed by the 2026-06-03 backend cleanup — full backend PHPUnit now passes.
+* KI-0009 and KI-0014 are closed by reviewer confirmation during T0032.
 * KI-0016 added in 2026-06-03 backend cleanup — verify whether the stale backend `GET /api/admin/reports` dashboard alias should remain as compatibility or be removed.
 
 ## Next Recommended Ticket
 
-Prioritize a focused backend route-compatibility cleanup for KI-0016, then remove fixed `container_name` usage from Docker Compose (KI-0014), followed by KI-0009 demo cover asset alignment.
+Prioritize a focused backend route-compatibility cleanup for KI-0016.
 
 ## T0029 Current State — 2026-06-02
 
@@ -1055,7 +1055,7 @@ Prioritize a focused backend route-compatibility cleanup for KI-0016, then remov
 * Installed dependency changes: none.
 * Available script changes: none.
 * Build/test status: `docker compose run --rm frontend npm run build` passed with the existing Vite chunk-size warning; `git diff --check` passed.
-* Known issues at T0029 close: no new out-of-scope issues discovered; KI-0009, KI-0014, and KI-0015 remained open at that time. KI-0015 was closed by the 2026-06-03 no-ticket backend cleanup below.
+* Known issues at T0029 close: no new out-of-scope issues discovered; KI-0015 remained open at that time and was closed by the 2026-06-03 no-ticket backend cleanup below. KI-0009 and KI-0014 were later closed by T0032 reviewer-confirmed cleanup.
 * Next recommended ticket at T0029 close: perform browser-based manual QA for the T0029 Admin checklist, then address KI-0015 backend baseline stability. Current recommendation is superseded by the 2026-06-03 cleanup note below.
 
 ## No-ticket Backend Baseline Cleanup — 2026-06-03
@@ -1066,8 +1066,8 @@ Prioritize a focused backend route-compatibility cleanup for KI-0016, then remov
 * Installed dependency changes: none.
 * Available script changes: none.
 * Build/test status: full backend PHPUnit passed with 86 tests and 895 assertions.
-* Known issues: KI-0015 closed; KI-0016 added for the `GET /api/admin/reports` compatibility alias; KI-0009 and KI-0014 remain open.
-* Next recommended ticket: decide whether to keep or remove the backend `api/admin/reports` alias, then address KI-0014 and KI-0009.
+* Known issues: KI-0015 closed; KI-0016 added for the `GET /api/admin/reports` compatibility alias. KI-0009 and KI-0014 were later closed by T0032 reviewer-confirmed cleanup.
+* Next recommended ticket: decide whether to keep or remove the backend `api/admin/reports` alias.
 
 ## T0030 Current State — 2026-06-03
 
@@ -1077,8 +1077,8 @@ Prioritize a focused backend route-compatibility cleanup for KI-0016, then remov
 * Installed dependency changes: none.
 * Available script changes: none.
 * Build/test status: `docker compose run --rm frontend npm run build` passed with the existing Vite chunk-size warning; `git diff --check` passed; Vite served SPA HTML with HTTP `200 OK` for T0030 unknown-route paths from inside the Compose network; backend tests were not run because no backend files changed.
-* Known issues: no new out-of-scope issues discovered; KI-0009, KI-0014, and KI-0016 remain open.
-* Next recommended ticket: perform browser-based manual QA for the T0030 route-fallback checklist, then address KI-0016, KI-0014, and KI-0009.
+* Known issues: no new out-of-scope issues discovered; KI-0016 remained open. KI-0009 and KI-0014 were later closed by T0032 reviewer-confirmed cleanup.
+* Next recommended ticket: perform browser-based manual QA for the T0030 route-fallback checklist, then address KI-0016.
 
 ## T0031 Current State — 2026-06-04
 
@@ -1088,5 +1088,16 @@ Prioritize a focused backend route-compatibility cleanup for KI-0016, then remov
 * Installed dependency changes: none.
 * Available script changes: none.
 * Build/test status: `docker compose run --rm frontend npm run build` passed with the existing Vite chunk-size warning; `git diff --check` passed; `git diff --name-only` stayed within T0031 allowed files after docs updates.
-* Known issues: no new out-of-scope issues discovered; KI-0009, KI-0014, and KI-0016 remain open.
-* Next recommended ticket: perform browser-based manual QA for the T0031 ProductDetail hero alignment checklist, then address KI-0016, KI-0014, and KI-0009.
+* Known issues: no new out-of-scope issues discovered; KI-0016 remained open. KI-0009 and KI-0014 were later closed by T0032 reviewer-confirmed cleanup.
+* Next recommended ticket: perform browser-based manual QA for the T0031 ProductDetail hero alignment checklist, then address KI-0016.
+
+## T0032 Current State — 2026-06-04
+
+* Current branch: `feature/t0032-alert-evaluation-footer-cleanup`.
+* Completed ticket: T0032 — Alert Auto-Evaluation, Email Retry, Footer Links, and Known-Issue Cleanup.
+* Relevant folder structure changes: none; changes stayed within allowed backend service/test files, `frontend/src/app/Root.tsx`, and required process docs.
+* Installed dependency changes: none.
+* Available script changes: none.
+* Build/test status: focused `PriceAlertFeatureTest` and `AdminCatalogFeatureTest` passed; full backend PHPUnit passed with 87 tests and 905 assertions; `rtk docker compose run --rm frontend npm run build` passed with the existing Vite chunk-size warning.
+* Known issues: KI-0009 and KI-0014 closed by reviewer confirmation; KI-0016 remains open.
+* Next recommended ticket: address KI-0016 with a focused backend route-compatibility cleanup.

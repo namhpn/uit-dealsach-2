@@ -212,6 +212,35 @@ Use this section for backend tickets that add or change JSON APIs.
 
 5. For database-backed API behavior, verify the result against the seeded database state, a focused PHPUnit feature test, or both.
 
+## Alert Observation Evaluation Verification
+
+Use this section when Admin-added price observations or alert email delivery behavior changes.
+
+1. Trace the backend path before editing:
+
+   ```bash
+   rtk rg -n "addObservation|attemptEmailWithRetry|alerts:evaluate|AlertNotificationService|outbound_emails" backend/app backend/tests
+   ```
+
+   Expected result: Admin observation writes happen in `AdminCatalogService::addObservation()`, alert evaluation is centralized in `AlertNotificationService`, and the Spark command `alerts:evaluate` calls the same evaluator.
+
+2. Run focused alert and Admin catalog tests:
+
+   ```bash
+   rtk docker compose run --rm app sh -lc "cd backend && php vendor/bin/phpunit --filter PriceAlertFeatureTest"
+   rtk docker compose run --rm app sh -lc "cd backend && php vendor/bin/phpunit --filter AdminCatalogFeatureTest"
+   ```
+
+   Expected result: target-price notification, no-duplicate behavior, failed-email retry attempts, and Admin observation auto-evaluation tests pass.
+
+3. For source-review footer checks, run:
+
+   ```bash
+   rtk rg -n 'href="#"|Khám phá|Tài khoản|Về DealSach|Câu hỏi thường gặp|Chính sách bảo mật|Điều khoản sử dụng' frontend/src/app/Root.tsx
+   ```
+
+   Expected result: no `href="#"` remains; footer labels either navigate to implemented routes, open the existing auth dialog for guests, or render as disabled informational text.
+
 ## Auth API Verification
 
 Use this section for backend tickets that add or change email verification or session APIs.

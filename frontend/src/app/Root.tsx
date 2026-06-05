@@ -82,14 +82,14 @@ function Header() {
     <header className="sticky top-0 z-50" style={{ background: C.white, borderBottom: border2 }}>
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 pt-3 pb-3 flex flex-wrap md:flex-nowrap items-start gap-3 md:gap-4">
         {/* Logo */}
-        <a href="#" onClick={(e) => { e.preventDefault(); navigate("/"); }} className="order-1 flex items-center gap-2 shrink-0 pt-1">
+        <button type="button" onClick={() => navigate("/")} className="order-1 flex items-center gap-2 shrink-0 pt-1 text-left">
           <div className="w-10 h-10 flex items-center justify-center" style={{ background: C.primary, border: border2 }}>
             <BookOpen size={20} style={{ color: C.white }} />
           </div>
           <span className="font-extrabold text-[22px] leading-none uppercase tracking-tight" style={{ color: C.primary, fontFamily: FONT, letterSpacing: "-0.02em" }}>
             DealSach
           </span>
-        </a>
+        </button>
 
         {/* Search + chips column */}
         <div className="order-3 basis-full max-w-full md:order-2 md:basis-auto md:w-auto flex-1 flex flex-col gap-2 min-w-0">
@@ -241,6 +241,45 @@ function Header() {
 }
 
 function Footer() {
+  const navigate = useNavigate();
+  const auth = useAuth();
+  const footerLinkStyle = { color: "#80bea6", fontFamily: FONT };
+  const goToAccountRoute = (route: string) => {
+    if (auth.authenticated) {
+      navigate(route);
+      return;
+    }
+
+    auth.openAuthDialog();
+  };
+  const footerColumns = [
+    {
+      heading: "Khám phá",
+      links: [
+        { label: "Tìm kiếm sách", onClick: () => navigate("/search") },
+        { label: "Danh mục", onClick: () => navigate("/search") },
+      ],
+    },
+    {
+      heading: "Tài khoản",
+      links: [
+        { label: "Đăng nhập / Đăng ký", onClick: () => auth.authenticated ? navigate("/account") : auth.openAuthDialog() },
+        { label: "Danh sách yêu thích", onClick: () => goToAccountRoute("/wishlist") },
+        { label: "Cài đặt thông báo giá", onClick: () => goToAccountRoute("/alerts") },
+        { label: "Cài đặt tài khoản", onClick: () => goToAccountRoute("/account") },
+      ],
+    },
+    {
+      heading: "Thông tin",
+      links: [
+        { label: "Về DealSach" },
+        { label: "Câu hỏi thường gặp" },
+        { label: "Chính sách bảo mật" },
+        { label: "Điều khoản sử dụng" },
+      ],
+    },
+  ];
+
   return (
     <footer className="mt-16" style={{ background: "rgb(0,53,39)", color: C.white, borderTop: border2 }}>
       <div className="max-w-[1200px] mx-auto px-6 py-8">
@@ -254,16 +293,20 @@ function Footer() {
             </div>
             <p className="text-[12px] leading-relaxed" style={{ color: "#80bea6", fontFamily: FONT }}>So sánh giá sách từ nhiều nhà bán lẻ uy tín tại Việt Nam. Chúng tôi không bán sách trực tiếp.</p>
           </div>
-          {[
-            { heading: "Khám phá",  links: ["Tìm kiếm sách", "Giảm giá hôm nay", "Ưu đãi phổ biến", "Danh mục"] },
-            { heading: "Tài khoản", links: ["Đăng nhập / Đăng ký", "Danh sách yêu thích", "Cài đặt thông báo giá", "Cài đặt tài khoản"] },
-            { heading: "Thông tin", links: ["Về DealSach", "Câu hỏi thường gặp", "Chính sách bảo mật", "Điều khoản sử dụng"] },
-          ].map(col => (
+          {footerColumns.map(col => (
             <div key={col.heading}>
               <h4 className="font-extrabold text-[11px] mb-3 uppercase tracking-widest" style={{ color: C.white, fontFamily: FONT }}>{col.heading}</h4>
               <ul className="space-y-1.5">
-                {col.links.map(l => (
-                  <li key={l}><a href="#" className="text-[12px] transition-colors hover:text-white" style={{ color: "#80bea6", fontFamily: FONT }}>{l}</a></li>
+                {col.links.map(link => (
+                  <li key={link.label}>
+                    {"onClick" in link ? (
+                      <button type="button" className="text-left text-[12px] transition-colors hover:text-white" style={footerLinkStyle} onClick={link.onClick}>
+                        {link.label}
+                      </button>
+                    ) : (
+                      <span className="text-[12px]" style={{ ...footerLinkStyle, opacity: 0.65 }}>{link.label}</span>
+                    )}
+                  </li>
                 ))}
               </ul>
             </div>

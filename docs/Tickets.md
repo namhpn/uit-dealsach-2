@@ -45,4 +45,7 @@
 | T0030 | Branded 404 and Route Error UX | Done | T0029 | Frontend UX |
 | T0031 | ProductDetail Hero Action Button Alignment Fix | Done | T0030 | Frontend UX |
 | T0032 | Alert Auto-Evaluation, Email Retry, Footer Links, and Known-Issue Cleanup | Done | T0031 | Backend / Frontend / Docs |
+<<<<<<< HEAD
 | T0033 | Alert Email URL and Redirect Formatting Fix | In Progress | T0032 | Backend Email / Alert links |
+=======
+>>>>>>> 73c44b6939a3a06f6b1e02a9b3c85b21c0862d51

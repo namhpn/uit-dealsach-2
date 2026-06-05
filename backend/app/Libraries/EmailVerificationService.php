@@ -286,21 +286,23 @@ class EmailVerificationService
         }
 
         $emailRow = $this->emails->find($emailId);
-        if ($emailRow === null || ! in_array((string) $emailRow->status, ['queued', 'sent'], true)) {
+        if ($emailRow === null || (string) $emailRow->status !== 'queued') {
             return;
         }
 
         $mailer = Services::email();
-        $mailer->clear(true);
-        $mailer->setFrom($config->fromEmail !== '' ? $config->fromEmail : $config->SMTPUser, $config->fromName !== '' ? $config->fromName : 'DealSach');
-        $mailer->setTo((string) $emailRow->display_recipient_email);
-        $mailer->setSubject((string) $emailRow->subject);
-        $mailer->setMessage((string) $emailRow->body_text);
+        for ($attempt = 1; $attempt <= 3; $attempt++) {
+            $mailer->clear(true);
+            $mailer->setFrom($config->fromEmail !== '' ? $config->fromEmail : $config->SMTPUser, $config->fromName !== '' ? $config->fromName : 'DealSach');
+            $mailer->setTo((string) $emailRow->display_recipient_email);
+            $mailer->setSubject((string) $emailRow->subject);
+            $mailer->setMessage((string) $emailRow->body_text);
 
-        if ($mailer->send(false)) {
-            $this->emails->update($emailId, ['status' => 'sent']);
+            if ($mailer->send(false)) {
+                $this->emails->update($emailId, ['status' => 'sent']);
 
-            return;
+                return;
+            }
         }
 
         $this->emails->update($emailId, ['status' => 'failed']);

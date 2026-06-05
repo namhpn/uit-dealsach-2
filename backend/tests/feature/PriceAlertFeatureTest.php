@@ -292,8 +292,8 @@ final class PriceAlertFeatureTest extends CIUnitTestCase
         $summary = $this->evaluateAt($this->formatDateTime($base->modify('+5 minutes')));
 
         $this->assertGreaterThanOrEqual(1, $summary['triggered']);
-        $this->assertSame(2, $summary['failed']);
-        $this->assertSame(2, $this->db->table('outbound_emails')->where('normalized_recipient_email', 'fail-alert@example.com')->where('status', 'failed')->countAllResults());
+        $this->assertSame(3, $summary['failed']);
+        $this->assertSame(3, $this->db->table('outbound_emails')->where('normalized_recipient_email', 'fail-alert@example.com')->where('status', 'failed')->countAllResults());
         $alert = $this->db->table('price_alerts')->where('id', $alertId)->get()->getFirstRow();
         $this->assertSame(0, (int) $alert->notification_count);
         $this->assertNull($alert->last_notified_price);

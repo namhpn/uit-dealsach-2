@@ -72,7 +72,7 @@ class Email extends BaseConfig
     /**
      * Enable word-wrap
      */
-    public bool $wordWrap = true;
+    public bool $wordWrap = false;
 
     /**
      * Character count to wrap at

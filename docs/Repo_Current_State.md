@@ -1,10 +1,10 @@
 # Repo Current State
 
-Last updated: 2026-06-04
+Last updated: 2026-06-05
 
 ## Current Branch
 
-`feature/t0032-alert-evaluation-footer-cleanup`
+`fix/t0033-alert-email-url-redirect-formatting`
 
 Current no-ticket backend cleanup source: local `main` after backend PHPUnit baseline stabilization.
 
@@ -45,6 +45,7 @@ Baseline source for T0007: local `main` after T0006 merge.
 | T0028 | 2026-06-01 | Unified frontend shared page/admin primitives (shell/header/prompt/button/input/table), standardized Root header icon controls and auth-dialog shared tokens, and aligned public/user/admin page styling without backend/API changes. |
 | T0025 | 2026-06-01 | Fixed backend ProductDetail purchasable-offer ordering to sort by current eligible `latest_price` (tie-breaker `offer id`), added seeded regression coverage for `Cho tôi xin một vé đi tuổi thơ`, and aligned manual verification/process docs. |
 | T0032 | 2026-06-04 | Added Admin observation-triggered alert evaluation, raised alert email retry to 3 attempts, wired footer links to existing routes/auth dialog behavior, and closed KI-0009/KI-0014 by reviewer confirmation while keeping KI-0016 open. |
+| T0033 | 2026-06-05 | Disabled CI4 outbound email word wrapping, changed alert email text to use absolute `app.baseURL` links, stored new email deal-link landing paths without `#offers`, and normalized email deal-link redirects to absolute book URLs while preserving click tracking and disable-link behavior. |
 
 ## Current Folder Structure
 
@@ -1100,4 +1101,15 @@ Prioritize a focused backend route-compatibility cleanup for KI-0016.
 * Available script changes: none.
 * Build/test status: focused `PriceAlertFeatureTest` and `AdminCatalogFeatureTest` passed; full backend PHPUnit passed with 87 tests and 905 assertions; `rtk docker compose run --rm frontend npm run build` passed with the existing Vite chunk-size warning.
 * Known issues: KI-0009 and KI-0014 closed by reviewer confirmation; KI-0016 remains open.
+* Next recommended ticket: address KI-0016 with a focused backend route-compatibility cleanup.
+
+## T0033 Current State — 2026-06-05
+
+* Current branch: `fix/t0033-alert-email-url-redirect-formatting`.
+* Completed ticket: T0033 — Alert Email URL and Redirect Formatting Fix.
+* Relevant folder structure changes: none; changes stayed within allowed backend email/link files, focused backend tests, and required process docs.
+* Installed dependency changes: none.
+* Available script changes: none.
+* Build/test status: `PriceAlertFeatureTest` passed with 13 tests and 209 assertions; `AuthFeatureTest` passed with 8 tests and 96 assertions; full backend PHPUnit passed with 87 tests and 918 assertions.
+* Known issues: no new out-of-scope issues discovered; KI-0016 remains open and was not touched.
 * Next recommended ticket: address KI-0016 with a focused backend route-compatibility cleanup.

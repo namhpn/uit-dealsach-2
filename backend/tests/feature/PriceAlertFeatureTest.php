@@ -252,6 +252,10 @@ final class PriceAlertFeatureTest extends CIUnitTestCase
         $this->assertNotNull($email);
         $this->assertStringContainsString('Nhà giả kim', $email->body_text);
         $this->assertStringContainsString('Giá tham khảo được ghi nhận gần đây', $email->body_text);
+        $this->assertStringContainsString('Xem chi tiết tại DealSach: http://example.com/email/deals/', $email->body_text);
+        $this->assertStringContainsString('Tắt riêng cảnh báo này: http://example.com/alerts/disable/', $email->body_text);
+        $this->assertStringNotContainsString('Xem chi tiết tại DealSach: /email/deals/', $email->body_text);
+        $this->assertStringNotContainsString('Tắt riêng cảnh báo này: /alerts/disable/', $email->body_text);
         $this->assertSame(1, $this->db->table('email_deal_links')->where('price_alert_id', $alertId)->countAllResults());
         $this->assertSame(1, (int) $this->db->table('price_alerts')->where('id', $alertId)->get()->getFirstRow()->notification_count);
 
@@ -320,10 +324,15 @@ final class PriceAlertFeatureTest extends CIUnitTestCase
         $this->assertSame(3, (int) $alert->notification_count);
 
         $dealLink = $this->db->table('email_deal_links')->where('price_alert_id', $alertId)->orderBy('id', 'ASC')->get()->getFirstRow();
+        $this->assertSame('/book/' . $bookId, $dealLink->landing_path);
+        $this->db->table('email_deal_links')->where('id', $dealLink->id)->update(['landing_path' => '/book/' . $bookId . '#offers']);
         $dealToken = $this->plainTokenForHash('email_deal_links', (string) $dealLink->token_hash);
         $click = $this->requestGet('/email/deals/' . $dealToken);
         $click->assertStatus(302);
-        $this->assertStringEndsWith('/book/' . $bookId . '#offers', $click->response()->getHeaderLine('Location'));
+        $this->assertSame('http://example.com/book/' . $bookId, $click->response()->getHeaderLine('Location'));
+        $this->assertStringNotContainsString('http://localhost', $click->response()->getHeaderLine('Location'));
+        $this->assertStringNotContainsString('index.php', $click->response()->getHeaderLine('Location'));
+        $this->assertStringNotContainsString('#offers', $click->response()->getHeaderLine('Location'));
         $this->assertSame(1, $this->db->table('email_deal_link_clicks')->where('email_deal_link_id', $dealLink->id)->countAllResults());
         $this->assertSame($redirectsBeforeEmailClick, $this->db->table('affiliate_redirects')->countAllResults());
 
